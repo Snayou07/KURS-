@@ -1,0 +1,117 @@
+.root-pane { /* Застосовується до BorderPane, якщо вказано styleClass="root-pane" */
+    -fx-background-color: #f9f9f9;
+    -fx-font-family: "Arial", sans-serif;
+}
+
+.top-bar {
+    -fx-background-color: #ffffff; /* Білий фон для верхньої панелі */
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0; /* Тільки нижня межа */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+}
+
+.app-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6a1b9a; /* Фіолетовий */
+}
+
+.user-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #444;
+    -fx-padding: 0 10px 0 0;
+}
+
+.left-sidebar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 1px 0 0; /* Тільки права межа */
+}
+
+.sidebar-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+    -fx-padding-bottom: 10px;
+}
+
+.center-content {
+    -fx-background-color: #f0f0f0; /* Трохи інший фон для центральної частини */
+}
+
+.content-header {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+}
+
+.list-view {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 3px;
+}
+
+/* Стилізація елементів списку (карток оголошень) */
+.list-cell {
+    -fx-padding: 10px;
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1px 0; /* Розділювач між елементами */
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #f5f5f5; /* Підсвічування при наведенні */
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: #e8eaf6; /* Колір вибраного елемента */
+}
+
+.ad-title-in-list {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.ad-price-in-list {
+    -fx-font-size: 14px;
+    -fx-text-fill: #27ae60; /* Зелений для ціни */
+    -fx-font-weight: bold;
+}
+
+.ad-category-in-list {
+    -fx-font-size: 12px;
+    -fx-text-fill: #7f8c8d;
+}
+
+
+.action-button-highlight {
+    -fx-background-color: #7e57c2; /* Фіолетовий */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 15px;
+    -fx-background-radius: 5px;
+}
+.action-button-highlight:hover {
+    -fx-background-color: #5e35b1;
+}
+
+.action-button-small {
+    -fx-background-color: #9575cd; /* Світліший фіолетовий */
+    -fx-text-fill: white;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 5px;
+}
+.action-button-small:hover {
+    -fx-background-color: #673ab7;
+}
+
+.action-button-secondary {
+    -fx-background-color: #e0e0e0; /* Сірий */
+    -fx-text-fill: #333;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 5px;
+}
+.action-button-secondary:hover {
+    -fx-background-color: #bdbdbd;
+}

@@ -1,0 +1,62 @@
+.root-pane {
+    -fx-background-color: #f4f6f8; /* Світло-сірий фон */
+    -fx-font-family: "Arial", sans-serif;
+}
+
+.header-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333; /* Темно-сірий текст */
+    -fx-padding-bottom: 20px;
+}
+
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: #e0e0e0; /* Фон для заголовків вкладок */
+}
+
+.tab-pane > .tab-header-area .tab .tab-label {
+    -fx-text-fill: #555; /* Колір тексту на вкладках */
+}
+
+.tab-pane > .tab-header-area .tab:selected .tab-label {
+    -fx-text-fill: #6a1b9a; /* Фіолетовий для активної вкладки, схоже на ваш приклад */
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #ffffff; /* Білий фон для активної вкладки */
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.tab-content-area {
+    -fx-background-color: #ffffff; /* Білий фон для вмісту вкладки */
+    -fx-padding: 15px;
+}
+
+.text-field, .password-field {
+    -fx-pref-height: 35px;
+    -fx-font-size: 14px;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.action-button {
+    -fx-background-color: #7e57c2; /* Фіолетовий, як у вашому прикладі */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-pref-width: 200px; /* Ширина кнопки */
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 1);
+}
+
+.action-button:hover {
+    -fx-background-color: #5e35b1; /* Темніший фіолетовий при наведенні */
+}
+
+.error-label {
+    -fx-text-fill: red;
+    -fx-font-size: 12px;
+}

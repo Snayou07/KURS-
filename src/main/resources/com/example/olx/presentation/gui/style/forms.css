@@ -1,0 +1,75 @@
+.root-pane-form {
+    -fx-background-color: #f8f9fa; /* Світлий фон для форм */
+    -fx-font-family: "Arial", sans-serif;
+}
+
+.form-header-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #343a40; /* Темно-сірий */
+    -fx-padding-bottom: 25px;
+}
+
+.grid-pane { /* Загальні стилі для GridPane у формах */
+    /* Можна додати -fx-background-color: #ffffff; якщо потрібен білий фон для самої сітки */
+    /* -fx-border-color: #dee2e6; */
+    /* -fx-border-radius: 5px; */
+    /* -fx-padding: 20px; */
+}
+
+.grid-pane .label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #495057; /* Сірий для міток */
+    -fx-padding-top: 5px; /* Вирівнювання по вертикалі з полем вводу */
+}
+
+.text-field,
+.text-area,
+.combo-box {
+    -fx-pref-height: 38px;
+    -fx-font-size: 14px;
+    -fx-border-color: #ced4da;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-prompt-text-fill: #6c757d; /* Колір для promptText */
+}
+
+.text-area {
+    -fx-pref-height: 120px; /* Висота для TextArea */
+}
+
+.combo-box .list-cell { /* Стилізація випадаючого списку */
+    -fx-font-size: 14px;
+}
+
+.submit-button {
+    -fx-background-color: #6f42c1; /* Фіолетовий, схожий на Canva */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 25px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 2);
+}
+
+.submit-button:hover {
+    -fx-background-color: #5a32a3; /* Темніший при наведенні */
+}
+
+.cancel-button {
+    -fx-background-color: #6c757d; /* Сірий для кнопки скасування */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 5px;
+}
+
+.cancel-button:hover {
+    -fx-background-color: #5a6268;
+}
+
+.error-label {
+    -fx-text-fill: #dc3545; /* Червоний для помилок */
+    -fx-font-size: 13px;
+    -fx-padding-top: 5px;
+}
