@@ -17,6 +17,7 @@ import javafx.stage.FileChooser; // Для завантаження фото
 import javafx.scene.image.Image; // Для прев'ю фото
 import javafx.scene.image.ImageView; // Для прев'ю фото
 import javafx.scene.layout.HBox; // Для списку фото
+import javafx.scene.layout.VBox; // ДОДАНО для VBox
 import javafx.util.StringConverter;
 
 import java.io.File; // Для роботи з файлами
@@ -27,6 +28,7 @@ import java.nio.file.Paths; // Для шляхів
 import java.nio.file.StandardCopyOption; // Для копіювання файлів
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID; // Для унікальних імен файлів
 
 public class CreateAdController {

@@ -44,10 +44,10 @@ public class SessionManager {
         users.removeIf(u -> u.getUserId().equals(userToUpdate.getUserId()));
         users.add(userToUpdate);
     }
+
     public synchronized void addUserToState(User userToAdd) {
         currentAppState.getUsers().add(userToAdd);
     }
-
 
     public synchronized void removeUserFromState(String userId) {
         currentAppState.getUsers().removeIf(u -> u.getUserId().equals(userId));
@@ -62,10 +62,10 @@ public class SessionManager {
         ads.removeIf(a -> a.getAdId().equals(adToUpdate.getAdId()));
         ads.add(adToUpdate);
     }
+
     public synchronized void addAdToState(Ad adToAdd) {
         currentAppState.getAds().add(adToAdd);
     }
-
 
     public synchronized void removeAdFromState(String adId) {
         currentAppState.getAds().removeIf(a -> a.getAdId().equals(adId));
@@ -78,7 +78,6 @@ public class SessionManager {
     public synchronized void setCategoriesInState(List<CategoryComponent> categories) {
         currentAppState.setCategories(new ArrayList<>(categories)); // Замінюємо весь список
     }
-
 
     public synchronized void saveState() throws DataPersistenceException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {

@@ -6,6 +6,7 @@ import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.model.User;
 import com.example.olx.presentation.gui.MainGuiApp;
 import com.example.olx.presentation.gui.util.GlobalContext;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -41,10 +42,18 @@ public class MainController {
         User currentUser = GlobalContext.getInstance().getLoggedInUser();
         if (currentUser != null) {
             loggedInUserLabel.setText("Користувач: " + currentUser.getUsername());
+            // Всі функції доступні для авторизованого користувача
+            createAdButton.setDisable(false);
+            logoutButton.setDisable(false);
         } else {
-            loggedInUserLabel.setText("Користувач: Гість"); // Або сховати кнопку виходу
-            // Можливо, деякі кнопки (наприклад, "Створити оголошення") варто деактивувати
-            createAdButton.setDisable(true);
+            // Якщо користувач не авторизований, перенаправляємо на сторінку входу
+            try {
+                MainGuiApp.loadLoginScene();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.exit(); // Закриваємо програму у випадку помилки
+            }
         }
 
         setupCategoryTree();
@@ -69,10 +78,7 @@ public class MainController {
 
     private void setupCategoryTree() {
         List<CategoryComponent> rootCategories = MainGuiApp.categoryService.getAllRootCategories();
-        if (rootCategories.isEmpty() && GlobalContext.getInstance().getLoggedInUser() != null) {
-            // Спробуємо ініціалізувати категорії, якщо їх немає (якщо це має сенс для логіки)
-            // MainGuiApp.initializeDefaultCategories(); // Потенційно, це має бути в MainGuiApp або сервісі
-            // rootCategories = MainGuiApp.categoryService.getAllRootCategories();
+        if (rootCategories.isEmpty()) {
             System.out.println("Warning: No categories loaded. Consider initializing them.");
         }
 
@@ -133,7 +139,6 @@ public class MainController {
                         descriptionText.setWrappingWidth(300); // Обмеження ширини для переносу
 
                         contentBox.getChildren().addAll(titleLabel, priceLabel, categoryLabel, sellerLabel, descriptionText);
-                        // Можна додати зображення, якщо воно є в моделі Ad
                     }
 
                     @Override
@@ -160,50 +165,31 @@ public class MainController {
                                 sellerLabel.setText("Продавець: невідомий");
                             }
                             setGraphic(contentBox);
-                            adListView.setOnMouseClicked(event -> {
-                                if (event.getClickCount() == 2) {
-                                    Ad selectedAd = adListView.getSelectionModel().getSelectedItem();
-                                    if (selectedAd != null) {
-                                        try {
-                                            MainGuiApp.loadAdDetailScene(selectedAd);
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                            // Показати помилку користувачу
-                                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                                            alert.setTitle("Помилка завантаження");
-                                            alert.setHeaderText("Не вдалося відкрити деталі оголошення.");
-                                            alert.setContentText(e.getMessage());
-                                            alert.showAndWait();
-                                        }
-                                    }
-                                }
-                            });
                         }
                     }
                 };
             }
         });
 
-        // Обробник подвійного кліку на оголошенні (можна відкривати детальну сторінку)
+        // Обробник подвійного кліку на оголошенні для відкриття деталей
         adListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Ad selectedAd = adListView.getSelectionModel().getSelectedItem();
                 if (selectedAd != null) {
-                    // TODO: Відкрити сцену деталей оголошення
-                    System.out.println("Selected Ad to view details: " + selectedAd.getTitle());
-                    // Наприклад, показати Alert з деталями
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Деталі оголошення");
-                    alert.setHeaderText(selectedAd.getTitle());
-                    alert.setContentText("Ціна: " + selectedAd.getPrice() + " грн\n" +
-                            "Опис: " + selectedAd.getDescription() + "\n" +
-                            "Продавець ID: " + selectedAd.getSellerId());
-                    alert.showAndWait();
+                    try {
+                        MainGuiApp.loadAdDetailScene(selectedAd);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Помилка завантаження");
+                        alert.setHeaderText("Не вдалося відкрити деталі оголошення.");
+                        alert.setContentText(e.getMessage());
+                        alert.showAndWait();
+                    }
                 }
             }
         });
     }
-
 
     private void loadAds(String categoryId) {
         List<Ad> ads;
@@ -221,16 +207,14 @@ public class MainController {
     @FXML
     private void handleSearchAds() {
         String keyword = searchField.getText();
-        // Для простоти, поки що шукаємо тільки за ключовим словом серед вже завантажених
-        // або можна викликати спеціальний метод сервісу
         List<Ad> searchResult = MainGuiApp.adService.searchAds(keyword, null, null, currentSelectedCategoryId);
         adsObservableList.setAll(searchResult);
+
         if(keyword.isEmpty() && currentSelectedCategoryId == null) {
             currentCategoryLabel.setText("Всі оголошення");
         } else if (keyword.isEmpty() && currentSelectedCategoryId != null) {
             // currentCategoryLabel вже має бути встановлено
-        }
-        else {
+        } else {
             currentCategoryLabel.setText("Результати пошуку для: \"" + keyword + "\" " +
                     (currentSelectedCategoryId != null ? "в категорії " + categoryTreeView.getSelectionModel().getSelectedItem().getValue().getName() : ""));
         }
@@ -239,11 +223,9 @@ public class MainController {
     @FXML
     private void handleCreateAd() {
         try {
-            // Перехід на сцену створення оголошення
             MainGuiApp.loadCreateAdScene();
         } catch (IOException e) {
             e.printStackTrace();
-            // Показати помилку користувачу
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Помилка");
             alert.setHeaderText("Не вдалося завантажити форму створення оголошення.");
@@ -254,13 +236,38 @@ public class MainController {
 
     @FXML
     private void handleLogout() {
-        GlobalContext.getInstance().clearLoggedInUser();
-        loggedInUserLabel.setText("Користувач: Гість");
-        createAdButton.setDisable(true); // Деактивувати кнопки, що вимагають логіну
-        try {
-            MainGuiApp.loadLoginScene(); // Повернення на екран входу
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Показуємо підтвердження
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Підтвердження виходу");
+        confirmAlert.setHeaderText("Ви впевнені, що хочете вийти?");
+        confirmAlert.setContentText("Всі незбережені дані будуть втрачені.");
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Очищуємо дані користувача
+            GlobalContext.getInstance().clearLoggedInUser();
+
+            try {
+                MainGuiApp.loadLoginScene();
+            } catch (IOException e) {
+                e.printStackTrace();
+                // У випадку помилки завантаження сцени входу, закриваємо програму
+                Platform.exit();
+            }
+        }
+    }
+
+    @FXML
+    private void handleExitApplication() {
+        // Показуємо підтвердження
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Підтвердження виходу");
+        confirmAlert.setHeaderText("Ви впевнені, що хочете закрити програму?");
+        confirmAlert.setContentText("Всі незбережені дані будуть втрачені.");
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            Platform.exit();
         }
     }
 }

@@ -51,6 +51,18 @@ public class FileUserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public Optional<User> findByEmail(String email) {
+        lock.readLock().lock();
+        try {
+            return sessionManager.getUsersFromState().stream()
+                    .filter(user -> user.getEmail().equals(email))
+                    .findFirst();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
     public Optional<User> findByUsername(String username) {
         lock.readLock().lock();
         try {
@@ -71,7 +83,7 @@ public class FileUserRepositoryImpl implements UserRepository {
             lock.readLock().unlock();
         }
     }
-
+    /*
     @Override
     public void deleteById(String id) {
         lock.writeLock().lock();
@@ -82,4 +94,6 @@ public class FileUserRepositoryImpl implements UserRepository {
             lock.writeLock().unlock();
         }
     }
+    */
+
 }

@@ -1,62 +1,79 @@
 .root-pane {
-    -fx-background-color: #f4f6f8; /* Світло-сірий фон */
-    -fx-font-family: "Arial", sans-serif;
+    -fx-background-color: #f1f3f4;
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
 }
 
 .header-label {
-    -fx-font-size: 24px;
+    -fx-font-size: 28px;
     -fx-font-weight: bold;
-    -fx-text-fill: #333; /* Темно-сірий текст */
-    -fx-padding-bottom: 20px;
+    -fx-text-fill: #2d3436;
+    -fx-padding-bottom: 25px;
 }
 
 .tab-pane > .tab-header-area > .tab-header-background {
-    -fx-background-color: #e0e0e0; /* Фон для заголовків вкладок */
+    -fx-background-color: #e9ecef;
+    -fx-background-radius: 8px 8px 0 0;
 }
 
 .tab-pane > .tab-header-area .tab .tab-label {
-    -fx-text-fill: #555; /* Колір тексту на вкладках */
+    -fx-text-fill: #636e72;
+    -fx-font-weight: 500;
 }
 
 .tab-pane > .tab-header-area .tab:selected .tab-label {
-    -fx-text-fill: #6a1b9a; /* Фіолетовий для активної вкладки, схоже на ваш приклад */
+    -fx-text-fill: #6c5ce7;
+    -fx-font-weight: 600;
 }
 
 .tab-pane .tab:selected {
-    -fx-background-color: #ffffff; /* Білий фон для активної вкладки */
+    -fx-background-color: #ffffff;
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
+    -fx-effect: dropshadow(three-pass-box, rgba(108,92,231,0.2), 5, 0, 0, 2);
 }
 
 .tab-content-area {
-    -fx-background-color: #ffffff; /* Білий фон для вмісту вкладки */
-    -fx-padding: 15px;
+    -fx-background-color: #ffffff;
+    -fx-padding: 25px;
+    -fx-background-radius: 0 0 12px 12px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
 }
 
 .text-field, .password-field {
-    -fx-pref-height: 35px;
-    -fx-font-size: 14px;
-    -fx-border-color: #cccccc;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
+    -fx-pref-height: 40px;
+    -fx-font-size: 15px;
+    -fx-border-color: #ced6e0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-background-color: #ffffff;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 3, 0, 0, 1);
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #6c5ce7;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(three-pass-box, rgba(108,92,231,0.2), 5, 0, 0, 2);
 }
 
 .action-button {
-    -fx-background-color: #7e57c2; /* Фіолетовий, як у вашому прикладі */
+    -fx-background-color: #6c5ce7;
     -fx-text-fill: white;
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-padding: 10px 20px;
-    -fx-pref-width: 200px; /* Ширина кнопки */
-    -fx-background-radius: 5px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 1);
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-padding: 12px 25px;
+    -fx-pref-width: 220px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(108,92,231,0.3), 8, 0, 0, 3);
+    -fx-cursor: hand;
 }
 
 .action-button:hover {
-    -fx-background-color: #5e35b1; /* Темніший фіолетовий при наведенні */
+    -fx-background-color: #5a4fcf;
+    -fx-effect: dropshadow(three-pass-box, rgba(108,92,231,0.4), 12, 0, 0, 4);
 }
 
 .error-label {
-    -fx-text-fill: red;
-    -fx-font-size: 12px;
+    -fx-text-fill: #e17055;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
 }

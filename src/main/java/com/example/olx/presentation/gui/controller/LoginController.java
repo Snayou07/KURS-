@@ -6,12 +6,13 @@ import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.User;
 import com.example.olx.domain.model.UserType;
 import com.example.olx.presentation.gui.MainGuiApp;
+import com.example.olx.presentation.gui.util.GlobalContext;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TabPane; // Для переключення вкладок, якщо потрібно
+import javafx.scene.control.TabPane;
 
 import java.io.IOException;
 
@@ -37,16 +38,9 @@ public class LoginController {
 
     @FXML
     public void initialize() {
-        // Початкове налаштування, якщо потрібно
+        // Початкове налаштування
         loginErrorLabel.setText("");
         registerErrorLabel.setText("");
-
-        // Показувати поле коду доступу тільки якщо вибрано ADMIN
-        registerUserTypeField.textProperty().addListener((obs, oldVal, newVal) -> {
-            boolean isAdmin = UserType.ADMIN.toString().equalsIgnoreCase(newVal.trim());
-            adminAccessCodeLabel.setVisible(isAdmin);
-            adminAccessCodeField.setVisible(isAdmin);
-        });
     }
 
     @FXML
@@ -62,9 +56,12 @@ public class LoginController {
 
         try {
             User loggedInUser = MainGuiApp.userService.loginUser(username, password);
-            // Успішний вхід - зберігаємо користувача в контексті (поки що просто статичне поле)
-            // і переходимо на головний екран
-            GlobalContext.getInstance().setLoggedInUser(loggedInUser); // Використання Singleton для контексту
+            // Успішний вхід - зберігаємо користувача в контексті
+            GlobalContext.getInstance().setLoggedInUser(loggedInUser);
+
+            // Додаємо відладочний вивід для перевірки
+            System.out.println("User logged in successfully: " + loggedInUser.getUsername());
+
             MainGuiApp.loadMainScene();
         } catch (UserNotFoundException e) {
             loginErrorLabel.setText("Неправильний логін або пароль.");
@@ -84,42 +81,30 @@ public class LoginController {
         String username = registerUsernameField.getText();
         String email = registerEmailField.getText();
         String password = registerPasswordField.getText();
-        String userTypeStr = registerUserTypeField.getText().trim().toUpperCase();
-        String adminCode = adminAccessCodeField.getText(); // Поки не використовуємо, але можна додати перевірку
 
         registerErrorLabel.setText("");
+        registerErrorLabel.setStyle("-fx-text-fill: red;"); // Червоний колір для помилок
 
-        if (username.isEmpty() || email.isEmpty() || password.isEmpty() || userTypeStr.isEmpty()) {
-            registerErrorLabel.setText("Всі поля (окрім коду адміна) є обов'язковими.");
+        if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+            registerErrorLabel.setText("Всі поля є обов'язковими.");
             return;
         }
 
-        UserType userType;
         try {
-            userType = UserType.valueOf(userTypeStr);
-        } catch (IllegalArgumentException e) {
-            registerErrorLabel.setText("Неправильний тип користувача. Доступні: REGULAR_USER, ADMIN");
-            return;
-        }
+            // Викликаємо реєстрацію з основними параметрами
+            MainGuiApp.userService.registerUser(username, password, email);
 
-        // Проста перевірка "коду доступу" для адміна (можна зробити складнішою)
-        String accessLevelArg = null;
-        if (userType == UserType.ADMIN) {
-            if (adminCode.isEmpty()) {
-                registerErrorLabel.setText("Для ADMIN потрібен код доступу (access level).");
-                return;
-            }
-            accessLevelArg = adminCode; // Використовуємо введений код як рівень доступу
-        }
-
-
-        try {
-            MainGuiApp.userService.registerUser(username, password, email, userType, accessLevelArg);
             registerErrorLabel.setStyle("-fx-text-fill: green;");
             registerErrorLabel.setText("Реєстрація успішна! Тепер ви можете увійти.");
-            // Очистити поля або переключити на вкладку входу
-            // tabPane.getSelectionModel().selectFirst(); // Переключити на вкладку входу
+
+            // Очистити поля реєстрації
             clearRegistrationFields();
+
+            // Опціонально: переключити на вкладку входу
+            if (tabPane != null) {
+                tabPane.getSelectionModel().selectFirst();
+            }
+
         } catch (DuplicateUserException e) {
             registerErrorLabel.setText("Користувач з таким ім'ям вже існує.");
         } catch (InvalidInputException e) {
@@ -134,7 +119,5 @@ public class LoginController {
         registerUsernameField.clear();
         registerEmailField.clear();
         registerPasswordField.clear();
-        registerUserTypeField.setText("REGULAR_USER"); // Повертаємо до значення за замовчуванням
-        adminAccessCodeField.clear();
     }
 }

@@ -54,6 +54,16 @@ public class Ad implements Serializable {
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
     }
 
+    // Метод для добавления одного пути к изображению
+    public void addImagePath(String imagePath) {
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            if (this.imagePaths == null) {
+                this.imagePaths = new ArrayList<>();
+            }
+            this.imagePaths.add(imagePath);
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -63,20 +73,20 @@ public class Ad implements Serializable {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(adId); }
+    public int hashCode() {
+        return Objects.hash(adId);
+    }
 
     @Override
     public String toString() {
         return "Ad{" +
                 "adId='" + adId + '\'' +
                 ", title='" + title + '\'' +
-                ", description='" + description + '\'' + // Добавлено для полноты, можно убрать если не нужно
+                ", description='" + description + '\'' +
                 ", price=" + price +
                 ", categoryId='" + categoryId + '\'' +
                 ", sellerId='" + sellerId + '\'' +
                 ", imagePathsCount=" + (imagePaths != null ? imagePaths.size() : 0) +
                 '}';
     }
-
-    // Удален дублирующийся вложенный класс Ad
 }

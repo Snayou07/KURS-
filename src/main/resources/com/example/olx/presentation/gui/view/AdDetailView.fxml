@@ -1,34 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Text?>
-<?import javafx.scene.text.Font?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="650.0" prefWidth="800.0" styleClass="root-pane-detail" stylesheets="@../style/detail.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.olx.presentation.gui.controller.AdDetailController">
+<AnchorPane prefHeight="650.0" prefWidth="800.0" styleClass="root-pane-detail" stylesheets="@../style/detail.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.olx.presentation.gui.controller.AdDetailController">
     <children>
-        <ScrollPane fitToWidth="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <ScrollPane fitToWidth="true" prefHeight="892.0" prefWidth="800.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <content>
-                <VBox alignment="TOP_CENTER" spacing="20.0" styleClass="detail-container">
+                <VBox alignment="TOP_CENTER" prefHeight="595.0" prefWidth="784.0" spacing="20.0" styleClass="detail-container">
                     <padding>
                         <Insets bottom="20.0" left="30.0" right="30.0" top="20.0" />
                     </padding>
                     <children>
                         <Label fx:id="titleLabel" styleClass="detail-title-label" text="Назва оголошення" />
 
-                        <ImageView fx:id="adImageView" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true" styleClass="detail-image">
-                        </ImageView>
-                        <Label fx:id="noImageLabel" text="Фото не завантажено" visible="false"/>
+                        <ImageView fx:id="adImageView" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true" styleClass="detail-image" />
+
+                        <Label fx:id="noImageLabel" managed="false" text="Фото не завантажено" visible="false" />
 
                         <HBox alignment="CENTER_LEFT" spacing="20.0">
                             <children>
-                                <Label styleClass="detail-price-label" text="Ціна:" />
+                                <Label prefHeight="21.0" prefWidth="46.0" styleClass="detail-price-label" text="Ціна:" />
                                 <Label fx:id="priceLabel" styleClass="detail-price-value" text="0.00 грн" />
                             </children>
                         </HBox>
@@ -36,23 +31,29 @@
                         <VBox spacing="10.0" styleClass="detail-section">
                             <children>
                                 <Label styleClass="detail-section-header" text="Опис:" />
-                                <Text fx:id="descriptionText" styleClass="detail-text-content" wrappingWidth="700.0" text="Довгий опис оголошення тут..." />
+                                <Text fx:id="descriptionText" styleClass="detail-text-content" text="Довгий опис оголошення тут..." wrappingWidth="700.0" />
                             </children>
                         </VBox>
 
                         <VBox spacing="5.0" styleClass="detail-section-meta">
                             <children>
                                 <HBox spacing="5.0">
-                                    <Label styleClass="detail-meta-label" text="Категорія:" />
-                                    <Label fx:id="categoryLabel" styleClass="detail-meta-value" text="Категорія" />
+                                    <children>
+                                        <Label styleClass="detail-meta-label" text="Категорія:" />
+                                        <Label fx:id="categoryLabel" styleClass="detail-meta-value" text="Категорія" />
+                                    </children>
                                 </HBox>
                                 <HBox spacing="5.0">
-                                    <Label styleClass="detail-meta-label" text="Продавець:" />
-                                    <Label fx:id="sellerLabel" styleClass="detail-meta-value" text="Ім'я Продавця" />
+                                    <children>
+                                        <Label styleClass="detail-meta-label" text="Продавець:" />
+                                        <Label fx:id="sellerLabel" styleClass="detail-meta-value" text="Ім'я Продавця" />
+                                    </children>
                                 </HBox>
                                 <HBox spacing="5.0">
-                                    <Label styleClass="detail-meta-label" text="ID Оголошення:" />
-                                    <Label fx:id="adIdLabel" styleClass="detail-meta-value" text="ідентифікатор" />
+                                    <children>
+                                        <Label styleClass="detail-meta-label" text="ID Оголошення:" />
+                                        <Label fx:id="adIdLabel" styleClass="detail-meta-value" text="ідентифікатор" />
+                                    </children>
                                 </HBox>
                             </children>
                         </VBox>
@@ -61,9 +62,23 @@
                             <VBox.margin>
                                 <Insets top="30.0" />
                             </VBox.margin>
-                            <Button fx:id="editButton" mnemonicParsing="false" onAction="#handleEditAd" styleClass="action-button" text="Редагувати" visible="false" />
-                            <Button fx:id="deleteButton" mnemonicParsing="false" onAction="#handleDeleteAd" styleClass="delete-button" text="Видалити" visible="false" />
+                            <children>
+                                <Button fx:id="editButton" managed="false" mnemonicParsing="false" onAction="#handleEditAd" styleClass="action-button" text="Редагувати" visible="false" />
+                                <Button fx:id="deleteButton" managed="false" mnemonicParsing="false" onAction="#handleDeleteAd" styleClass="delete-button" text="Видалити" visible="false" />
+                            </children>
                         </HBox>
+                        <!-- Якщо ви хочете додати кнопку видалення в інший файл FXML, використовуйте цей код: -->
+
+
+
+
+                        <!-- Варіант 4: Кнопка видалення з підтвердженням через tooltip -->
+                        <Button fx:id="deleteButton" mnemonicParsing="false" onAction="#handleDeleteAd" styleClass="delete-button" text="🗑️Видалити оголошення">
+                            <tooltip>
+                                <Tooltip text="Видалити це оголошення назавжди" />
+                            </tooltip>
+                        </Button>
+
                         <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" styleClass="secondary-button" text="Назад до списку" />
                     </children>
                 </VBox>

@@ -1,75 +1,339 @@
 .root-pane-form {
-    -fx-background-color: #f8f9fa; /* Світлий фон для форм */
-    -fx-font-family: "Arial", sans-serif;
+    -fx-background-color: #f3f4f6;
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
 }
 
 .form-header-label {
-    -fx-font-size: 22px;
+    -fx-font-size: 32px;
     -fx-font-weight: bold;
-    -fx-text-fill: #343a40; /* Темно-сірий */
-    -fx-padding-bottom: 25px;
+    -fx-text-fill: #1f2937;
+    -fx-padding-bottom: 35px;
+    -fx-text-alignment: center;
+    -fx-effect: dropshadow(three-pass-box, rgba(31,41,55,0.1), 3, 0, 0, 1);
 }
 
-.grid-pane { /* Загальні стилі для GridPane у формах */
-    /* Можна додати -fx-background-color: #ffffff; якщо потрібен білий фон для самої сітки */
-    /* -fx-border-color: #dee2e6; */
-    /* -fx-border-radius: 5px; */
-    /* -fx-padding: 20px; */
+.form-container {
+    -fx-max-width: 600px;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16px;
+    -fx-padding: 40px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.12), 20, 0, 0, 8);
+    -fx-border-color: #e5e7eb;
+    -fx-border-width: 1px;
+    -fx-border-radius: 16px;
+}
+
+.grid-pane {
+    -fx-background-color: transparent;
+    -fx-vgap: 20px;
+    -fx-hgap: 15px;
+}
+
+.form-field-container {
+    -fx-spacing: 8px;
 }
 
 .grid-pane .label {
-    -fx-font-size: 14px;
-    -fx-text-fill: #495057; /* Сірий для міток */
-    -fx-padding-top: 5px; /* Вирівнювання по вертикалі з полем вводу */
+    -fx-font-size: 16px;
+    -fx-text-fill: #374151;
+    -fx-font-weight: 600;
+    -fx-padding-top: 0;
+    -fx-padding-bottom: 5px;
+}
+
+.required-asterisk {
+    -fx-text-fill: #ef4444;
+    -fx-font-weight: bold;
 }
 
 .text-field,
 .text-area,
 .combo-box {
-    -fx-pref-height: 38px;
-    -fx-font-size: 14px;
-    -fx-border-color: #ced4da;
-    -fx-border-radius: 4px;
-    -fx-background-radius: 4px;
-    -fx-prompt-text-fill: #6c757d; /* Колір для promptText */
+    -fx-pref-height: 48px;
+    -fx-font-size: 16px;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-background-color: #f9fafb;
+    -fx-prompt-text-fill: #9ca3af;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.03), 2, 0, 0, 1);
+    -fx-padding: 12px 16px;
+}
+
+.text-field:focused,
+.text-area:focused,
+.combo-box:focused {
+    -fx-border-color: #6366f1;
+    -fx-border-width: 2px;
+    -fx-background-color: #ffffff;
+    -fx-effect: dropshadow(three-pass-box, rgba(99,102,241,0.2), 8, 0, 0, 3);
+}
+
+.text-field:hover,
+.text-area:hover,
+.combo-box:hover {
+    -fx-border-color: #9ca3af;
+    -fx-background-color: #ffffff;
 }
 
 .text-area {
-    -fx-pref-height: 120px; /* Висота для TextArea */
+    -fx-pref-height: 140px;
+    -fx-pref-row-count: 5;
 }
 
-.combo-box .list-cell { /* Стилізація випадаючого списку */
-    -fx-font-size: 14px;
+.combo-box {
+    -fx-pref-height: 48px;
+}
+
+.combo-box .list-cell {
+    -fx-font-size: 16px;
+    -fx-padding: 10px 16px;
+}
+
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow {
+    -fx-background-color: #6b7280;
+}
+
+.form-buttons-container {
+    -fx-spacing: 15px;
+    -fx-alignment: center;
+    -fx-padding: 30px 0 10px 0;
 }
 
 .submit-button {
-    -fx-background-color: #6f42c1; /* Фіолетовий, схожий на Canva */
+    -fx-background-color: #6366f1;
     -fx-text-fill: white;
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-padding: 10px 25px;
-    -fx-background-radius: 5px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 2);
+    -fx-font-size: 18px;
+    -fx-font-weight: 600;
+    -fx-padding: 14px 40px;
+    -fx-background-radius: 12px;
+    -fx-pref-width: 200px;
+    -fx-effect: dropshadow(three-pass-box, rgba(99,102,241,0.35), 12, 0, 0, 5);
+    -fx-cursor: hand;
 }
 
 .submit-button:hover {
-    -fx-background-color: #5a32a3; /* Темніший при наведенні */
+    -fx-background-color: #4f46e5;
+    -fx-effect: dropshadow(three-pass-box, rgba(99,102,241,0.5), 16, 0, 0, 6);
+    -fx-scale-y: 1.02;
+    -fx-scale-x: 1.02;
+}
+
+.submit-button:pressed {
+    -fx-scale-y: 0.98;
+    -fx-scale-x: 0.98;
 }
 
 .cancel-button {
-    -fx-background-color: #6c757d; /* Сірий для кнопки скасування */
-    -fx-text-fill: white;
-    -fx-font-size: 14px;
-    -fx-padding: 10px 20px;
-    -fx-background-radius: 5px;
+    -fx-background-color: #f3f4f6;
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 16px;
+    -fx-font-weight: 500;
+    -fx-padding: 14px 30px;
+    -fx-background-radius: 12px;
+    -fx-border-color: #d1d5db;
+    -fx-border-width: 2px;
+    -fx-border-radius: 12px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 4, 0, 0, 2);
+    -fx-cursor: hand;
 }
 
 .cancel-button:hover {
-    -fx-background-color: #5a6268;
+    -fx-background-color: #e5e7eb;
+    -fx-text-fill: #374151;
+    -fx-border-color: #9ca3af;
 }
 
 .error-label {
-    -fx-text-fill: #dc3545; /* Червоний для помилок */
-    -fx-font-size: 13px;
+    -fx-text-fill: #ef4444;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
     -fx-padding-top: 5px;
+    -fx-padding-left: 5px;
+}
+
+.success-label {
+    -fx-text-fill: #10b981;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-padding-top: 5px;
+    -fx-padding-left: 5px;
+}
+
+.field-hint {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 13px;
+    -fx-padding-top: 3px;
+    -fx-padding-left: 5px;
+    -fx-font-style: italic;
+}
+
+/* Стилі для file chooser та спеціальних полів */
+.file-upload-area {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #cbd5e1;
+    -fx-border-width: 2px;
+    -fx-border-style: dashed;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 30px;
+    -fx-alignment: center;
+    -fx-spacing: 10px;
+}
+
+.file-upload-area:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #6366f1;
+}
+
+.upload-icon {
+    -fx-text-fill: #6366f1;
+    -fx-font-size: 36px;
+}
+
+.upload-text {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 16px;
+    -fx-font-weight: 500;
+}
+
+.upload-hint {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 14px;
+}
+
+/* ===== DETAIL.CSS - Стилі деталей ===== */
+
+.root-pane-detail {
+    -fx-background-color: #fafbfc;
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+.detail-container {
+    -fx-max-width: 850px;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-padding: 30px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 15, 0, 0, 5);
+}
+
+.detail-title-label {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d3436;
+    -fx-padding-bottom: 20px;
+    -fx-text-alignment: center;
+}
+
+.detail-image {
+    -fx-border-color: #ddd;
+    -fx-border-width: 1px;
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 12, 0, 0, 6);
+}
+
+.detail-price-label {
+    -fx-font-size: 19px;
+    -fx-text-fill: #636e72;
+    -fx-font-weight: 500;
+}
+
+.detail-price-value {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00b894;
+}
+
+.detail-section {
+    -fx-padding: 20px 0;
+    -fx-border-color: #f0f2f5;
+    -fx-border-width: 2px 0 0 0;
+    -fx-alignment: top-left;
+}
+
+.detail-section-header {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d3436;
+    -fx-padding-bottom: 12px;
+}
+
+.detail-text-content {
+    -fx-font-size: 15px;
+    -fx-fill: #636e72;
+    -fx-line-spacing: 4px;
+}
+
+.detail-section-meta {
+    -fx-background-color: #f8f9fa;
+    -fx-padding: 20px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e9ecef;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, 2);
+}
+
+.detail-meta-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #636e72;
+}
+
+.detail-meta-value {
+    -fx-font-size: 14px;
+    -fx-text-fill: #2d3436;
+    -fx-font-weight: 500;
+}
+
+.action-button {
+    -fx-background-color: #74b9ff;
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-padding: 12px 30px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(116,185,255,0.3), 8, 0, 0, 3);
+    -fx-cursor: hand;
+}
+
+.action-button:hover {
+    -fx-background-color: #0984e3;
+    -fx-effect: dropshadow(three-pass-box, rgba(116,185,255,0.4), 12, 0, 0, 4);
+}
+
+.delete-button {
+    -fx-background-color: #e17055;
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-padding: 12px 30px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(225,112,85,0.3), 8, 0, 0, 3);
+    -fx-cursor: hand;
+}
+
+.delete-button:hover {
+    -fx-background-color: #d63031;
+    -fx-effect: dropshadow(three-pass-box, rgba(225,112,85,0.4), 12, 0, 0, 4);
+}
+
+.secondary-button {
+    -fx-background-color: #b2bec3;
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: 500;
+    -fx-padding: 12px 25px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+}
+
+.secondary-button:hover {
+    -fx-background-color: #636e72;
 }

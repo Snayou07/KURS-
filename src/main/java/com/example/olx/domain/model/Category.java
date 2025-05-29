@@ -18,4 +18,22 @@ public class Category extends CategoryComponent {
         System.out.println(indent + "Категорія: " + getName() + " (ID: " + getId() + ")");
         subCategories.forEach(c -> c.displayCategory(indent + "  "));
     }
+
+    public void addSubCategory(Category category) {
+        // Перевірка на null
+        if (category == null) {
+            throw new IllegalArgumentException("Category cannot be null");
+        }
+
+        // Ініціалізація списку підкategorій, якщо він ще не створений
+        if (this.subCategories == null) {
+            this.subCategories = new ArrayList<>();
+        }
+
+        // Додавання підкategorії до списку
+        this.subCategories.add(category);
+
+        // Встановлення батьківської категорії для доданої підкategorії
+
+    }
 }

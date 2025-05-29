@@ -1,4 +1,3 @@
-// com/example/olx/application/service/impl/AdServiceImpl.java
 package com.example.olx.application.service.impl;
 
 import com.example.olx.application.dto.AdCreationRequest;
@@ -7,7 +6,7 @@ import com.example.olx.application.service.port.NotificationServicePort;
 import com.example.olx.application.service.strategy.AdSearchStrategy;
 import com.example.olx.domain.exception.AdNotFoundException;
 import com.example.olx.domain.exception.InvalidInputException;
-import com.example.olx.domain.exception.UnauthorizedActionException; // Новий виняток
+import com.example.olx.domain.exception.UnauthorizedActionException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.User;
@@ -29,7 +28,8 @@ public class AdServiceImpl implements AdServicePort {
 
     public AdServiceImpl(AdRepository adRepository, UserRepository userRepository,
                          CategoryRepository categoryRepository,
-                         NotificationServicePort notificationService, AdSearchStrategy searchStrategy) {
+                         NotificationServicePort notificationService,
+                         AdSearchStrategy searchStrategy) {
         this.adRepository = adRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
@@ -38,18 +38,17 @@ public class AdServiceImpl implements AdServicePort {
     }
 
     @Override
-    public Ad createAd(AdCreationRequest request) {
+    public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
         if (request.getTitle() == null || request.getTitle().trim().isEmpty() ||
                 request.getPrice() < 0 || request.getCategoryId() == null || request.getSellerId() == null) {
-            throw new InvalidInputException("Title, non-negative price, categoryId, and sellerId are required for an ad.");
+            throw new InvalidInputException("Назва, невід'ємна ціна, ідентифікатор категорії та ідентифікатор продавця є обов'язковими для оголошення.");
         }
 
         userRepository.findById(request.getSellerId())
-                .orElseThrow(() -> new UserNotFoundException("Seller with ID " + request.getSellerId() + " not found."));
+                .orElseThrow(() -> new UserNotFoundException("Продавець з ідентифікатором " + request.getSellerId() + " не знайдений."));
 
         categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new InvalidInputException("Category with ID " + request.getCategoryId() + " not found."));
-
+                .orElseThrow(() -> new InvalidInputException("Категорія з ідентифікатором " + request.getCategoryId() + " не знайдена."));
 
         Ad newAd = new Ad(request.getTitle(), request.getDescription(), request.getPrice(),
                 request.getCategoryId(), request.getSellerId(), request.getImagePaths()); // Додано imagePaths
@@ -62,7 +61,7 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public Optional<Ad> getAdById(String adId) {
         if (adId == null || adId.trim().isEmpty()) {
-            throw new InvalidInputException("Ad ID cannot be empty.");
+            throw new InvalidInputException("Ідентифікатор оголошення не може бути порожнім.");
         }
         return adRepository.findById(adId);
     }
@@ -75,7 +74,7 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public List<Ad> getAdsByUserId(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            throw new InvalidInputException("User ID cannot be empty.");
+            throw new InvalidInputException("Ідентифікатор користувача не може бути порожнім.");
         }
         return adRepository.findBySellerId(userId);
     }
@@ -83,7 +82,7 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public List<Ad> getAdsByCategoryId(String categoryId) {
         if (categoryId == null || categoryId.trim().isEmpty()) {
-            throw new InvalidInputException("Category ID cannot be empty.");
+            throw new InvalidInputException("Ідентифікатор категорії не може бути порожнім.");
         }
         // Тут можна додати логіку для отримання оголошень з усіх підкатегорій
         return adRepository.findByCategoryId(categoryId);
@@ -100,45 +99,44 @@ public class AdServiceImpl implements AdServicePort {
         return searchStrategy.search(adRepository.findAll(), criteria);
     }
 
-
     @Override
-    public void deleteAd(String adId, String currentUserId) {
+    public void deleteAd(String adId, String currentUserId) throws UserNotFoundException {
         if (adId == null || currentUserId == null) {
-            throw new InvalidInputException("Ad ID and Current User ID are required.");
+            throw new InvalidInputException("Ідентифікатор оголошення та ідентифікатор поточного користувача є обов'язковими.");
         }
         Ad adToDelete = adRepository.findById(adId)
-                .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found."));
+                .orElseThrow(() -> new AdNotFoundException("Оголошення з ідентифікатором " + adId + " не знайдене."));
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + currentUserId + " not found."));
+                .orElseThrow(() -> new UserNotFoundException("Користувач з ідентифікатором " + currentUserId + " не знайдений."));
 
         if (!adToDelete.getSellerId().equals(currentUserId) && currentUser.getUserType() != UserType.ADMIN) {
-            throw new UnauthorizedActionException("User is not authorized to delete this ad.");
+            throw new UnauthorizedActionException("Користувач не має права видаляти це оголошення.");
         }
         adRepository.deleteById(adId);
-        notificationService.sendSystemMessage("Ad '" + adToDelete.getTitle() + "' was deleted.");
+        notificationService.sendSystemMessage("Оголошення '" + adToDelete.getTitle() + "' було видалено.");
     }
 
     @Override
-    public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) {
+    public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
         if (adId == null || currentUserId == null) {
-            throw new InvalidInputException("Ad ID and Current User ID are required.");
+            throw new InvalidInputException("Ідентифікатор оголошення та ідентифікатор поточного користувача є обов'язковими.");
         }
         Ad existingAd = adRepository.findById(adId)
-                .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found."));
+                .orElseThrow(() -> new AdNotFoundException("Оголошення з ідентифікатором " + adId + " не знайдене."));
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + currentUserId + " not found."));
+                .orElseThrow(() -> new UserNotFoundException("Користувач з ідентифікатором " + currentUserId + " не знайдений."));
 
         if (!existingAd.getSellerId().equals(currentUserId) && currentUser.getUserType() != UserType.ADMIN) {
-            throw new UnauthorizedActionException("User is not authorized to update this ad.");
+            throw new UnauthorizedActionException("Користувач не має права оновлювати це оголошення.");
         }
 
         // Валідація даних з request
         if (request.getTitle() == null || request.getTitle().trim().isEmpty() ||
                 request.getPrice() < 0 || request.getCategoryId() == null) {
-            throw new InvalidInputException("Title, non-negative price, and categoryId are required for an ad update.");
+            throw new InvalidInputException("Назва, невід'ємна ціна та ідентифікатор категорії є обов'язковими для оновлення оголошення.");
         }
         categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new InvalidInputException("Category with ID " + request.getCategoryId() + " not found during update."));
+                .orElseThrow(() -> new InvalidInputException("Категорія з ідентифікатором " + request.getCategoryId() + " не знайдена під час оновлення."));
 
         // Оновлюємо поля
         existingAd.setTitle(request.getTitle());
@@ -147,6 +145,6 @@ public class AdServiceImpl implements AdServicePort {
         existingAd.setCategoryId(request.getCategoryId());
         existingAd.setImagePaths(request.getImagePaths()); // Оновлюємо шляхи до фото
 
-        return adRepository.save(existingAd);// Метод save репозиторію має обробляти оновлення
+        return adRepository.save(existingAd); // Метод save репозиторію має обробляти оновлення
     }
 }

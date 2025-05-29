@@ -24,7 +24,8 @@
                 <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearchAds" text="Знайти" styleClass="action-button-small"/>
                 <Button fx:id="createAdButton" mnemonicParsing="false" onAction="#handleCreateAd" styleClass="action-button-highlight" text="Створити оголошення" />
                 <Label fx:id="loggedInUserLabel" text="Користувач: " styleClass="user-label"/>
-                <Button fx:id="logoutButton" mnemonicParsing="false" onAction="#handleLogout" text="Вийти" styleClass="action-button-secondary"/>
+                <Button fx:id="logoutButton" mnemonicParsing="false" onAction="#handleLogout" text="Вийти з акаунту" styleClass="action-button-secondary"/>
+                <Button fx:id="exitButton" mnemonicParsing="false" onAction="#handleExitApplication" text="Закрити програму" styleClass="action-button-secondary"/>
             </children>
         </HBox>
     </top>

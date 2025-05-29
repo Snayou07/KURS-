@@ -1,6 +1,7 @@
 // com/example/olx/application/service/impl/CategoryServiceImpl.java
 package com.example.olx.application.service.impl;
 
+import com.example.olx.application.service.port.CategoryServicePort;
 import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.exception.InvalidInputException;
 import com.example.olx.domain.repository.CategoryRepository;
@@ -8,7 +9,7 @@ import com.example.olx.domain.repository.CategoryRepository;
 import java.util.List;
 import java.util.Optional;
 
-public class CategoryServiceImpl {
+public class CategoryServiceImpl implements CategoryServicePort {
     private final CategoryRepository categoryRepository;
 
     public CategoryServiceImpl(CategoryRepository categoryRepository) {

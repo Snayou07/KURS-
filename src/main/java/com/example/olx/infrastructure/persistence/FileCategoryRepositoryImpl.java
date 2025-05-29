@@ -3,6 +3,7 @@ package com.example.olx.infrastructure.persistence;
 
 import com.example.olx.domain.model.Category;
 import com.example.olx.domain.model.CategoryComponent;
+import com.example.olx.domain.repository.CategoryRepository; // Додано правильний import
 
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +80,31 @@ public class FileCategoryRepositoryImpl implements CategoryRepository {
             return sessionManager.getCategoriesFromState();
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    // Додаємо метод deleteById, якщо він потрібен в інтерфейсі CategoryRepository
+    @Override
+    public void deleteById(String id) {
+        lock.writeLock().lock();
+        try {
+            List<CategoryComponent> roots = sessionManager.getCategoriesFromState();
+            roots.removeIf(c -> c.getId().equals(id));
+            // Також потрібно видалити з дочірніх категорій рекурсивно
+            removeFromChildrenRecursive(roots, id);
+            sessionManager.setCategoriesInState(roots);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private void removeFromChildrenRecursive(List<CategoryComponent> categories, String id) {
+        for (CategoryComponent component : categories) {
+            if (component instanceof Category) {
+                Category category = (Category) component;
+                category.getSubCategories().removeIf(c -> c.getId().equals(id));
+                removeFromChildrenRecursive(category.getSubCategories(), id);
+            }
         }
     }
 }
