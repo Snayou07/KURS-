@@ -4,12 +4,12 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="400.0" prefWidth="400.0" styleClass="root-pane" stylesheets="@../style/login.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.olx.presentation.gui.controller.LoginController">
+<AnchorPane prefHeight="456.0" prefWidth="409.0" styleClass="root-pane" stylesheets="@../style/login.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.olx.presentation.gui.controller.LoginController">
     <children>
         <VBox alignment="CENTER" layoutX="50.0" layoutY="7.0" prefHeight="373.0" prefWidth="360.0" spacing="20.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="7.0">
             <children>
                 <Label prefHeight="7.0" prefWidth="252.0" styleClass="header-label" text="Ласкаво просимо!" />
-                <TabPane fx:id="tabPane" prefHeight="307.0" prefWidth="360.0" tabClosingPolicy="UNAVAILABLE">
+                <TabPane fx:id="tabPane" prefHeight="345.0" prefWidth="377.0" tabClosingPolicy="UNAVAILABLE">
                     <tabs>
                         <Tab text="Вхід">
                             <content>

@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public class Ad implements Serializable {
     private static final long serialVersionUID = 4L;
+
     private String adId;
     private String title;
     private String description;
@@ -17,6 +18,7 @@ public class Ad implements Serializable {
     private String sellerId;
     private List<String> imagePaths;
 
+    // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
         this.adId = UUID.randomUUID().toString();
         this.title = title;
@@ -24,44 +26,71 @@ public class Ad implements Serializable {
         this.price = price;
         this.categoryId = categoryId;
         this.sellerId = sellerId;
-        // Создаем защитную копию списка
+        // Створюємо захисну копію списку
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
     }
 
+    // Конструктор без imagePaths (для зворотної сумісності)
     public Ad(String title, String description, double price, String categoryId, String sellerId) {
         this(title, description, price, categoryId, sellerId, new ArrayList<>());
     }
 
-    public String getAdId() { return adId; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public double getPrice() { return price; }
-    public String getCategoryId() { return categoryId; }
-    public String getSellerId() { return sellerId; }
+    // Порожній конструктор (може знадобитися для деяких фреймворків)
+    public Ad() {
+        this.adId = UUID.randomUUID().toString();
+        this.imagePaths = new ArrayList<>();
+    }
 
-    // Возвращаем неизменяемую копию списка
+    // Геттери
+    public String getAdId() {
+        return adId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public String getCategoryId() {
+        return categoryId;
+    }
+
+    public String getSellerId() {
+        return sellerId;
+    }
+
+    // Повертаємо незмінну копію списку
     public List<String> getImagePaths() {
         return Collections.unmodifiableList(imagePaths);
     }
 
-    public void setTitle(String title) { this.title = title; }
-    public void setDescription(String description) { this.description = description; }
-    public void setPrice(double price) { this.price = price; }
-    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
-
-    // Создаем защитную копию списка при установке
-    public void setImagePaths(List<String> imagePaths) {
-        this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
+    // Сеттери
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    // Метод для добавления одного пути к изображению
-    public void addImagePath(String imagePath) {
-        if (imagePath != null && !imagePath.trim().isEmpty()) {
-            if (this.imagePaths == null) {
-                this.imagePaths = new ArrayList<>();
-            }
-            this.imagePaths.add(imagePath);
-        }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    // Створюємо захисну копію списку при встановленні
+    public void setImagePaths(List<String> imagePaths) {
+        this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
     }
 
     @Override
