@@ -17,6 +17,7 @@ public class Ad implements Serializable {
     private String categoryId;
     private String sellerId;
     private List<String> imagePaths;
+    private String status;
 
     // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -117,5 +118,13 @@ public class Ad implements Serializable {
                 ", sellerId='" + sellerId + '\'' +
                 ", imagePathsCount=" + (imagePaths != null ? imagePaths.size() : 0) +
                 '}';
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

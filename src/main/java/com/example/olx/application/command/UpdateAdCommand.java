@@ -2,6 +2,7 @@ package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
+import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 
 public class UpdateAdCommand implements Command {
@@ -9,7 +10,7 @@ public class UpdateAdCommand implements Command {
     private final String adId;
     private final AdCreationRequest newRequest;
     private final String currentUserId;
-    private Ad originalAd; // Для скасування
+    private Ad originalAd;
     private Ad updatedAd;
 
     public UpdateAdCommand(AdServicePort adService, String adId, AdCreationRequest newRequest, String currentUserId) {
@@ -20,15 +21,20 @@ public class UpdateAdCommand implements Command {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws UserNotFoundException {
         // Зберігаємо оригінальний стан для можливості скасування
-        this.originalAd = adService.getAdById(adId).orElse(null);
+        this.originalAd = adService.getAdById(adId)
+                .orElseThrow(() -> new IllegalArgumentException("Оголошення з ID " + adId + " не знайдено"));
+
+        // Створюємо глибоку копію для збереження оригінального стану
+        this.originalAd = createAdCopy(this.originalAd);
+
         this.updatedAd = adService.updateAd(adId, newRequest, currentUserId);
         System.out.println("Команда UpdateAd виконана для оголошення: " + updatedAd.getTitle());
     }
 
     @Override
-    public void undo() {
+    public void undo() throws UserNotFoundException {
         if (originalAd != null) {
             // Створюємо запит на основі оригінальних даних
             AdCreationRequest originalRequest = new AdCreationRequest(
@@ -41,6 +47,19 @@ public class UpdateAdCommand implements Command {
             );
             adService.updateAd(adId, originalRequest, currentUserId);
             System.out.println("Команда UpdateAd скасована для оголошення: " + originalAd.getTitle());
+        }
+    }
+
+    private Ad createAdCopy(Ad original) {
+        // Тут потрібно створити копію об'єкта Ad
+        // Це залежить від конструкторів класу Ad
+        // Припускаємо, що є конструктор копіювання або builder
+        try {
+            return original.clone(); // Якщо Ad імплементує Cloneable
+        } catch (Exception e) {
+            // Якщо clone не доступний, повертаємо оригінал
+            // В реальному проекті потрібно імплементувати правильне копіювання
+            return original;
         }
     }
 

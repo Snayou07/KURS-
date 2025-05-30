@@ -1,3 +1,4 @@
+// src/main/java/com/example/olx/application/command/CreateAdCommand.java
 package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
@@ -8,7 +9,7 @@ import com.example.olx.domain.model.Ad;
 public class CreateAdCommand implements Command {
     private final AdServicePort adService;
     private final AdCreationRequest request;
-    private Ad createdAd; // Для можливості скасування
+    private Ad createdAd;
 
     public CreateAdCommand(AdServicePort adService, AdCreationRequest request) {
         this.adService = adService;
@@ -26,6 +27,7 @@ public class CreateAdCommand implements Command {
         if (createdAd != null) {
             adService.deleteAd(createdAd.getAdId(), request.getSellerId());
             System.out.println("Команда CreateAd скасована для оголошення: " + createdAd.getTitle());
+            createdAd = null; // Очищуємо посилання після скасування
         }
     }
 

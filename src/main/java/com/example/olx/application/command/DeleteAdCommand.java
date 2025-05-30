@@ -1,14 +1,16 @@
+// src/main/java/com/example/olx/application/command/DeleteAdCommand.java
 package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
+import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 
 public class DeleteAdCommand implements Command {
     private final AdServicePort adService;
     private final String adId;
     private final String currentUserId;
-    private Ad deletedAd; // Для можливості скасування
+    private Ad deletedAd;
 
     public DeleteAdCommand(AdServicePort adService, String adId, String currentUserId) {
         this.adService = adService;
@@ -17,17 +19,17 @@ public class DeleteAdCommand implements Command {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws UserNotFoundException {
         // Зберігаємо дані перед видаленням
-        this.deletedAd = adService.getAdById(adId).orElse(null);
+        this.deletedAd = adService.getAdById(adId)
+                .orElseThrow(() -> new IllegalArgumentException("Оголошення з ID " + adId + " не знайдено"));
+
         adService.deleteAd(adId, currentUserId);
-        if (deletedAd != null) {
-            System.out.println("Команда DeleteAd виконана для оголошення: " + deletedAd.getTitle());
-        }
+        System.out.println("Команда DeleteAd виконана для оголошення: " + deletedAd.getTitle());
     }
 
     @Override
-    public void undo() {
+    public void undo() throws UserNotFoundException {
         if (deletedAd != null) {
             // Відновлюємо оголошення
             AdCreationRequest restoreRequest = new AdCreationRequest(
@@ -38,8 +40,34 @@ public class DeleteAdCommand implements Command {
                     deletedAd.getSellerId(),
                     deletedAd.getImagePaths()
             );
-            adService.createAd(restoreRequest);
+            Ad restoredAd = adService.createAd(restoreRequest);
             System.out.println("Команда DeleteAd скасована для оголошення: " + deletedAd.getTitle());
+
+            // Намагаємося відновити попередній стан (якщо можливо)
+            if (!deletedAd.getStatus().equals("Чернетка")) {
+                try {
+                    restoreAdState(restoredAd, deletedAd.getStatus());
+                } catch (Exception e) {
+                    System.err.println("Не вдалося відновити стан оголошення: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void restoreAdState(Ad ad, String previousStatus) {
+        switch (previousStatus) {
+            case "Активне":
+                ad.publishAd();
+                break;
+            case "Архівоване":
+                ad.archiveAd();
+                break;
+            case "Продано":
+                ad.markAsSold();
+                break;
+            case "На модерації":
+                // Складніше відновити стан модерації, можливо потрібна окрема логіка
+                break;
         }
     }
 
