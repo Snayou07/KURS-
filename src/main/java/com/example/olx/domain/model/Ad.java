@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public class Ad implements Serializable {
+public class Ad implements Serializable, Cloneable {
     private static final long serialVersionUID = 4L;
 
     private String adId;
@@ -18,6 +18,7 @@ public class Ad implements Serializable {
     private String sellerId;
     private List<String> imagePaths;
     private String status;
+    private AdState currentState;
 
     // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -29,6 +30,8 @@ public class Ad implements Serializable {
         this.sellerId = sellerId;
         // Створюємо захисну копію списку
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
+        this.currentState = new DraftAdState(); // Початковий стан - чернетка
+        this.status = currentState.getStatusName();
     }
 
     // Конструктор без imagePaths (для зворотної сумісності)
@@ -40,6 +43,39 @@ public class Ad implements Serializable {
     public Ad() {
         this.adId = UUID.randomUUID().toString();
         this.imagePaths = new ArrayList<>();
+        this.currentState = new DraftAdState();
+        this.status = currentState.getStatusName();
+    }
+
+    // Методи для роботи зі станами
+    public void publishAd() {
+        currentState.publish(this);
+        updateStatus();
+    }
+
+    public void archiveAd() {
+        currentState.archive(this);
+        updateStatus();
+    }
+
+    public void markAsSold() {
+        currentState.markAsSold(this);
+        updateStatus();
+    }
+
+    public void setCurrentState(AdState state) {
+        this.currentState = state;
+        updateStatus();
+    }
+
+    public AdState getCurrentState() {
+        return currentState;
+    }
+
+    private void updateStatus() {
+        if (currentState != null) {
+            this.status = currentState.getStatusName();
+        }
     }
 
     // Геттери
@@ -72,6 +108,10 @@ public class Ad implements Serializable {
         return Collections.unmodifiableList(imagePaths);
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     // Сеттери
     public void setTitle(String title) {
         this.title = title;
@@ -89,9 +129,40 @@ public class Ad implements Serializable {
         this.categoryId = categoryId;
     }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     // Створюємо захисну копію списку при встановленні
     public void setImagePaths(List<String> imagePaths) {
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
+    }
+
+    // Імплементація клонування
+    @Override
+    public Ad clone() throws CloneNotSupportedException {
+        Ad cloned = (Ad) super.clone();
+        cloned.imagePaths = new ArrayList<>(this.imagePaths);
+        // Створюємо новий стан на основі поточного
+        cloned.currentState = createStateFromStatus(this.status);
+        return cloned;
+    }
+
+    private AdState createStateFromStatus(String status) {
+        switch (status) {
+            case "Чернетка":
+                return new DraftAdState();
+            case "Активне":
+                return new ActiveAdState();
+            case "Архівоване":
+                return new ArchivedAdState();
+            case "Продано":
+                return new SoldAdState();
+            case "На модерації":
+                return new ModerationAdState();
+            default:
+                return new DraftAdState();
+        }
     }
 
     @Override
@@ -116,15 +187,8 @@ public class Ad implements Serializable {
                 ", price=" + price +
                 ", categoryId='" + categoryId + '\'' +
                 ", sellerId='" + sellerId + '\'' +
+                ", status='" + status + '\'' +
                 ", imagePathsCount=" + (imagePaths != null ? imagePaths.size() : 0) +
                 '}';
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }

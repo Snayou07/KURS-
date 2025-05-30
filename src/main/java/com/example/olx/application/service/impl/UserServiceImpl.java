@@ -7,6 +7,7 @@ import com.example.olx.domain.exception.DuplicateUserException;
 import com.example.olx.domain.exception.InvalidInputException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.User;
+import com.example.olx.domain.model.UserType;
 import com.example.olx.domain.repository.UserRepository;
 import com.example.olx.infrastructure.security.PasswordHasher;
 import java.util.List;
@@ -14,10 +15,12 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
+    private final UserFactory userFactory;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordHasher passwordHasher) {
+    public UserServiceImpl(UserRepository userRepository, PasswordHasher passwordHasher, UserFactory userFactory) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
+        this.userFactory = userFactory;
     }
 
     @Override
@@ -27,8 +30,9 @@ public class UserServiceImpl implements UserService {
                 email == null || email.trim().isEmpty()) {
             throw new InvalidInputException("Username, password, and email cannot be empty.");
         }
-        // Валідація формату email (проста)
-        if (!email.contains("@") || !email.contains(".")) {
+
+        // Валідація формату email
+        if (!isValidEmail(email)) {
             throw new InvalidInputException("Invalid email format.");
         }
 
@@ -36,7 +40,8 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateUserException("User with username '" + username + "' already exists.");
         }
 
-        User newUser = UserFactory.createUser( username, password, email, passwordHasher);
+        // Використовуємо фабрику для створення користувача
+        User newUser = userFactory.createUser(UserType.REGULAR_USER, username, password, email);
         return userRepository.save(newUser);
     }
 
@@ -67,23 +72,14 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll();
     }
 
-    // Додаткові методи які потрібні для LoginController/*
-    /*
-    @Override
-    public User getUserService() {
-        // Цей метод здається неправильним - повертаємо null або кидаємо виключення
-        throw new UnsupportedOperationException("getUserService() method is not supported");
-    }
-*/
     @Override
     public void setCurrentUser(User user) {
-        // Цей метод для встановлення поточного користувача
-        // Можна зберігати в статичній змінній або використовувати інший механізм
+        // Встановлення поточного користувача
         CurrentUserHolder.setCurrentUser(user);
     }
-/*
+
     @Override
-    public void deleteById(String userId) {
+    public void deleteById(String userId) throws UserNotFoundException {
         if (userId == null || userId.trim().isEmpty()) {
             throw new InvalidInputException("User ID cannot be empty.");
         }
@@ -94,7 +90,19 @@ public class UserServiceImpl implements UserService {
 
         userRepository.deleteById(userId);
     }
-*/
+
+    // Допоміжний метод для валідації email
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        // Покращена валідація email
+        return email.contains("@") && email.contains(".") &&
+                email.indexOf("@") < email.lastIndexOf(".") &&
+                email.indexOf("@") > 0 &&
+                email.lastIndexOf(".") < email.length() - 1;
+    }
+
     // Допоміжний клас для зберігання поточного користувача
     private static class CurrentUserHolder {
         private static User currentUser;

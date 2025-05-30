@@ -66,7 +66,8 @@ public class DeleteAdCommand implements Command {
                 ad.markAsSold();
                 break;
             case "На модерації":
-                // Складніше відновити стан модерації, можливо потрібна окрема логіка
+                // Встановлюємо стан модерації
+                ad.setCurrentState(new com.example.olx.domain.model.ModerationAdState());
                 break;
         }
     }

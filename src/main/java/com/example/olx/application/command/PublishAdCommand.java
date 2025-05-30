@@ -4,6 +4,9 @@ package com.example.olx.application.command;
 import com.example.olx.application.service.port.AdServicePort;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
+import com.example.olx.domain.model.DraftAdState;
+import com.example.olx.domain.model.ArchivedAdState;
+import com.example.olx.domain.model.ModerationAdState;
 
 public class PublishAdCommand implements Command {
     private final AdServicePort adService;
@@ -37,14 +40,13 @@ public class PublishAdCommand implements Command {
     private void restorePreviousState() {
         switch (previousState) {
             case "Чернетка":
-                // Потрібно мати метод для повернення в стан чернетки
-                ad.setCurrentState(new com.example.olx.domain.model.DraftAdState());
+                ad.setCurrentState(new DraftAdState());
                 break;
             case "Архівоване":
-                ad.archiveAd();
+                ad.setCurrentState(new ArchivedAdState());
                 break;
             case "На модерації":
-                ad.setCurrentState(new com.example.olx.domain.model.ModerationAdState());
+                ad.setCurrentState(new ModerationAdState());
                 break;
             default:
                 System.err.println("Не вдалося відновити попередній стан: " + previousState);

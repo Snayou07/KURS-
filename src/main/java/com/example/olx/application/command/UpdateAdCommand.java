@@ -26,7 +26,7 @@ public class UpdateAdCommand implements Command {
         this.originalAd = adService.getAdById(adId)
                 .orElseThrow(() -> new IllegalArgumentException("Оголошення з ID " + adId + " не знайдено"));
 
-        // Створюємо глибоку копію для збереження оригінального стану
+        // Створюємо копію для збереження оригінального стану
         this.originalAd = createAdCopy(this.originalAd);
 
         this.updatedAd = adService.updateAd(adId, newRequest, currentUserId);
@@ -51,15 +51,20 @@ public class UpdateAdCommand implements Command {
     }
 
     private Ad createAdCopy(Ad original) {
-        // Тут потрібно створити копію об'єкта Ad
-        // Це залежить від конструкторів класу Ad
-        // Припускаємо, що є конструктор копіювання або builder
         try {
-            return original.clone(); // Якщо Ad імплементує Cloneable
-        } catch (Exception e) {
-            // Якщо clone не доступний, повертаємо оригінал
-            // В реальному проекті потрібно імплементувати правильне копіювання
-            return original;
+            return original.clone();
+        } catch (CloneNotSupportedException e) {
+            // Створюємо новий об'єкт з тими самими даними
+            Ad copy = new Ad(
+                    original.getTitle(),
+                    original.getDescription(),
+                    original.getPrice(),
+                    original.getCategoryId(),
+                    original.getSellerId(),
+                    original.getImagePaths()
+            );
+            copy.setStatus(original.getStatus());
+            return copy;
         }
     }
 
