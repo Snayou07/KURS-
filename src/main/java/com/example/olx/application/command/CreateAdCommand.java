@@ -2,6 +2,7 @@ package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
+import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 
 public class CreateAdCommand implements Command {
@@ -15,13 +16,13 @@ public class CreateAdCommand implements Command {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws UserNotFoundException {
         this.createdAd = adService.createAd(request);
         System.out.println("Команда CreateAd виконана для оголошення: " + createdAd.getTitle());
     }
 
     @Override
-    public void undo() {
+    public void undo() throws UserNotFoundException {
         if (createdAd != null) {
             adService.deleteAd(createdAd.getAdId(), request.getSellerId());
             System.out.println("Команда CreateAd скасована для оголошення: " + createdAd.getTitle());
