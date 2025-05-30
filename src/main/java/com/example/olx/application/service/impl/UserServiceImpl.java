@@ -15,9 +15,9 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
-    private final UserFactory userFactory;
+    private UserFactory userFactory;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordHasher passwordHasher, UserFactory userFactory) {
+    public UserServiceImpl(UserRepository userRepository, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.userFactory = userFactory;
@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService {
         // Встановлення поточного користувача
         CurrentUserHolder.setCurrentUser(user);
     }
-
+    /*
     @Override
     public void deleteById(String userId) throws UserNotFoundException {
         if (userId == null || userId.trim().isEmpty()) {
@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
 
         userRepository.deleteById(userId);
     }
-
+*/
     // Допоміжний метод для валідації email
     private boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
