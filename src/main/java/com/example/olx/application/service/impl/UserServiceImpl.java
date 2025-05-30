@@ -15,12 +15,12 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
-    private UserFactory userFactory;
+    private final UserFactory userFactory;
 
     public UserServiceImpl(UserRepository userRepository, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
-        this.userFactory = userFactory;
+        this.userFactory = new UserFactory(passwordHasher); // Виправлено: створюємо екземпляр UserFactory
     }
 
     @Override
