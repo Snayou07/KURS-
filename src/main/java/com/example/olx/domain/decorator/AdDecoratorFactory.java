@@ -13,7 +13,7 @@ public class AdDecoratorFactory {
     }
 
     public static AdComponent createUrgentAd(Ad ad) {
-        return new UrgentAdDecorator(new BasicAdComponent(ad));
+        return null;
     }
 
     public static AdComponent createDiscountAd(Ad ad, double discountPercentage, String reason) {
@@ -59,5 +59,13 @@ public class AdDecoratorFactory {
         }
 
         return component;
+    }
+
+    public AdComponent createDiscountAd(AdComponent baseComponent) {
+        return baseComponent;
+    }
+
+    public AdComponent createBaseAdComponent(Ad ad) {
+        return null;
     }
 }

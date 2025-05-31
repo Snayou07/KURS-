@@ -19,6 +19,8 @@ public class Ad implements Serializable, Cloneable {
     private List<String> imagePaths;
     private String status;
     private AdState currentState;
+    private boolean premium;
+    private boolean urgent;
 
     // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -190,5 +192,25 @@ public class Ad implements Serializable, Cloneable {
                 ", status='" + status + '\'' +
                 ", imagePathsCount=" + (imagePaths != null ? imagePaths.size() : 0) +
                 '}';
+    }
+
+    public boolean isPremium() {
+        return premium;
+    }
+
+    public void setPremium(boolean premium) {
+        this.premium = premium;
+    }
+
+    public boolean isUrgent() {
+        return urgent;
+    }
+
+    public void setUrgent(boolean urgent) {
+        this.urgent = urgent;
+    }
+
+    public boolean hasDiscount() {
+        return false;
     }
 }

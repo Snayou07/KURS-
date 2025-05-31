@@ -288,19 +288,19 @@ public class MainGuiApp extends Application {
 
         List<CategoryComponent> rootCategories = new ArrayList<>();
 
-        Category electronics = new Category("Електроніка");
+        Category electronics = new Category("root", "Всі категорії", "Електроніка");
         rootCategories.add(electronics);
 
-        Category clothing = new Category("Одяг і взуття");
+        Category clothing = new Category("root", "Всі категорії", "Одяг і взуття");
         rootCategories.add(clothing);
 
-        Category home = new Category("Дім і сад");
+        Category home = new Category("root", "Всі категорії", "Дім і сад");
         rootCategories.add(home);
 
-        Category auto = new Category("Авто");
+        Category auto = new Category("root", "Всі категорії", "Авто");
         rootCategories.add(auto);
 
-        Category sport = new Category("Спорт і хобі");
+        Category sport = new Category("root", "Всі категорії", "Спорт і хобі");
         rootCategories.add(sport);
 
         try {

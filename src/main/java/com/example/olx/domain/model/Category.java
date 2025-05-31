@@ -5,7 +5,9 @@ import java.util.List;
 public class Category extends CategoryComponent {
     private static final long serialVersionUID = 6L;
     private List<CategoryComponent> subCategories = new ArrayList<>();
-    public Category(String name) { super(name); }
+    private CategoryComponent[] children;
+
+    public Category(String root, String всіКатегорії, String name) { super(name); }
     @Override
     public void add(CategoryComponent categoryComponent) { if (categoryComponent != null && !subCategories.contains(categoryComponent)) { subCategories.add(categoryComponent); } }
     @Override
@@ -35,5 +37,13 @@ public class Category extends CategoryComponent {
 
         // Встановлення батьківської категорії для доданої підкategorії
 
+    }
+
+    public CategoryComponent[] getChildren() {
+        return children;
+    }
+
+    public void setChildren(CategoryComponent[] children) {
+        this.children = children;
     }
 }

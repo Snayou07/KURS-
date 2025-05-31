@@ -842,17 +842,17 @@ public class MainController {
             System.out.println("Warning: No categories loaded. Consider initializing them.");
         }
 
-
-        TreeItem<CategoryComponent> rootItem = new TreeItem<>(new Category("Всі категорії"));
+        // Створюємо кореневу категорію
+        Category allCategoriesRoot = new Category("root", "Всі категорії", null);
+        TreeItem<CategoryComponent> rootItem = new TreeItem<>(allCategoriesRoot);
         rootItem.setExpanded(true);
-
 
         for (CategoryComponent rootCategory : rootCategories) {
             rootItem.getChildren().add(createTreeItem(rootCategory));
         }
+
         categoryTreeView.setRoot(rootItem);
         categoryTreeView.setShowRoot(false);
-
 
         categoryTreeView.setCellFactory(tv -> new TreeCell<CategoryComponent>() {
             @Override
@@ -1065,7 +1065,25 @@ public class MainController {
         alert.setContentText(content);
         alert.showAndWait();
     }
+    private AdComponent createDecoratedAd(Ad ad) {
+        AdDecoratorFactory decoratorFactory = new AdDecoratorFactory();
+        AdComponent baseComponent = decoratorFactory.createBaseAdComponent(ad);
 
+        // Застосовуємо декоратори на основі властивостей оголошення
+        if (ad.isPremium()) {
+            baseComponent = decoratorFactory.createPremiumAd((Ad) baseComponent);
+        }
+
+        if (ad.isUrgent()) {
+            baseComponent = decoratorFactory.createUrgentAd((Ad) baseComponent);
+        }
+
+        if (ad.hasDiscount()) {
+            baseComponent = decoratorFactory.createDiscountAd(baseComponent);
+        }
+
+        return baseComponent;
+    }
     // ========== MEDIATOR INTEGRATION METHODS ==========
 
     /**
