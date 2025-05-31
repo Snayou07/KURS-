@@ -3,6 +3,9 @@ package com.example.olx.presentation.gui.controller;
 
 import com.example.olx.application.command.AdCommandManager;
 import com.example.olx.application.dto.AdCreationRequest;
+import com.example.olx.domain.decorator.AdComponent;
+import com.example.olx.domain.decorator.AdDecoratorFactory;
+import com.example.olx.domain.decorator.BasicAdComponent;
 import com.example.olx.domain.exception.InvalidInputException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
@@ -15,11 +18,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import java.io.File;
@@ -28,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +54,34 @@ public class CreateAdController {
     private List<File> selectedImageFiles = new ArrayList<>();
     private List<String> existingImagePaths = new ArrayList<>();
 
+    // Декоратори
+    @FXML private CheckBox premiumCheckBox;
+    @FXML private CheckBox urgentCheckBox;
+
+    // Знижка
+    @FXML private CheckBox discountCheckBox;
+    @FXML private HBox discountOptionsBox;
+    @FXML private TextField discountPercentageField;
+    @FXML private TextField discountReasonField;
+
+    // Гарантія
+    @FXML private CheckBox warrantyCheckBox;
+    @FXML private HBox warrantyOptionsBox;
+    @FXML private TextField warrantyMonthsField;
+    @FXML private TextField warrantyTypeField;
+
+    // Доставка
+    @FXML private CheckBox deliveryCheckBox;
+    @FXML private VBox deliveryOptionsBox;
+    @FXML private CheckBox freeDeliveryCheckBox;
+    @FXML private HBox deliveryCostBox;
+    @FXML private TextField deliveryCostField;
+    @FXML private TextField deliveryInfoField;
+
+    // Попередній перегляд
+    @FXML private Button previewButton;
+    @FXML private TextArea previewArea;
+
     private ObservableList<CategoryDisplayItem> categoryItems = FXCollections.observableArrayList();
     private Ad adToEdit = null;
     private static final String IMAGE_STORAGE_DIR = "user_images";
@@ -64,6 +96,7 @@ public class CreateAdController {
         setupCategoryComboBox();
         setupPriceFieldValidation();
         setupImageStorageDir();
+        setupDecoratorValidation();
 
         // Отримуємо Command Manager з головного класу
         commandManager = MainGuiApp.getAdCommandManager();
@@ -73,6 +106,211 @@ public class CreateAdController {
         } else {
             formHeaderLabel.setText("Редагувати оголошення");
         }
+
+        // Додаємо слухачі для автоматичного оновлення превʼю
+        setupPreviewListeners();
+    }
+
+    private void setupDecoratorValidation() {
+        // Валідація для знижки
+        discountPercentageField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d{0,3}")) {
+                discountPercentageField.setText(oldValue);
+            }
+        });
+
+        // Валідація для гарантії
+        warrantyMonthsField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d{0,3}")) {
+                warrantyMonthsField.setText(oldValue);
+            }
+        });
+
+        // Валідація для доставки
+        deliveryCostField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*([.,]\\d{0,2})?")) {
+                deliveryCostField.setText(oldValue);
+            }
+        });
+    }
+
+    private void setupPreviewListeners() {
+        // Додаємо слухачі для основних полів
+        titleField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        descriptionArea.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        priceField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        categoryComboBox.valueProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+
+        // Додаємо слухачі для декораторів
+        premiumCheckBox.selectedProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        urgentCheckBox.selectedProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        discountCheckBox.selectedProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        discountPercentageField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        discountReasonField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        warrantyCheckBox.selectedProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        warrantyMonthsField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        warrantyTypeField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        deliveryCheckBox.selectedProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        freeDeliveryCheckBox.selectedProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        deliveryCostField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+        deliveryInfoField.textProperty().addListener((obs, old, newVal) -> updatePreviewAutomatically());
+    }
+
+    private void updatePreviewAutomatically() {
+        // Оновлюємо превʼю тільки якщо всі основні поля заповнені
+        if (!titleField.getText().trim().isEmpty() &&
+                !descriptionArea.getText().trim().isEmpty() &&
+                !priceField.getText().trim().isEmpty()) {
+            handleUpdatePreview();
+        }
+    }
+
+    @FXML
+    private void handleDiscountToggle() {
+        discountOptionsBox.setDisable(!discountCheckBox.isSelected());
+        if (!discountCheckBox.isSelected()) {
+            discountPercentageField.clear();
+            discountReasonField.clear();
+        }
+    }
+
+    @FXML
+    private void handleWarrantyToggle() {
+        warrantyOptionsBox.setDisable(!warrantyCheckBox.isSelected());
+        if (!warrantyCheckBox.isSelected()) {
+            warrantyMonthsField.clear();
+            warrantyTypeField.clear();
+        }
+    }
+
+    @FXML
+    private void handleDeliveryToggle() {
+        deliveryOptionsBox.setDisable(!deliveryCheckBox.isSelected());
+        if (!deliveryCheckBox.isSelected()) {
+            freeDeliveryCheckBox.setSelected(false);
+            deliveryCostField.clear();
+            deliveryInfoField.clear();
+        }
+    }
+
+    @FXML
+    private void handleFreeDeliveryToggle() {
+        deliveryCostBox.setDisable(freeDeliveryCheckBox.isSelected());
+        if (freeDeliveryCheckBox.isSelected()) {
+            deliveryCostField.clear();
+        }
+    }
+
+    @FXML
+    private void handleUpdatePreview() {
+        try {
+            // Створюємо тимчасове оголошення для превʼю
+            String title = titleField.getText().trim();
+            String description = descriptionArea.getText().trim();
+            String priceStr = priceField.getText().replace(',', '.').trim();
+
+            if (title.isEmpty() || description.isEmpty() || priceStr.isEmpty()) {
+                previewArea.setText("Заповніть всі основні поля для перегляду");
+                return;
+            }
+
+            double price = Double.parseDouble(priceStr);
+
+            // Створюємо базове оголошення
+            Ad tempAd = new Ad();
+            tempAd.setTitle(title);
+            tempAd.setDescription(description);
+            tempAd.setPrice(price);
+            tempAd.setStatus("ACTIVE");
+
+            // Застосовуємо декоратори
+            AdComponent decoratedAd = createDecoratedAd(tempAd);
+
+            // Показуємо результат
+            String preview = decoratedAd.getDisplayInfo();
+            preview += "\n\n" + "=".repeat(50);
+            preview += "\nЗаголовок: " + decoratedAd.getFormattedTitle();
+            preview += String.format("\nПідсумкова ціна: %.2f грн", decoratedAd.getCalculatedPrice());
+
+            previewArea.setText(preview);
+
+        } catch (NumberFormatException e) {
+            previewArea.setText("Неправильний формат ціни");
+        } catch (Exception e) {
+            previewArea.setText("Помилка створення превʼю: " + e.getMessage());
+        }
+    }
+
+    private AdComponent createDecoratedAd(Ad ad) {
+        // Отримуємо параметри декораторів
+        boolean isPremium = premiumCheckBox.isSelected();
+        boolean isUrgent = urgentCheckBox.isSelected();
+
+        Double discountPercentage = null;
+        String discountReason = null;
+        if (discountCheckBox.isSelected()) {
+            try {
+                String percentStr = discountPercentageField.getText().trim();
+                if (!percentStr.isEmpty()) {
+                    discountPercentage = Double.parseDouble(percentStr);
+                    discountReason = discountReasonField.getText().trim();
+                    if (discountReason.isEmpty()) {
+                        discountReason = "Спеціальна пропозиція";
+                    }
+                }
+            } catch (NumberFormatException e) {
+                // Ігноруємо неправильний формат
+                discountPercentage = null;
+            }
+        }
+
+        Integer warrantyMonths = null;
+        String warrantyType = null;
+        if (warrantyCheckBox.isSelected()) {
+            try {
+                String monthsStr = warrantyMonthsField.getText().trim();
+                if (!monthsStr.isEmpty()) {
+                    warrantyMonths = Integer.parseInt(monthsStr);
+                    warrantyType = warrantyTypeField.getText().trim();
+                    if (warrantyType.isEmpty()) {
+                        warrantyType = "Стандартна гарантія";
+                    }
+                }
+            } catch (NumberFormatException e) {
+                // Ігноруємо неправильний формат
+                warrantyMonths = null;
+            }
+        }
+
+        Boolean freeDelivery = null;
+        Double deliveryCost = null;
+        String deliveryInfo = null;
+        if (deliveryCheckBox.isSelected()) {
+            freeDelivery = freeDeliveryCheckBox.isSelected();
+            deliveryInfo = deliveryInfoField.getText().trim();
+            if (deliveryInfo.isEmpty()) {
+                deliveryInfo = "Стандартна доставка";
+            }
+
+            if (!freeDelivery) {
+                try {
+                    String costStr = deliveryCostField.getText().replace(',', '.').trim();
+                    if (!costStr.isEmpty()) {
+                        deliveryCost = Double.parseDouble(costStr);
+                    }
+                } catch (NumberFormatException e) {
+                    deliveryCost = 0.0;
+                }
+            }
+        }
+
+        // Використовуємо фабрику для створення декорованого оголошення
+        return AdDecoratorFactory.createFullyDecoratedAd(
+                ad, isPremium, isUrgent,
+                discountPercentage, discountReason,
+                warrantyMonths, warrantyType,
+                freeDelivery, deliveryCost, deliveryInfo
+        );
     }
 
     private void setupImageStorageDir() {
@@ -104,6 +342,9 @@ public class CreateAdController {
             existingImagePaths.addAll(ad.getImagePaths());
             existingImagePaths.forEach(this::addExistingImageToPreview);
         }
+
+        // Тут можна додати логіку для завантаження збережених декораторів
+        // якщо вони зберігаються разом з оголошенням
     }
 
     private void setupCategoryComboBox() {
@@ -281,6 +522,7 @@ public class CreateAdController {
             }
         }
 
+        // Створюємо базовий запит для оголошення
         AdCreationRequest request = new AdCreationRequest(
                 title, description, price,
                 selectedCategoryItem.getId(),
@@ -289,21 +531,66 @@ public class CreateAdController {
         );
 
         try {
+            Ad savedAd;
             if (adToEdit == null) {
-                // Використовуємо Command Manager для створення оголошення
-                commandManager.createAd(request);
-                showSuccessAndReturn("Оголошення успішно створено!");
+                // Створюємо нове оголошення
+                savedAd = commandManager.createAd(request);
             } else {
-                // Використовуємо Command Manager для оновлення оголошення
-                commandManager.updateAd(adToEdit.getAdId(), request, currentUser.getUserId());
-                showSuccessAndReturn("Оголошення успішно оновлено!");
+                // Оновлюємо існуюче оголошення
+                savedAd = commandManager.updateAd(adToEdit.getAdId(), request, currentUser.getUserId());
             }
+
+            // Якщо потрібно зберегти інформацію про декоратори, можна додати це тут
+            // Наприклад, зберегти метадані про застосовані декоратори в додатковому полі
+            saveDecoratorMetadata(savedAd);
+
+            String successMessage = (adToEdit == null) ?
+                    "Оголошення успішно створено з усіма декораторами!" :
+                    "Оголошення успішно оновлено з усіма декораторами!";
+            showSuccessAndReturn(successMessage);
+
         } catch (InvalidInputException | IllegalArgumentException | UserNotFoundException e) {
             showError(e.getMessage());
         } catch (Exception e) {
             showError("Сталася помилка: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void saveDecoratorMetadata(Ad ad) {
+        // Цей метод можна використати для збереження інформації про застосовані декоратори
+        // Наприклад, в додатковому полі або окремій таблиці
+
+        // Збираємо інформацію про застосовані декоратори
+        StringBuilder decoratorInfo = new StringBuilder();
+
+        if (premiumCheckBox.isSelected()) {
+            decoratorInfo.append("premium;");
+        }
+
+        if (urgentCheckBox.isSelected()) {
+            decoratorInfo.append("urgent;");
+        }
+
+        if (discountCheckBox.isSelected() && !discountPercentageField.getText().trim().isEmpty()) {
+            decoratorInfo.append("discount:").append(discountPercentageField.getText().trim()).append(";");
+        }
+
+        if (warrantyCheckBox.isSelected() && !warrantyMonthsField.getText().trim().isEmpty()) {
+            decoratorInfo.append("warranty:").append(warrantyMonthsField.getText().trim()).append(";");
+        }
+
+        if (deliveryCheckBox.isSelected()) {
+            if (freeDeliveryCheckBox.isSelected()) {
+                decoratorInfo.append("delivery:free;");
+            } else if (!deliveryCostField.getText().trim().isEmpty()) {
+                decoratorInfo.append("delivery:").append(deliveryCostField.getText().trim()).append(";");
+            }
+        }
+
+        // Тут можна зберегти decoratorInfo в базі даних або іншому сховищі
+        // Наприклад, в додатковому полі оголошення або окремій таблиці
+        System.out.println("Декоратори для оголошення " + ad.getAdId() + ": " + decoratorInfo.toString());
     }
 
     @FXML
