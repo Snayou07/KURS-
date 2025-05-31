@@ -1,6 +1,8 @@
 // src/main/java/com/example/olx/presentation/gui/controller/AdDetailController.java
 package com.example.olx.presentation.gui.controller;
 
+import com.example.olx.domain.decorator.AdComponent;
+import com.example.olx.domain.decorator.AdDecoratorFactory;
 import com.example.olx.domain.exception.AdNotFoundException;
 import com.example.olx.domain.exception.UnauthorizedActionException;
 import com.example.olx.domain.model.Ad;
@@ -10,11 +12,7 @@ import com.example.olx.domain.model.UserType;
 import com.example.olx.presentation.gui.MainGuiApp;
 import com.example.olx.presentation.gui.util.GlobalContext;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -31,7 +29,7 @@ import java.util.Optional;
 public class AdDetailController {
 
     @FXML private Label titleLabel;
-    @FXML private ImageView adImageView; // Основне зображення
+    @FXML private ImageView adImageView;
     @FXML private Label noImageLabel;
     @FXML private Label priceLabel;
     @FXML private Text descriptionText;
@@ -43,7 +41,11 @@ public class AdDetailController {
     @FXML private Button editButton;
     @FXML private Button deleteButton;
 
-    // Додаткові елементи для галереї фотографій
+    // Додаткові елементи для декорованої інформації
+    @FXML private VBox decoratedInfoContainer;
+    private Text decoratedInfoText;
+
+    // Галерея зображень
     private VBox imageGalleryContainer;
     private HBox thumbnailContainer;
     private ImageView currentMainImage;
@@ -51,31 +53,48 @@ public class AdDetailController {
     private List<String> imagePaths;
 
     private Ad currentAd;
+    private AdComponent decoratedAd;
 
     public void initialize() {
         editButton.setVisible(true);
         deleteButton.setVisible(true);
         setupImageGallery();
+        setupDecoratedInfoContainer();
+    }
+
+    private void setupDecoratedInfoContainer() {
+        // Створюємо контейнер для декорованої інформації
+        decoratedInfoContainer = new VBox(10);
+        decoratedInfoContainer.setAlignment(Pos.CENTER_LEFT);
+        decoratedInfoContainer.setPadding(new Insets(15, 0, 15, 0));
+        decoratedInfoContainer.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        // Створюємо текстовий елемент для декорованої інформації
+        decoratedInfoText = new Text();
+        decoratedInfoText.setStyle("-fx-font-size: 14px; -fx-fill: #495057;");
+        decoratedInfoText.setWrappingWidth(700.0);
+
+        // Заголовок для декорованої інформації
+        Label decoratedInfoLabel = new Label("📋 Детальна інформація:");
+        decoratedInfoLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #343a40;");
+
+        decoratedInfoContainer.getChildren().addAll(decoratedInfoLabel, decoratedInfoText);
     }
 
     private void setupImageGallery() {
-        // Створюємо контейнер для галереї зображень
         imageGalleryContainer = new VBox(10);
         imageGalleryContainer.setAlignment(Pos.CENTER);
 
-        // Налаштовуємо основне зображення
         currentMainImage = adImageView;
         currentMainImage.setFitHeight(300.0);
         currentMainImage.setFitWidth(400.0);
         currentMainImage.setPreserveRatio(true);
         currentMainImage.setSmooth(true);
 
-        // Створюємо контейнер для мініатюр
         thumbnailContainer = new HBox(10);
         thumbnailContainer.setAlignment(Pos.CENTER);
         thumbnailContainer.setPadding(new Insets(10, 0, 10, 0));
 
-        // Створюємо ScrollPane для мініатюр (якщо їх багато)
         ScrollPane thumbnailScrollPane = new ScrollPane(thumbnailContainer);
         thumbnailScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         thumbnailScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -83,24 +102,93 @@ public class AdDetailController {
         thumbnailScrollPane.setPrefHeight(100);
         thumbnailScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        // Додаємо ScrollPane до контейнера галереї
         imageGalleryContainer.getChildren().add(thumbnailScrollPane);
     }
 
     public void initData(Ad ad) {
+        initData(ad, false, false, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Ініціалізація з декораторами
+     */
+    public void initData(Ad ad, boolean isPremium, boolean isUrgent,
+                         Double discountPercentage, String discountReason,
+                         Integer warrantyMonths, String warrantyType,
+                         Boolean freeDelivery, Double deliveryCost, String deliveryInfo) {
         if (ad == null) {
             showErrorAndGoBack("Не вдалося завантажити деталі оголошення (дані не передано).");
             return;
         }
+
         this.currentAd = ad;
+
+        // Створюємо декорований компонент
+        this.decoratedAd = AdDecoratorFactory.createFullyDecoratedAd(
+                ad, isPremium, isUrgent, discountPercentage, discountReason,
+                warrantyMonths, warrantyType, freeDelivery, deliveryCost, deliveryInfo
+        );
+
         populateAdDetails();
         setupActionButtons();
         loadImages();
+        displayDecoratedInfo();
+    }
+
+    /**
+     * Альтернативний метод для швидкого створення декорованого оголошення
+     */
+    public void initDataWithAutoDecorators(Ad ad) {
+        // Автоматично визначаємо декоратори на основі властивостей оголошення
+        boolean isPremium = ad.getTitle().toLowerCase().contains("преміум") ||
+                ad.getDescription() != null && ad.getDescription().toLowerCase().contains("преміум");
+
+        boolean isUrgent = ad.getTitle().toLowerCase().contains("терміново") ||
+                ad.getDescription() != null && ad.getDescription().toLowerCase().contains("терміново");
+
+        Double discount = null;
+        String discountReason = null;
+        if (ad.getDescription() != null && ad.getDescription().toLowerCase().contains("знижка")) {
+            discount = 10.0; // 10% знижка за замовчуванням
+            discountReason = "Спеціальна пропозиція";
+        }
+
+        Integer warranty = null;
+        String warrantyType = null;
+        if (ad.getDescription() != null && ad.getDescription().toLowerCase().contains("гарантія")) {
+            warranty = 12; // 12 місяців за замовчуванням
+            warrantyType = "Офіційна гарантія";
+        }
+
+        Boolean freeDelivery = null;
+        Double deliveryCost = null;
+        String deliveryInfo = null;
+        if (ad.getDescription() != null &&
+                (ad.getDescription().toLowerCase().contains("доставка") ||
+                        ad.getDescription().toLowerCase().contains("безкоштовна доставка"))) {
+            if (ad.getDescription().toLowerCase().contains("безкоштовна")) {
+                freeDelivery = true;
+                deliveryInfo = "Безкоштовна доставка по всій Україні";
+            } else {
+                freeDelivery = false;
+                deliveryCost = 50.0;
+                deliveryInfo = "Доставка Новою Поштою";
+            }
+        }
+
+        initData(ad, isPremium, isUrgent, discount, discountReason,
+                warranty, warrantyType, freeDelivery, deliveryCost, deliveryInfo);
     }
 
     private void populateAdDetails() {
-        titleLabel.setText(currentAd.getTitle());
-        priceLabel.setText(String.format("%.2f грн", currentAd.getPrice()));
+        // Використовуємо декорований заголовок
+        titleLabel.setText(decoratedAd.getFormattedTitle());
+
+        // Використовуємо розраховану ціну з декораторів
+        double calculatedPrice = decoratedAd.getCalculatedPrice();
+        priceLabel.setText(String.format("%.2f грн", calculatedPrice));
+
+        // Основна інформація залишається з оригінального оголошення
         descriptionText.setText(currentAd.getDescription() != null ? currentAd.getDescription() : "Опис відсутній.");
         adIdLabel.setText(currentAd.getAdId());
 
@@ -115,21 +203,51 @@ public class AdDetailController {
         }
     }
 
+    private void displayDecoratedInfo() {
+        // Відображаємо повну декоровану інформацію
+        String decoratedInfo = decoratedAd.getDisplayInfo();
+        decoratedInfoText.setText(decoratedInfo);
+
+        // Додаємо контейнер до основного макету
+        addDecoratedInfoToMainContainer();
+    }
+
+    private void addDecoratedInfoToMainContainer() {
+        // Знаходимо батьківський VBox і додаємо декоровану інформацію після опису
+        if (descriptionText.getParent() instanceof VBox) {
+            VBox parentContainer = (VBox) descriptionText.getParent().getParent();
+
+            // Знаходимо індекс блоку з описом
+            int descriptionIndex = -1;
+            for (int i = 0; i < parentContainer.getChildren().size(); i++) {
+                if (parentContainer.getChildren().get(i) instanceof VBox) {
+                    VBox vbox = (VBox) parentContainer.getChildren().get(i);
+                    if (vbox.getChildren().contains(descriptionText.getParent())) {
+                        descriptionIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Додаємо декоровану інформацію після опису
+            if (descriptionIndex >= 0) {
+                parentContainer.getChildren().add(descriptionIndex + 1, decoratedInfoContainer);
+            }
+        }
+    }
+
+    // Методи для роботи з зображеннями залишаються без змін
     private void loadImages() {
-        // Отримуємо список шляхів до зображень з оголошення
         imagePaths = currentAd.getImagePaths();
 
         if (imagePaths == null || imagePaths.isEmpty()) {
-            // Якщо немає зображень, показуємо повідомлення
             showNoImageMessage();
             return;
         }
 
-        // Завантажуємо та відображаємо зображення
         loadMainImage(0);
         loadThumbnails();
 
-        // Додаємо галерею до основного контейнера, якщо більше одного зображення
         if (imagePaths.size() > 1) {
             addGalleryToMainContainer();
         }
@@ -139,8 +257,6 @@ public class AdDetailController {
         adImageView.setVisible(false);
         noImageLabel.setText("Фото не завантажено");
         noImageLabel.setVisible(true);
-
-        // Очищуємо контейнер мініатюр
         thumbnailContainer.getChildren().clear();
     }
 
@@ -158,7 +274,6 @@ public class AdDetailController {
             noImageLabel.setVisible(false);
             currentImageIndex = index;
         } else {
-            // Якщо не вдалося завантажити зображення, спробуємо наступне
             if (index + 1 < imagePaths.size()) {
                 loadMainImage(index + 1);
             } else {
@@ -188,16 +303,13 @@ public class AdDetailController {
         thumbnail.setPreserveRatio(true);
         thumbnail.setSmooth(true);
 
-        // Додаємо стиль для вибраної мініатюри
         updateThumbnailStyle(thumbnail, index == currentImageIndex);
 
-        // Додаємо обробник клацання
         thumbnail.setOnMouseClicked(event -> {
             loadMainImage(index);
             updateAllThumbnailStyles();
         });
 
-        // Додаємо ефект при наведенні
         thumbnail.setOnMouseEntered(event -> {
             if (index != currentImageIndex) {
                 thumbnail.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0.5, 0, 0); -fx-cursor: hand;");
@@ -232,7 +344,6 @@ public class AdDetailController {
         try {
             File imageFile = new File(imagePath);
 
-            // Якщо файл не існує за абсолютним шляхом, спробуємо відносний шлях
             if (!imageFile.exists()) {
                 imageFile = new File("user_images", new File(imagePath).getName());
             }
@@ -250,14 +361,10 @@ public class AdDetailController {
     }
 
     private void addGalleryToMainContainer() {
-        // Знаходимо батьківський контейнер основного зображення
         if (adImageView.getParent() instanceof VBox) {
             VBox parentContainer = (VBox) adImageView.getParent();
-
-            // Знаходимо індекс основного зображення
             int imageViewIndex = parentContainer.getChildren().indexOf(adImageView);
 
-            // Додаємо галерею мініатюр після основного зображення
             if (imageViewIndex >= 0 && imageViewIndex + 1 < parentContainer.getChildren().size()) {
                 parentContainer.getChildren().add(imageViewIndex + 1, imageGalleryContainer.getChildren().get(0));
             }
@@ -289,7 +396,6 @@ public class AdDetailController {
             showErrorAlert("Помилка редагування", "Не вдалося завантажити форму редагування: " + e.getMessage());
         }
     }
-
 
     @FXML
     private void handleDeleteAd() {
@@ -332,6 +438,7 @@ public class AdDetailController {
         }
     }
 
+    // Utility методи
     private void showErrorAndGoBack(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Помилка");
@@ -356,5 +463,4 @@ public class AdDetailController {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
 }

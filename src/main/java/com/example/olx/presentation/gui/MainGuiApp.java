@@ -54,7 +54,17 @@ public class MainGuiApp extends Application {
     public static CommandInvoker commandInvoker;
     public static CommandFactory commandFactory;
 
+    /**
+     * Завантажує детальний вигляд оголошення з базовими параметрами
+     */
     public static void loadAdDetailScene(Ad ad) throws IOException {
+        loadAdDetailSceneWithDecorators(ad, false, false, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Завантажує детальний вигляд оголошення з автоматичним визначенням декораторів
+     */
+    public static void loadAdDetailSceneWithAutoDecorators(Ad ad) throws IOException {
         URL fxmlLocation = MainGuiApp.class.getResource("view/AdDetailView.fxml");
         if (fxmlLocation == null) {
             throw new IOException("Cannot find FXML file: view/AdDetailView.fxml");
@@ -63,7 +73,13 @@ public class MainGuiApp extends Application {
         Parent root = fxmlLoader.load();
 
         AdDetailController controller = fxmlLoader.getController();
-        controller.initData(ad);
+        // Перевірка чи контролер має метод initDataWithAutoDecorators
+        if (hasAutoDecoratorsMethod(controller)) {
+            controller.initDataWithAutoDecorators(ad);
+        } else {
+            // Fallback до стандартного методу
+            controller.initData(ad);
+        }
 
         Scene scene = primaryStage.getScene();
         if (scene == null) {
@@ -75,6 +91,67 @@ public class MainGuiApp extends Application {
         primaryStage.setTitle("Деталі оголошення: " + ad.getTitle());
     }
 
+    /**
+     * Завантажує детальний вигляд оголошення з повним контролем декораторів
+     */
+    public static void loadAdDetailSceneWithDecorators(Ad ad, boolean isPremium, boolean isUrgent,
+                                                       Double discountPercentage, String discountReason,
+                                                       Integer warrantyMonths, String warrantyType,
+                                                       Boolean freeDelivery, Double deliveryCost, String deliveryInfo) throws IOException {
+        URL fxmlLocation = MainGuiApp.class.getResource("view/AdDetailView.fxml");
+        if (fxmlLocation == null) {
+            throw new IOException("Cannot find FXML file: view/AdDetailView.fxml");
+        }
+        FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
+        Parent root = fxmlLoader.load();
+
+        AdDetailController controller = fxmlLoader.getController();
+
+        // Перевірка чи контролер має метод з декораторами
+        if (hasDecoratorsMethod(controller)) {
+            controller.initData(ad, isPremium, isUrgent, discountPercentage, discountReason,
+                    warrantyMonths, warrantyType, freeDelivery, deliveryCost, deliveryInfo);
+        } else {
+            // Fallback до стандартного методу
+            controller.initData(ad);
+            System.out.println("Warning: AdDetailController doesn't support decorators, using basic initialization");
+        }
+
+        Scene scene = primaryStage.getScene();
+        if (scene == null) {
+            scene = new Scene(root, 800, 650);
+            primaryStage.setScene(scene);
+        } else {
+            scene.setRoot(root);
+        }
+
+        // Використовуємо декорований заголовок для вікна
+        String windowTitle = "Деталі оголошення: " + ad.getTitle();
+        if (isPremium) windowTitle = "⭐ " + windowTitle;
+        if (isUrgent) windowTitle = "🚨 " + windowTitle;
+
+        primaryStage.setTitle(windowTitle);
+    }
+
+    /**
+     * Приклад використання декорованого оголошення для преміум товарів
+     */
+    public static void loadPremiumAdDetailScene(Ad ad) throws IOException {
+        loadAdDetailSceneWithDecorators(ad, true, false, null, null,
+                12, "Розширена гарантія", true, 0.0, "Безкоштовна експрес-доставка");
+    }
+
+    /**
+     * Приклад використання декорованого оголошення для термінових товарів зі знижкою
+     */
+    public static void loadUrgentDiscountAdDetailScene(Ad ad, double discountPercent) throws IOException {
+        loadAdDetailSceneWithDecorators(ad, false, true, discountPercent, "Термінова розпродаж",
+                null, null, false, 30.0, "Швидка доставка");
+    }
+
+    /**
+     * Завантажує сцену редагування оголошення
+     */
     public static void loadEditAdScene(Ad adToEdit) throws IOException {
         URL fxmlLocation = MainGuiApp.class.getResource("view/CreateAdView.fxml");
         if (fxmlLocation == null) {
@@ -94,6 +171,32 @@ public class MainGuiApp extends Application {
             scene.setRoot(root);
         }
         primaryStage.setTitle("Редагувати оголошення: " + adToEdit.getTitle());
+    }
+
+    /**
+     * Перевіряє чи контролер має метод initDataWithAutoDecorators
+     */
+    private static boolean hasAutoDecoratorsMethod(AdDetailController controller) {
+        try {
+            controller.getClass().getMethod("initDataWithAutoDecorators", Ad.class);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Перевіряє чи контролер має метод initData з декораторами
+     */
+    private static boolean hasDecoratorsMethod(AdDetailController controller) {
+        try {
+            controller.getClass().getMethod("initData", Ad.class, boolean.class, boolean.class,
+                    Double.class, String.class, Integer.class, String.class,
+                    Boolean.class, Double.class, String.class);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
     }
 
     @Override

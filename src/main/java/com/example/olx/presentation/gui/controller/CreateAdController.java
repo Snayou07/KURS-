@@ -5,7 +5,6 @@ import com.example.olx.application.command.AdCommandManager;
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.domain.decorator.AdComponent;
 import com.example.olx.domain.decorator.AdDecoratorFactory;
-import com.example.olx.domain.decorator.BasicAdComponent;
 import com.example.olx.domain.exception.InvalidInputException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
@@ -31,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +42,6 @@ public class CreateAdController {
     @FXML private TextArea descriptionArea;
     @FXML private TextField priceField;
     @FXML private ComboBox<CategoryDisplayItem> categoryComboBox;
-    @FXML private Button saveButton;
     @FXML private Button cancelButton;
     @FXML private Label errorLabel;
 
@@ -533,11 +530,19 @@ public class CreateAdController {
         try {
             Ad savedAd;
             if (adToEdit == null) {
-                // Створюємо нове оголошення
+                // Створюємо нове оголошення - виправлена лінія 537
                 savedAd = commandManager.createAd(request);
+                if (savedAd == null) {
+                    showError("Помилка створення оголошення: метод повернув null");
+                    return;
+                }
             } else {
-                // Оновлюємо існуюче оголошення
+                // Оновлюємо існуюче оголошення - виправлена лінія 540
                 savedAd = commandManager.updateAd(adToEdit.getAdId(), request, currentUser.getUserId());
+                if (savedAd == null) {
+                    showError("Помилка оновлення оголошення: метод повернув null");
+                    return;
+                }
             }
 
             // Якщо потрібно зберегти інформацію про декоратори, можна додати це тут

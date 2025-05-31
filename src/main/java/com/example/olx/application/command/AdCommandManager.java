@@ -2,6 +2,7 @@ package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.domain.exception.UserNotFoundException;
+import com.example.olx.domain.model.Ad;
 
 import java.util.List;
 
@@ -18,15 +19,17 @@ public class AdCommandManager {
     }
 
     // Створення оголошення
-    public void createAd(AdCreationRequest request) throws UserNotFoundException {
+    public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
         Command command = commandFactory.createCreateAdCommand(request);
         commandInvoker.executeCommand(command);
+        return null;
     }
 
     // Оновлення оголошення
-    public void updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
+    public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
         Command command = commandFactory.createUpdateAdCommand(adId, request, currentUserId);
         commandInvoker.executeCommand(command);
+        return null;
     }
 
     // Видалення оголошення
