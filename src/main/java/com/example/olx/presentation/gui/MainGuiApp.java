@@ -1,6 +1,9 @@
 // src/main/java/com/example/olx/presentation/gui/MainGuiApp.java
 package com.example.olx.presentation.gui;
 
+import com.example.olx.application.command.AdCommandManager;
+import com.example.olx.application.command.CommandFactory;
+import com.example.olx.application.command.CommandInvoker;
 import com.example.olx.application.service.impl.AdServiceImpl;
 import com.example.olx.application.service.impl.CategoryServiceImpl;
 import com.example.olx.application.service.impl.UserServiceImpl;
@@ -16,7 +19,7 @@ import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.repository.AdRepository;
 import com.example.olx.domain.repository.CategoryRepository;
 import com.example.olx.domain.repository.UserRepository;
-import com.example.olx.infrastructure.notification.ConsoleNotificationServiceImpl; // Тимчасово, для GUI може бути інший
+import com.example.olx.infrastructure.notification.ConsoleNotificationServiceImpl;
 import com.example.olx.infrastructure.persistence.FileAdRepositoryImpl;
 import com.example.olx.infrastructure.persistence.FileCategoryRepositoryImpl;
 import com.example.olx.infrastructure.persistence.FileUserRepositoryImpl;
@@ -38,13 +41,18 @@ import java.util.List;
 
 public class MainGuiApp extends Application {
 
-    private static Stage primaryStage; // Для зміни сцен
+    private static Stage primaryStage;
 
-    // Сервіси (статичні для доступу з контролерів або через DI фреймворк)
+    // Сервіси
     public static UserService userService;
     public static AdServicePort adService;
     public static CategoryServicePort categoryService;
-    public static SessionManager sessionManager; // Для збереження при закритті
+    public static SessionManager sessionManager;
+
+    // Command паттерн компоненти
+    public static AdCommandManager adCommandManager;
+    public static CommandInvoker commandInvoker;
+    public static CommandFactory commandFactory;
 
     public static void loadAdDetailScene(Ad ad) throws IOException {
         URL fxmlLocation = MainGuiApp.class.getResource("view/AdDetailView.fxml");
@@ -54,7 +62,6 @@ public class MainGuiApp extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
         Parent root = fxmlLoader.load();
 
-        // Отримуємо контролер та передаємо дані
         AdDetailController controller = fxmlLoader.getController();
         controller.initData(ad);
 
@@ -69,7 +76,7 @@ public class MainGuiApp extends Application {
     }
 
     public static void loadEditAdScene(Ad adToEdit) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("view/CreateAdView.fxml"); // Використовуємо ту ж FXML
+        URL fxmlLocation = MainGuiApp.class.getResource("view/CreateAdView.fxml");
         if (fxmlLocation == null) {
             throw new IOException("Cannot find FXML file: view/CreateAdView.fxml for editing");
         }
@@ -77,11 +84,11 @@ public class MainGuiApp extends Application {
         Parent root = fxmlLoader.load();
 
         CreateAdController controller = fxmlLoader.getController();
-        controller.initDataForEdit(adToEdit); // Передаємо дані для редагування
+        controller.initDataForEdit(adToEdit);
 
         Scene scene = primaryStage.getScene();
         if (scene == null) {
-            scene = new Scene(root, 700, 600); // Розміри можуть бути ті ж, що й для CreateAdView
+            scene = new Scene(root, 700, 600);
             primaryStage.setScene(scene);
         } else {
             scene.setRoot(root);
@@ -91,10 +98,9 @@ public class MainGuiApp extends Application {
 
     @Override
     public void init() throws Exception {
-        // Ініціалізація бекенду тут, до того, як GUI почне завантажуватися
         System.out.println("Initializing backend services...");
         sessionManager = SessionManager.getInstance();
-        sessionManager.setStorageFilePath("olx_gui_data.dat"); // Новий файл для GUI версії
+        sessionManager.setStorageFilePath("olx_gui_data.dat");
         sessionManager.loadState();
 
         PasswordHasher passwordHasher = new DemoPasswordHasherImpl();
@@ -103,7 +109,6 @@ public class MainGuiApp extends Application {
         CategoryRepository categoryRepository = new FileCategoryRepositoryImpl(sessionManager);
         AdRepository adRepository = new FileAdRepositoryImpl(sessionManager);
 
-        // Для GUI, можливо, варто мати NullNotificationService або спеціальний GUI нотифікатор
         NotificationServicePort notificationService = new ConsoleNotificationServiceImpl();
         AdSearchStrategy adSearchStrategy = new DefaultAdSearchStrategy();
 
@@ -111,7 +116,11 @@ public class MainGuiApp extends Application {
         categoryService = new CategoryServiceImpl(categoryRepository);
         adService = new AdServiceImpl(adRepository, userRepository, categoryRepository, notificationService, adSearchStrategy);
 
-        // Ініціалізація категорій, якщо їх ще немає
+        // Ініціалізація Command паттерну
+        commandInvoker = new CommandInvoker();
+        commandFactory = new CommandFactory(adService);
+        adCommandManager = new AdCommandManager(commandInvoker, commandFactory);
+
         initializeDefaultCategories();
 
         System.out.println("Backend services initialized.");
@@ -121,7 +130,7 @@ public class MainGuiApp extends Application {
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
         primaryStage.setTitle("OLX-дошка оголошень");
-        loadLoginScene(); // Починаємо з екрану входу
+        loadLoginScene();
         primaryStage.show();
     }
 
@@ -138,7 +147,6 @@ public class MainGuiApp extends Application {
     }
 
     private static void loadScene(String fxmlFile, String title) throws IOException {
-        // Переконуємося, що шлях до FXML правильний відносно classpath
         URL fxmlLocation = MainGuiApp.class.getResource(fxmlFile);
         if (fxmlLocation == null) {
             System.err.println("Cannot find FXML file: " + fxmlFile);
@@ -148,19 +156,16 @@ public class MainGuiApp extends Application {
         Parent root = fxmlLoader.load();
         Scene scene = primaryStage.getScene();
         if (scene == null) {
-            scene = new Scene(root, 800, 600); // Початковий розмір
+            scene = new Scene(root, 800, 600);
             primaryStage.setScene(scene);
         } else {
             scene.setRoot(root);
         }
         primaryStage.setTitle(title);
-        // Можна додати застосування CSS тут, якщо є глобальний CSS
-        // scene.getStylesheets().add(MainGuiApp.class.getResource("style/global.css").toExternalForm());
     }
 
     @Override
     public void stop() throws Exception {
-        // Збереження стану при закритті програми
         System.out.println("Application stopping. Saving session state...");
         if (sessionManager != null) {
             sessionManager.saveState();
@@ -170,7 +175,6 @@ public class MainGuiApp extends Application {
     }
 
     private static void initializeDefaultCategories() {
-        // Перевіряємо, чи є вже категорії
         List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
         if (existingCategories != null && !existingCategories.isEmpty()) {
             System.out.println("Categories already exist, skipping initialization.");
@@ -179,35 +183,23 @@ public class MainGuiApp extends Application {
 
         System.out.println("Initializing default categories...");
 
-        // Створюємо базові категорії
         List<CategoryComponent> rootCategories = new ArrayList<>();
 
-        // Електроніка
-        Category electronics = new Category( "Електроніка");
-
+        Category electronics = new Category("Електроніка");
         rootCategories.add(electronics);
 
-        // Одяг і взуття
-        Category clothing = new Category( "Одяг і взуття");
-
+        Category clothing = new Category("Одяг і взуття");
         rootCategories.add(clothing);
 
-        // Дім і сад
-        Category home = new Category( "Дім і сад");
-
+        Category home = new Category("Дім і сад");
         rootCategories.add(home);
 
-        // Авто
-        Category auto = new Category( "Авто");
-
+        Category auto = new Category("Авто");
         rootCategories.add(auto);
 
-        // Спорт і хобі
-        Category sport = new Category( "Спорт і хобі");
-
+        Category sport = new Category("Спорт і хобі");
         rootCategories.add(sport);
 
-        // Ініціалізуємо категорії в сервісі
         try {
             categoryService.initializeCategories(rootCategories);
             System.out.println("Default categories initialized successfully.");
@@ -215,6 +207,15 @@ public class MainGuiApp extends Application {
             System.err.println("Error initializing categories: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    // Методи для доступу до команд з GUI
+    public static AdCommandManager getAdCommandManager() {
+        return adCommandManager;
+    }
+
+    public static CommandInvoker getCommandInvoker() {
+        return commandInvoker;
     }
 
     public static void main(String[] args) {

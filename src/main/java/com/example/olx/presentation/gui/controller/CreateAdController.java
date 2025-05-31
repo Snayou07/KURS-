@@ -1,9 +1,11 @@
 // src/main/java/com/example/olx/presentation/gui/controller/CreateAdController.java
 package com.example.olx.presentation.gui.controller;
 
-import com.example.olx.application.dto.AdCreationRequest; // Вже є
+import com.example.olx.application.command.AdCommandManager;
+import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.domain.exception.InvalidInputException;
-import com.example.olx.domain.model.Ad; // Додано
+import com.example.olx.domain.exception.UserNotFoundException;
+import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.Category;
 import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.model.User;
@@ -13,27 +15,27 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.stage.FileChooser; // Для завантаження фото
-import javafx.scene.image.Image; // Для прев'ю фото
-import javafx.scene.image.ImageView; // Для прев'ю фото
-import javafx.scene.layout.HBox; // Для списку фото
-import javafx.scene.layout.VBox; // ДОДАНО для VBox
+import javafx.stage.FileChooser;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
-import java.io.File; // Для роботи з файлами
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files; // Для копіювання файлів
-import java.nio.file.Path; // Для шляхів
-import java.nio.file.Paths; // Для шляхів
-import java.nio.file.StandardCopyOption; // Для копіювання файлів
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID; // Для унікальних імен файлів
+import java.util.UUID;
 
 public class CreateAdController {
 
-    @FXML private Label formHeaderLabel; // Для зміни заголовка
+    @FXML private Label formHeaderLabel;
     @FXML private TextField titleField;
     @FXML private TextArea descriptionArea;
     @FXML private TextField priceField;
@@ -42,17 +44,18 @@ public class CreateAdController {
     @FXML private Button cancelButton;
     @FXML private Label errorLabel;
 
-    // --- Для фотографій ---
+    // Для фотографій
     @FXML private Button addPhotoButton;
-    @FXML private HBox photoPreviewBox; // Контейнер для мініатюр
+    @FXML private HBox photoPreviewBox;
     private List<File> selectedImageFiles = new ArrayList<>();
-    private List<String> existingImagePaths = new ArrayList<>(); // Для шляхів фото при редагуванні
-    // ----------------------
+    private List<String> existingImagePaths = new ArrayList<>();
 
     private ObservableList<CategoryDisplayItem> categoryItems = FXCollections.observableArrayList();
-    private Ad adToEdit = null; // Для режиму редагування
-    private static final String IMAGE_STORAGE_DIR = "user_images"; // Директорія для збереження фото
+    private Ad adToEdit = null;
+    private static final String IMAGE_STORAGE_DIR = "user_images";
 
+    // Command Manager для виконання операцій
+    private AdCommandManager commandManager;
 
     @FXML
     public void initialize() {
@@ -60,13 +63,15 @@ public class CreateAdController {
         loadCategories();
         setupCategoryComboBox();
         setupPriceFieldValidation();
-        setupImageStorageDir(); // Створюємо директорію для фото
+        setupImageStorageDir();
+
+        // Отримуємо Command Manager з головного класу
+        commandManager = MainGuiApp.getAdCommandManager();
 
         if (adToEdit == null) {
             formHeaderLabel.setText("Створити нове оголошення");
         } else {
             formHeaderLabel.setText("Редагувати оголошення");
-            // Заповнення полів відбудеться в initDataForEdit
         }
     }
 
@@ -77,21 +82,17 @@ public class CreateAdController {
                 Files.createDirectories(storagePath);
             } catch (IOException e) {
                 System.err.println("Could not create image storage directory: " + e.getMessage());
-                // Можна показати помилку користувачу або деактивувати функцію фото
             }
         }
     }
 
-
-    // Метод для передачі даних при редагуванні
     public void initDataForEdit(Ad ad) {
         this.adToEdit = ad;
         formHeaderLabel.setText("Редагувати оголошення: " + ad.getTitle());
         titleField.setText(ad.getTitle());
         descriptionArea.setText(ad.getDescription());
-        priceField.setText(String.format("%.2f", ad.getPrice()).replace(',', '.')); // Форматуємо ціну
+        priceField.setText(String.format("%.2f", ad.getPrice()).replace(',', '.'));
 
-        // Вибір категорії
         if (ad.getCategoryId() != null) {
             categoryItems.stream()
                     .filter(item -> item.getId().equals(ad.getCategoryId()))
@@ -99,7 +100,6 @@ public class CreateAdController {
                     .ifPresent(categoryComboBox::setValue);
         }
 
-        // Завантаження існуючих фотографій (шляхів)
         if (ad.getImagePaths() != null && !ad.getImagePaths().isEmpty()) {
             existingImagePaths.addAll(ad.getImagePaths());
             existingImagePaths.forEach(this::addExistingImageToPreview);
@@ -122,7 +122,7 @@ public class CreateAdController {
 
     private void setupPriceFieldValidation() {
         priceField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*([.,]\\d{0,2})?")) { // Дозволяємо крапку або кому
+            if (!newValue.matches("\\d*([.,]\\d{0,2})?")) {
                 priceField.setText(oldValue);
             }
         });
@@ -155,7 +155,6 @@ public class CreateAdController {
         List<File> files = fileChooser.showOpenMultipleDialog(addPhotoButton.getScene().getWindow());
 
         if (files != null && !files.isEmpty()) {
-            // Обмеження на кількість фото, наприклад 5
             int limit = 5 - selectedImageFiles.size() - existingImagePaths.size();
             if (files.size() > limit && limit > 0) {
                 showError("Можна додати ще максимум " + limit + " фото.");
@@ -163,7 +162,7 @@ public class CreateAdController {
 
             for (int i = 0; i < files.size() && i < limit; i++) {
                 File file = files.get(i);
-                if (!selectedImageFiles.contains(file) && !isAlreadyExistingImage(file.getName())) { // Проста перевірка за ім'ям
+                if (!selectedImageFiles.contains(file) && !isAlreadyExistingImage(file.getName())) {
                     selectedImageFiles.add(file);
                     addImageToPreview(file);
                 }
@@ -175,14 +174,12 @@ public class CreateAdController {
     }
 
     private boolean isAlreadyExistingImage(String fileName) {
-        // Дуже проста перевірка, можливо, потрібно покращити
         return existingImagePaths.stream().anyMatch(path -> Paths.get(path).getFileName().toString().equals(fileName));
     }
 
-
     private void addImageToPreview(File file) {
         try {
-            Image image = new Image(file.toURI().toString(), 100, 100, true, true); // Зберігаємо пропорції, гладке масштабування
+            Image image = new Image(file.toURI().toString(), 100, 100, true, true);
             ImageView imageView = new ImageView(image);
             imageView.setFitHeight(80);
             imageView.setFitWidth(80);
@@ -190,7 +187,7 @@ public class CreateAdController {
 
             Button removeButton = new Button("X");
             removeButton.setOnAction(event -> {
-                photoPreviewBox.getChildren().remove(imageView.getParent()); // Видаляємо HBox з кнопкою
+                photoPreviewBox.getChildren().remove(imageView.getParent());
                 selectedImageFiles.remove(file);
                 if (selectedImageFiles.size() + existingImagePaths.size() < 5) {
                     addPhotoButton.setDisable(false);
@@ -205,11 +202,10 @@ public class CreateAdController {
         }
     }
 
-    // Для відображення існуючих фото при редагуванні
     private void addExistingImageToPreview(String imagePath) {
         try {
-            File file = new File(imagePath); // Припускаємо, що imagePath - це абсолютний шлях або відносний до робочої директорії
-            if (!file.exists()) { // Якщо це відносний шлях до директорії програми
+            File file = new File(imagePath);
+            if (!file.exists()) {
                 file = new File(IMAGE_STORAGE_DIR, Paths.get(imagePath).getFileName().toString());
             }
 
@@ -220,10 +216,10 @@ public class CreateAdController {
                 imageView.setFitWidth(80);
                 imageView.setPreserveRatio(true);
 
-                Button removeButton = new Button("X (збережене)"); // Позначаємо, що це збережене фото
+                Button removeButton = new Button("X (збережене)");
                 removeButton.setOnAction(event -> {
                     photoPreviewBox.getChildren().remove(imageView.getParent());
-                    existingImagePaths.remove(imagePath); // Видаляємо зі списку збережених
+                    existingImagePaths.remove(imagePath);
                     if (selectedImageFiles.size() + existingImagePaths.size() < 5) {
                         addPhotoButton.setDisable(false);
                     }
@@ -240,7 +236,6 @@ public class CreateAdController {
         }
     }
 
-
     @FXML
     private void handleSaveAd() {
         User currentUser = GlobalContext.getInstance().getLoggedInUser();
@@ -251,7 +246,7 @@ public class CreateAdController {
 
         String title = titleField.getText().trim();
         String description = descriptionArea.getText().trim();
-        String priceStr = priceField.getText().replace(',', '.').trim(); // Замінюємо кому на крапку
+        String priceStr = priceField.getText().replace(',', '.').trim();
         CategoryDisplayItem selectedCategoryItem = categoryComboBox.getSelectionModel().getSelectedItem();
 
         errorLabel.setText("");
@@ -274,36 +269,36 @@ public class CreateAdController {
         }
 
         // Обробка та копіювання нових фотографій
-        List<String> finalImagePaths = new ArrayList<>(existingImagePaths); // Починаємо з існуючих фото
+        List<String> finalImagePaths = new ArrayList<>(existingImagePaths);
         for (File imageFile : selectedImageFiles) {
             try {
                 String uniqueFileName = UUID.randomUUID().toString() + "_" + imageFile.getName();
                 Path targetPath = Paths.get(IMAGE_STORAGE_DIR, uniqueFileName);
                 Files.copy(imageFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-                finalImagePaths.add(targetPath.toString()); // Зберігаємо повний шлях або відносний
+                finalImagePaths.add(targetPath.toString());
             } catch (IOException e) {
                 showError("Помилка збереження фото: " + imageFile.getName() + " - " + e.getMessage());
-                // Можна продовжити без цього фото або перервати операцію
             }
         }
-
 
         AdCreationRequest request = new AdCreationRequest(
                 title, description, price,
                 selectedCategoryItem.getId(),
                 currentUser.getUserId(),
-                finalImagePaths // Передаємо шляхи до фото
+                finalImagePaths
         );
 
         try {
-            if (adToEdit == null) { // Режим створення
-                MainGuiApp.adService.createAd(request);
+            if (adToEdit == null) {
+                // Використовуємо Command Manager для створення оголошення
+                commandManager.createAd(request);
                 showSuccessAndReturn("Оголошення успішно створено!");
-            } else { // Режим редагування
-                MainGuiApp.adService.updateAd(adToEdit.getAdId(), request, currentUser.getUserId());
+            } else {
+                // Використовуємо Command Manager для оновлення оголошення
+                commandManager.updateAd(adToEdit.getAdId(), request, currentUser.getUserId());
                 showSuccessAndReturn("Оголошення успішно оновлено!");
             }
-        } catch (InvalidInputException | IllegalArgumentException e) {
+        } catch (InvalidInputException | IllegalArgumentException | UserNotFoundException e) {
             showError(e.getMessage());
         } catch (Exception e) {
             showError("Сталася помилка: " + e.getMessage());
@@ -313,7 +308,6 @@ public class CreateAdController {
 
     @FXML
     private void handleCancel() {
-        // Перед поверненням, можна запитати підтвердження, якщо були зміни
         Alert confirmationDialog = new Alert(Alert.AlertType.CONFIRMATION);
         confirmationDialog.setTitle("Підтвердження скасування");
         confirmationDialog.setHeaderText("Скасувати " + (adToEdit == null ? "створення" : "редагування") + " оголошення?");
@@ -322,7 +316,7 @@ public class CreateAdController {
         Optional<ButtonType> result = confirmationDialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                MainGuiApp.loadMainScene(); // Повернення на головний екран
+                MainGuiApp.loadMainScene();
             } catch (IOException e) {
                 e.printStackTrace();
                 showError("Помилка повернення на головний екран: " + e.getMessage());
@@ -345,12 +339,11 @@ public class CreateAdController {
             MainGuiApp.loadMainScene();
         } catch (IOException e) {
             e.printStackTrace();
-            // showError тут не підходить, бо alert вже показаний
             System.err.println("Error returning to main scene: " + e.getMessage());
         }
     }
 
-    private static class CategoryDisplayItem { /* ... залишається без змін ... */
+    private static class CategoryDisplayItem {
         private final String id;
         private final String displayName;
 
@@ -358,7 +351,13 @@ public class CreateAdController {
             this.id = id;
             this.displayName = displayName;
         }
-        public String getId() { return id; }
-        public String getDisplayName() { return displayName; }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 }

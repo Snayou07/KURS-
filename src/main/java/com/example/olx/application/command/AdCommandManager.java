@@ -53,16 +53,25 @@ public class AdCommandManager {
         commandInvoker.executeCommand(command);
     }
 
-    // Створення та публікація оголошення одночасно
+    // Створення та публікація оголошення одночасно (використовуючи MacroCommand)
     public void createAndPublishAd(AdCreationRequest request) throws UserNotFoundException {
+        // Створюємо макрокоманду для складної операції
         List<Command> commands = List.of(
-                commandFactory.createCreateAdCommand(request),
-                commandFactory.createPublishAdCommand("") // ID буде отримано після створення
+                commandFactory.createCreateAdCommand(request)
+                // Публікацію додамо після отримання ID створеного оголошення
         );
 
-        // Для цього випадку краще виконати послідовно
+        // Для складних операцій краще використовувати окремі виклики
         createAd(request);
-        // Тут потрібно отримати ID створеного оголошення та опублікувати його
+
+        // TODO: Тут потрібно отримати ID створеного оголошення та опублікувати його
+        // Це можна зробити через додаткову логіку в CreateAdCommand або через callback
+    }
+
+    // Виконання макрокоманди
+    public void executeMacroCommand(List<Command> commands, String description) throws UserNotFoundException {
+        MacroCommand macroCommand = new MacroCommand(commands, description);
+        commandInvoker.executeCommand(macroCommand);
     }
 
     // Делегування до CommandInvoker
@@ -88,5 +97,19 @@ public class AdCommandManager {
 
     public List<String> getCommandHistory() {
         return commandInvoker.getCommandHistory();
+    }
+
+    // Додаткові методи для GUI
+    public String getLastExecutedCommandDescription() {
+        List<String> history = getCommandHistory();
+        return history.isEmpty() ? "Немає виконаних команд" : history.get(history.size() - 1);
+    }
+
+    public int getHistorySize() {
+        return getCommandHistory().size();
+    }
+
+    public boolean hasCommands() {
+        return !getCommandHistory().isEmpty();
     }
 }
