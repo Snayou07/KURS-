@@ -8,6 +8,9 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -21,8 +24,41 @@
             </padding>
             <children>
                 <Label styleClass="app-title" text="OLX Дошка" />
-                <TextField fx:id="searchField" HBox.hgrow="ALWAYS" promptText="Пошук оголошень..." />
-                <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearchAds" text="Знайти" styleClass="action-button-small"/>
+
+                <!-- Розширена панель пошуку -->
+                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                    <children>
+                        <HBox spacing="5.0" alignment="CENTER_LEFT">
+                            <children>
+                                <TextField fx:id="searchField" HBox.hgrow="ALWAYS" promptText="Пошук оголошень..." />
+                                <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearchAds" text="Знайти" styleClass="action-button-small"/>
+                                <Button fx:id="advancedSearchButton" mnemonicParsing="false" onAction="#handleToggleAdvancedSearch" text="⚙" styleClass="action-button-small" />
+                            </children>
+                        </HBox>
+
+                        <!-- Панель розширеного пошуку (спочатку прихована) -->
+                        <HBox fx:id="advancedSearchPanel" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
+                            <children>
+                                <Label text="Ціна від:" styleClass="filter-label" />
+                                <TextField fx:id="minPriceField" prefWidth="80.0" promptText="0" />
+                                <Label text="до:" styleClass="filter-label" />
+                                <TextField fx:id="maxPriceField" prefWidth="80.0" promptText="∞" />
+
+                                <Separator orientation="VERTICAL" />
+
+                                <Label text="Статус:" styleClass="filter-label" />
+                                <ComboBox fx:id="statusFilterCombo" prefWidth="120.0" />
+
+                                <CheckBox fx:id="premiumOnlyCheckBox" text="Тільки преміум" />
+                                <CheckBox fx:id="urgentOnlyCheckBox" text="Тільки терміново" />
+
+                                <Button fx:id="applyFiltersButton" mnemonicParsing="false" onAction="#handleApplyFilters" text="Застосувати" styleClass="action-button-small" />
+                                <Button fx:id="clearFiltersButton" mnemonicParsing="false" onAction="#handleClearFilters" text="Очистити" styleClass="action-button-secondary" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+
                 <Button fx:id="createAdButton" mnemonicParsing="false" onAction="#handleCreateAd" styleClass="action-button-highlight" text="Створити оголошення" />
                 <Label fx:id="loggedInUserLabel" text="Користувач: " styleClass="user-label"/>
                 <Button fx:id="logoutButton" mnemonicParsing="false" onAction="#handleLogout" text="Вийти з акаунту" styleClass="action-button-secondary"/>
@@ -30,6 +66,7 @@
             </children>
         </HBox>
     </top>
+
     <left>
         <VBox prefWidth="280.0" spacing="10.0" styleClass="left-sidebar" BorderPane.alignment="CENTER">
             <padding>
@@ -37,7 +74,21 @@
             </padding>
             <children>
                 <Label styleClass="sidebar-title" text="Категорії" />
-                <TreeView fx:id="categoryTreeView" prefHeight="300.0" VBox.vgrow="SOMETIMES" />
+                <TreeView fx:id="categoryTreeView" prefHeight="250.0" VBox.vgrow="SOMETIMES" />
+
+                <Separator />
+
+                <!-- Панель швидких фільтрів -->
+                <Label styleClass="sidebar-title" text="Швидкі фільтри" />
+                <VBox spacing="5.0">
+                    <children>
+                        <CheckBox fx:id="quickFilterPremium" text="⭐ Преміум оголошення" />
+                        <CheckBox fx:id="quickFilterUrgent" text="🚨 Терміново" />
+                        <CheckBox fx:id="quickFilterWithDelivery" text="🚚 З доставкою" />
+                        <CheckBox fx:id="quickFilterWithWarranty" text="🛡️ З гарантією" />
+                        <CheckBox fx:id="quickFilterWithDiscount" text="💰 Зі знижкою" />
+                    </children>
+                </VBox>
 
                 <Separator />
 
@@ -53,22 +104,109 @@
 
                 <!-- Історія команд -->
                 <Label styleClass="sidebar-subtitle" text="Історія команд:" />
-                <ListView fx:id="commandHistoryListView" prefHeight="150.0" VBox.vgrow="SOMETIMES" />
+                <ListView fx:id="commandHistoryListView" prefHeight="120.0" VBox.vgrow="SOMETIMES" />
+
+                <!-- Статистика медіатора -->
+                <Separator />
+                <Label styleClass="sidebar-subtitle" text="Статистика:" />
+                <VBox spacing="3.0">
+                    <children>
+                        <Label fx:id="totalAdsLabel" text="Всього оголошень: 0" styleClass="stats-label" />
+                        <Label fx:id="filteredAdsLabel" text="Після фільтрації: 0" styleClass="stats-label" />
+                        <Label fx:id="selectedCategoryLabel" text="Обрана категорія: немає" styleClass="stats-label" />
+                    </children>
+                </VBox>
             </children>
         </VBox>
     </left>
+
     <center>
         <VBox spacing="10.0" styleClass="center-content" BorderPane.alignment="CENTER">
             <padding>
                 <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
             </padding>
             <children>
-                <Label fx:id="currentCategoryLabel" styleClass="content-header" text="Всі оголошення" />
+                <!-- Заголовок з інформацією про поточний вигляд -->
+                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                    <children>
+                        <Label fx:id="currentCategoryLabel" styleClass="content-header" text="Всі оголошення" />
+
+                        <!-- Кнопки сортування -->
+                        <Label text="Сортування:" styleClass="sort-label" />
+                        <ComboBox fx:id="sortComboBox" prefWidth="150.0" />
+                        <Button fx:id="sortOrderButton" mnemonicParsing="false" onAction="#handleToggleSortOrder" text="↑" styleClass="action-button-small" />
+
+                        <!-- Перемикач виду відображення -->
+                        <Separator orientation="VERTICAL" />
+                        <Button fx:id="listViewButton" mnemonicParsing="false" onAction="#handleSwitchToListView" text="☰" styleClass="view-button" />
+                        <Button fx:id="gridViewButton" mnemonicParsing="false" onAction="#handleSwitchToGridView" text="⊞" styleClass="view-button" />
+
+                        <!-- Оновлення -->
+                        <Button fx:id="refreshButton" mnemonicParsing="false" onAction="#handleRefresh" text="🔄" styleClass="action-button-small" />
+                    </children>
+                </HBox>
+
+                <!-- Активні фільтри -->
+                <HBox fx:id="activeFiltersPanel" spacing="5.0" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <children>
+                        <Label text="Активні фільтри:" styleClass="filter-label" />
+                        <ScrollPane fx:id="activeFiltersScrollPane" fitToHeight="true" prefHeight="30.0" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER">
+                            <content>
+                                <HBox fx:id="activeFiltersContainer" spacing="5.0" />
+                            </content>
+                        </ScrollPane>
+                        <Button fx:id="clearAllFiltersButton" mnemonicParsing="false" onAction="#handleClearAllFilters" text="✕ Очистити всі" styleClass="filter-clear-button" />
+                    </children>
+                </HBox>
+
+                <!-- Список оголошень -->
                 <ListView fx:id="adListView" VBox.vgrow="ALWAYS" />
-                <HBox fx:id="paginationControls" alignment="CENTER" spacing="5.0" visible="false">
-                    <!-- Pagination controls will be added dynamically if needed -->
+
+                <!-- Панель керування відображенням -->
+                <HBox spacing="10.0" alignment="CENTER">
+                    <children>
+                        <!-- Пагінація -->
+                        <HBox fx:id="paginationControls" alignment="CENTER" spacing="5.0" visible="false">
+                            <children>
+                                <Button fx:id="firstPageButton" mnemonicParsing="false" onAction="#handleFirstPage" text="⟪" styleClass="pagination-button" />
+                                <Button fx:id="prevPageButton" mnemonicParsing="false" onAction="#handlePrevPage" text="‹" styleClass="pagination-button" />
+                                <Label fx:id="pageInfoLabel" text="Сторінка 1 з 1" styleClass="page-info" />
+                                <Button fx:id="nextPageButton" mnemonicParsing="false" onAction="#handleNextPage" text="›" styleClass="pagination-button" />
+                                <Button fx:id="lastPageButton" mnemonicParsing="false" onAction="#handleLastPage" text="⟫" styleClass="pagination-button" />
+                            </children>
+                        </HBox>
+
+                        <!-- Налаштування перегляду -->
+                        <Separator orientation="VERTICAL" />
+                        <Label text="На сторінці:" styleClass="page-size-label" />
+                        <ComboBox fx:id="pageSizeComboBox" prefWidth="80.0" />
+                    </children>
                 </HBox>
             </children>
         </VBox>
     </center>
+
+    <bottom>
+        <!-- Статус бар -->
+        <HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="status-bar">
+            <padding>
+                <Insets top="5.0" right="10.0" bottom="5.0" left="10.0" />
+            </padding>
+            <children>
+                <Label fx:id="statusLabel" text="Готово" styleClass="status-text" />
+                <Separator orientation="VERTICAL" />
+                <Label fx:id="lastUpdateLabel" text="Останнє оновлення: ніколи" styleClass="status-text" />
+                <Label text=" | " styleClass="status-separator" />
+                <Label fx:id="mediatorStatusLabel" text="Медіатор: активний" styleClass="status-text" />
+
+                <!-- Індикатор завантаження -->
+                <HBox fx:id="loadingIndicator" spacing="5.0" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <children>
+                        <Label text="⏳" styleClass="loading-icon" />
+                        <Label fx:id="loadingLabel" text="Завантаження..." styleClass="loading-text" />
+                    </children>
+                </HBox>
+            </children>
+        </HBox>
+    </bottom>
 </BorderPane>
