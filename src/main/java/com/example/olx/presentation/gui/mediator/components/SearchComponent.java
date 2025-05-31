@@ -33,7 +33,7 @@ public class SearchComponent extends UIComponent {
         mediator.notify(this, "priceRangeChanged", new double[]{minPrice != null ? minPrice : 0, maxPrice != null ? maxPrice : Double.MAX_VALUE});
     }
 
-    public void performSearch() {
+    public void performSearch(String keyword, String categoryId) {
         SearchCriteria criteria = new SearchCriteria(searchText, minPrice, maxPrice, selectedCategory);
         mediator.notify(this, "searchRequested", criteria);
     }

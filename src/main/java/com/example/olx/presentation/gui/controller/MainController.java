@@ -1,6 +1,8 @@
 package com.example.olx.presentation.gui.controller;
 
-
+import com.example.olx.presentation.gui.mediator.components.SearchComponent;
+import com.example.olx.presentation.gui.mediator.components.AdListComponent;
+import com.example.olx.presentation.gui.mediator.components.FilterComponent;
 import com.example.olx.application.command.AdCommandManager;
 import com.example.olx.application.command.CommandFactory;
 import com.example.olx.application.command.CommandInvoker;
@@ -911,7 +913,7 @@ public class MainController {
 
         List<Ad> ads;
         if (categoryId != null && !categoryId.isEmpty()) {
-            ads = MainGuiApp.adService.getAdsByCategory(categoryId);
+            ads = MainGuiApp.adService.getAdsByCategoryId(categoryId);
         } else {
             ads = MainGuiApp.adService.getAllAds();
         }
@@ -928,28 +930,7 @@ public class MainController {
         updateStatus("Завантажено " + decoratedAds.size() + " оголошень");
     }
 
-    private AdComponent createDecoratedAd(Ad ad) {
-        AdComponent adComponent = AdDecoratorFactory.createAdComponent(ad);
 
-        // Додаємо випадкові декорації для демонстрації
-        if (random.nextDouble() < 0.3) { // 30% шанс на преміум
-            adComponent = AdDecoratorFactory.addPremiumDecoration(adComponent);
-        }
-        if (random.nextDouble() < 0.2) { // 20% шанс на терміново
-            adComponent = AdDecoratorFactory.addUrgentDecoration(adComponent);
-        }
-        if (random.nextDouble() < 0.15) { // 15% шанс на знижку
-            adComponent = AdDecoratorFactory.addDiscountDecoration(adComponent, 10 + random.nextInt(40));
-        }
-        if (random.nextDouble() < 0.25) { // 25% шанс на доставку
-            adComponent = AdDecoratorFactory.addDeliveryDecoration(adComponent);
-        }
-        if (random.nextDouble() < 0.20) { // 20% шанс на гарантію
-            adComponent = AdDecoratorFactory.addWarrantyDecoration(adComponent, 6 + random.nextInt(24));
-        }
-
-        return adComponent;
-    }
 
     private void refreshCurrentView() {
         loadAds(currentSelectedCategoryId);
@@ -957,7 +938,7 @@ public class MainController {
 
     private void handleOpenAdDetails(Ad ad) {
         try {
-            MainGuiApp.loadAdDetailsScene(ad);
+            MainGuiApp.loadAdDetailScene(ad);
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("Помилка", "Не вдалося відкрити деталі оголошення", e.getMessage());
@@ -1025,7 +1006,7 @@ public class MainController {
     // ========== COMMAND PATTERN HANDLERS ==========
 
     @FXML
-    private void handleUndo() {
+    private void handleUndo() throws UserNotFoundException {
         if (commandManager.canUndo()) {
             commandManager.undo();
             refreshCurrentView();
@@ -1035,7 +1016,7 @@ public class MainController {
     }
 
     @FXML
-    private void handleRedo() {
+    private void handleRedo() throws UserNotFoundException {
         if (commandManager.canRedo()) {
             commandManager.redo();
             refreshCurrentView();
