@@ -12,55 +12,130 @@
             </VBox.margin>
         </Label>
 
-        <GridPane hgap="10.0" vgap="15.0">
-            <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="150.0" minWidth="100.0" prefWidth="120.0" />
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="400.0" minWidth="200.0" prefWidth="300.0" />
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="80.0" prefHeight="100.0" vgrow="SOMETIMES" />
-            </rowConstraints>
+        <ScrollPane fitToWidth="true" prefHeight="600.0">
+            <content>
+                <VBox spacing="15.0">
+                    <padding>
+                        <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+                    </padding>
 
-            <Label text="Назва:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-            <TextField fx:id="titleField" promptText="Введіть назву оголошення" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                    <!-- Основні поля -->
+                    <GridPane hgap="10.0" vgap="15.0">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="150.0" minWidth="100.0" prefWidth="120.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="400.0" minWidth="200.0" prefWidth="300.0" />
+                        </columnConstraints>
+                        <rowConstraints>
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="80.0" prefHeight="100.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="80.0" prefHeight="100.0" vgrow="SOMETIMES" />
+                        </rowConstraints>
 
-            <Label text="Ціна:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <TextField fx:id="priceField" promptText="Введіть ціну" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <Label text="Назва:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                        <TextField fx:id="titleField" promptText="Введіть назву оголошення" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-            <Label text="Категорія:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-            <ComboBox fx:id="categoryComboBox" promptText="Виберіть категорію" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                        <Label text="Ціна:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                        <TextField fx:id="priceField" promptText="Введіть ціну" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-            <Label text="Опис:" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.valignment="TOP">
-                <GridPane.margin>
-                    <Insets top="5.0" />
-                </GridPane.margin>
-            </Label>
-            <TextArea fx:id="descriptionArea" prefHeight="100.0" promptText="Введіть опис оголошення" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <Label text="Категорія:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                        <ComboBox fx:id="categoryComboBox" promptText="Виберіть категорію" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-            <Label text="Фотографії:" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.valignment="TOP">
-                <GridPane.margin>
-                    <Insets top="5.0" />
-                </GridPane.margin>
-            </Label>
-            <VBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
-                <Button fx:id="addPhotoButton" onAction="#handleAddPhoto" text="Додати фото" />
-                <ScrollPane fitToWidth="true" prefHeight="100.0">
-                    <HBox fx:id="photoPreviewBox" spacing="10.0">
-                        <padding>
-                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                        </padding>
+                        <Label text="Опис:" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.valignment="TOP">
+                            <GridPane.margin>
+                                <Insets top="5.0" />
+                            </GridPane.margin>
+                        </Label>
+                        <TextArea fx:id="descriptionArea" prefHeight="100.0" promptText="Введіть опис оголошення" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                        <Label text="Фотографії:" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.valignment="TOP">
+                            <GridPane.margin>
+                                <Insets top="5.0" />
+                            </GridPane.margin>
+                        </Label>
+                        <VBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                            <Button fx:id="addPhotoButton" onAction="#handleAddPhoto" text="Додати фото" />
+                            <ScrollPane fitToWidth="true" prefHeight="100.0">
+                                <HBox fx:id="photoPreviewBox" spacing="10.0">
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                    </padding>
+                                </HBox>
+                            </ScrollPane>
+                        </VBox>
+                    </GridPane>
+
+                    <!-- Блок декораторів -->
+                    <Separator />
+                    <Label text="Додаткові опції (декоратори)" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
+
+                    <!-- Преміум -->
+                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <CheckBox fx:id="premiumCheckBox" text="⭐ Преміум оголошення (+5% до ціни)" />
+                        <Label text="Підвищена видимість у пошуку" style="-fx-text-fill: gray;" />
                     </HBox>
-                </ScrollPane>
-            </VBox>
 
-            <GridPane.margin>
-                <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
-            </GridPane.margin>
-        </GridPane>
+                    <!-- Термінове -->
+                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <CheckBox fx:id="urgentCheckBox" text="🚨 Термінове оголошення" />
+                        <Label text="Позначає потребу у швидкому продажу" style="-fx-text-fill: gray;" />
+                    </HBox>
+
+                    <!-- Знижка -->
+                    <VBox spacing="5.0">
+                        <CheckBox fx:id="discountCheckBox" text="💰 Додати знижку" onAction="#handleDiscountToggle" />
+                        <HBox fx:id="discountOptionsBox" spacing="10.0" disable="true">
+                            <Label text="Відсоток знижки (%):" />
+                            <TextField fx:id="discountPercentageField" promptText="0-100" prefWidth="80.0" />
+                            <Label text="Причина знижки:" />
+                            <TextField fx:id="discountReasonField" promptText="Спеціальна пропозиція" prefWidth="200.0" />
+                        </HBox>
+                    </VBox>
+
+                    <!-- Гарантія -->
+                    <VBox spacing="5.0">
+                        <CheckBox fx:id="warrantyCheckBox" text="🛡️ Додати гарантію" onAction="#handleWarrantyToggle" />
+                        <HBox fx:id="warrantyOptionsBox" spacing="10.0" disable="true">
+                            <Label text="Місяців гарантії:" />
+                            <TextField fx:id="warrantyMonthsField" promptText="12" prefWidth="80.0" />
+                            <Label text="Тип гарантії:" />
+                            <TextField fx:id="warrantyTypeField" promptText="Стандартна гарантія" prefWidth="200.0" />
+                        </HBox>
+                    </VBox>
+
+                    <!-- Доставка -->
+                    <VBox spacing="5.0">
+                        <CheckBox fx:id="deliveryCheckBox" text="🚚 Додати доставку" onAction="#handleDeliveryToggle" />
+                        <VBox fx:id="deliveryOptionsBox" spacing="5.0" disable="true">
+                            <HBox spacing="10.0">
+                                <CheckBox fx:id="freeDeliveryCheckBox" text="Безкоштовна доставка" onAction="#handleFreeDeliveryToggle" />
+                            </HBox>
+                            <HBox fx:id="deliveryCostBox" spacing="10.0">
+                                <Label text="Вартість доставки:" />
+                                <TextField fx:id="deliveryCostField" promptText="50.00" prefWidth="100.0" />
+                                <Label text="грн" />
+                            </HBox>
+                            <HBox spacing="10.0">
+                                <Label text="Інформація про доставку:" />
+                                <TextField fx:id="deliveryInfoField" promptText="Стандартна доставка" prefWidth="250.0" />
+                            </HBox>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Попередній перегляд -->
+                    <Separator />
+                    <VBox spacing="10.0">
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <Label text="Попередній перегляд:" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
+                            <Button fx:id="previewButton" text="Оновити перегляд" onAction="#handleUpdatePreview" />
+                        </HBox>
+                        <TextArea fx:id="previewArea" prefHeight="150.0" editable="false" wrapText="true"
+                                  style="-fx-background-color: #f0f0f0;" />
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
 
         <Label fx:id="errorLabel" textFill="RED" wrapText="true">
             <VBox.margin>
