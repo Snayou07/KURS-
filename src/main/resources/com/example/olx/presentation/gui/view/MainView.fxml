@@ -7,12 +7,13 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TreeView?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="mainBorderPane" prefHeight="700.0" prefWidth="1000.0" stylesheets="@../style/main.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.olx.presentation.gui.controller.MainController">
+<BorderPane fx:id="mainBorderPane" prefHeight="800.0" prefWidth="1200.0" stylesheets="@../style/main.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.olx.presentation.gui.controller.MainController">
     <top>
         <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="top-bar" BorderPane.alignment="CENTER">
             <padding>
@@ -30,13 +31,29 @@
         </HBox>
     </top>
     <left>
-        <VBox prefWidth="250.0" spacing="10.0" styleClass="left-sidebar" BorderPane.alignment="CENTER">
+        <VBox prefWidth="280.0" spacing="10.0" styleClass="left-sidebar" BorderPane.alignment="CENTER">
             <padding>
                 <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
             </padding>
             <children>
                 <Label styleClass="sidebar-title" text="Категорії" />
-                <TreeView fx:id="categoryTreeView" VBox.vgrow="ALWAYS" />
+                <TreeView fx:id="categoryTreeView" prefHeight="300.0" VBox.vgrow="SOMETIMES" />
+
+                <Separator />
+
+                <!-- Панель команд -->
+                <Label styleClass="sidebar-title" text="Команди" />
+                <HBox spacing="5.0" alignment="CENTER_LEFT">
+                    <children>
+                        <Button fx:id="undoButton" mnemonicParsing="false" onAction="#handleUndo" text="↶ Скасувати" styleClass="command-button" prefWidth="80.0"/>
+                        <Button fx:id="redoButton" mnemonicParsing="false" onAction="#handleRedo" text="↷ Повторити" styleClass="command-button" prefWidth="80.0"/>
+                    </children>
+                </HBox>
+                <Button fx:id="clearHistoryButton" mnemonicParsing="false" onAction="#handleClearHistory" text="🗑 Очистити історію" styleClass="command-button-danger" prefWidth="170.0"/>
+
+                <!-- Історія команд -->
+                <Label styleClass="sidebar-subtitle" text="Історія команд:" />
+                <ListView fx:id="commandHistoryListView" prefHeight="150.0" VBox.vgrow="SOMETIMES" />
             </children>
         </VBox>
     </left>
@@ -49,6 +66,7 @@
                 <Label fx:id="currentCategoryLabel" styleClass="content-header" text="Всі оголошення" />
                 <ListView fx:id="adListView" VBox.vgrow="ALWAYS" />
                 <HBox fx:id="paginationControls" alignment="CENTER" spacing="5.0" visible="false">
+                    <!-- Pagination controls will be added dynamically if needed -->
                 </HBox>
             </children>
         </VBox>

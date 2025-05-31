@@ -24,6 +24,22 @@
     -fx-padding: 0 15px 0 0;
     -fx-font-weight: 500;
 }
+.command-button {
+    -fx-font-size: 11px;
+    -fx-padding: 3 8 3 8;
+}
+
+.command-button-danger {
+    -fx-background-color: #dc3545;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-padding: 3 8 3 8;
+}
+
+.sidebar-subtitle {
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
 
 .left-sidebar {
     -fx-background-color: #ffffff;
