@@ -3,7 +3,8 @@ package com.example.olx.presentation.gui.controller;
 import com.example.olx.application.command.AdCommandManager;
 import com.example.olx.application.command.CommandFactory;
 import com.example.olx.application.command.CommandInvoker;
-import com.example.olx.application.dto.AdCreationRequest;
+import com.example.olx.domain.decorator.AdComponent;
+import com.example.olx.domain.decorator.AdDecoratorFactory;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.Category;
@@ -25,6 +26,7 @@ import javafx.util.Callback;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 public class MainController {
 
@@ -36,7 +38,7 @@ public class MainController {
     @FXML private Button logoutButton;
     @FXML private TreeView<CategoryComponent> categoryTreeView;
     @FXML private Label currentCategoryLabel;
-    @FXML private ListView<Ad> adListView;
+    @FXML private ListView<AdComponent> adListView; // Змінено на AdComponent
     @FXML private HBox paginationControls;
 
     // Command pattern components
@@ -46,9 +48,10 @@ public class MainController {
     @FXML private ListView<String> commandHistoryListView;
 
     private AdCommandManager commandManager;
-    private ObservableList<Ad> adsObservableList = FXCollections.observableArrayList();
+    private ObservableList<AdComponent> adsObservableList = FXCollections.observableArrayList(); // Змінено на AdComponent
     private ObservableList<String> commandHistoryObservableList = FXCollections.observableArrayList();
     private String currentSelectedCategoryId = null;
+    private Random random = new Random(); // Для демонстраційних цілей
 
     @FXML
     public void initialize() {
@@ -155,13 +158,54 @@ public class MainController {
         return item;
     }
 
+    /**
+     * Створює декорований компонент оголошення на основі різних умов
+     */
+    private AdComponent createDecoratedAd(Ad ad) {
+        // Симулюємо різні умови для демонстрації декораторів
+        boolean isPremium = ad.getPrice() > 10000; // Дорогі товари - преміум
+        boolean isUrgent = random.nextBoolean() && random.nextDouble() < 0.3; // 30% шанс бути терміновим
+
+        Double discountPercentage = null;
+        String discountReason = null;
+        if (random.nextDouble() < 0.2) { // 20% шанс на знижку
+            discountPercentage = 5.0 + random.nextDouble() * 20; // 5-25%
+            discountReason = "Спеціальна пропозиція";
+        }
+
+        Integer warrantyMonths = null;
+        String warrantyType = null;
+        if (ad.getCategoryId().contains("електроніка") || ad.getCategoryId().contains("авто")) {
+            warrantyMonths = 12 + random.nextInt(24); // 12-36 місяців
+            warrantyType = "Офіційна гарантія виробника";
+        }
+
+        Boolean freeDelivery = null;
+        Double deliveryCost = null;
+        String deliveryInfo = null;
+        if (random.nextDouble() < 0.4) { // 40% шанс на доставку
+            freeDelivery = ad.getPrice() > 5000; // Безкоштовна при ціні > 5000
+            if (!freeDelivery) {
+                deliveryCost = 50.0 + random.nextDouble() * 100; // 50-150 грн
+            }
+            deliveryInfo = freeDelivery ? "Безкоштовна доставка по всій Україні" : "Швидка доставка Новою Поштою";
+        }
+
+        return AdDecoratorFactory.createFullyDecoratedAd(
+                ad, isPremium, isUrgent,
+                discountPercentage, discountReason,
+                warrantyMonths, warrantyType,
+                freeDelivery, deliveryCost, deliveryInfo
+        );
+    }
+
     private void setupAdListView() {
         adListView.setItems(adsObservableList);
 
-        adListView.setCellFactory(new Callback<ListView<Ad>, ListCell<Ad>>() {
+        adListView.setCellFactory(new Callback<ListView<AdComponent>, ListCell<AdComponent>>() {
             @Override
-            public ListCell<Ad> call(ListView<Ad> listView) {
-                return new ListCell<Ad>() {
+            public ListCell<AdComponent> call(ListView<AdComponent> listView) {
+                return new ListCell<AdComponent>() {
                     private final VBox contentBox = new VBox(5);
                     private final Label titleLabel = new Label();
                     private final Label priceLabel = new Label();
@@ -169,6 +213,7 @@ public class MainController {
                     private final Label sellerLabel = new Label();
                     private final Label statusLabel = new Label();
                     private final Text descriptionText = new Text();
+                    private final Text decoratorInfoText = new Text(); // Нове поле для декораторів
                     private final HBox actionButtons = new HBox(5);
 
                     {
@@ -178,23 +223,33 @@ public class MainController {
                         sellerLabel.getStyleClass().add("ad-category-in-list");
                         statusLabel.getStyleClass().add("ad-status-in-list");
                         descriptionText.setWrappingWidth(300);
+                        decoratorInfoText.setWrappingWidth(300);
+                        decoratorInfoText.getStyleClass().add("ad-decorator-info");
 
                         contentBox.getChildren().addAll(titleLabel, priceLabel, categoryLabel,
-                                sellerLabel, statusLabel, descriptionText, actionButtons);
+                                sellerLabel, statusLabel, descriptionText, decoratorInfoText, actionButtons);
                     }
 
                     @Override
-                    protected void updateItem(Ad ad, boolean empty) {
-                        super.updateItem(ad, empty);
-                        if (empty || ad == null) {
+                    protected void updateItem(AdComponent adComponent, boolean empty) {
+                        super.updateItem(adComponent, empty);
+                        if (empty || adComponent == null) {
                             setText(null);
                             setGraphic(null);
                         } else {
-                            titleLabel.setText(ad.getTitle());
-                            priceLabel.setText(String.format("%.2f грн", ad.getPrice()));
+                            Ad ad = adComponent.getAd();
+
+                            // Використовуємо декорований заголовок і ціну
+                            titleLabel.setText(adComponent.getFormattedTitle());
+                            priceLabel.setText(String.format("%.2f грн", adComponent.getCalculatedPrice()));
+
                             statusLabel.setText("Статус: " + ad.getStatus());
                             descriptionText.setText(ad.getDescription() != null && ad.getDescription().length() > 100 ?
                                     ad.getDescription().substring(0, 100) + "..." : ad.getDescription());
+
+                            // Показуємо декоровану інформацію (без повного опису, тільки ключові моменти)
+                            String decoratorInfo = extractKeyDecoratorInfo(adComponent);
+                            decoratorInfoText.setText(decoratorInfo);
 
                             // Отримати ім'я категорії
                             Optional<CategoryComponent> catOpt = MainGuiApp.categoryService.findCategoryById(ad.getCategoryId());
@@ -217,13 +272,14 @@ public class MainController {
             }
         });
 
-        // Обробник подвійного кліку
+        // Обробник подвійного кліку - передаємо декоровані дані
         adListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                Ad selectedAd = adListView.getSelectionModel().getSelectedItem();
-                if (selectedAd != null) {
+                AdComponent selectedAdComponent = adListView.getSelectionModel().getSelectedItem();
+                if (selectedAdComponent != null) {
                     try {
-                        MainGuiApp.loadAdDetailScene(selectedAd);
+                        // Використовуємо метод з автоматичними декораторами
+                        MainGuiApp.loadAdDetailSceneWithAutoDecorators(selectedAdComponent.getAd());
                     } catch (IOException e) {
                         e.printStackTrace();
                         showErrorAlert("Помилка завантаження", "Не вдалося відкрити деталі оголошення.", e.getMessage());
@@ -231,6 +287,40 @@ public class MainController {
                 }
             }
         });
+    }
+
+    /**
+     * Витягує ключову інформацію з декораторів для відображення в списку
+     */
+    private String extractKeyDecoratorInfo(AdComponent adComponent) {
+        String fullInfo = adComponent.getDisplayInfo();
+        StringBuilder keyInfo = new StringBuilder();
+
+        // Шукаємо ключові маркери декораторів
+        if (fullInfo.contains("⭐ ПРЕМІУМ")) {
+            keyInfo.append("⭐ Преміум ");
+        }
+        if (fullInfo.contains("🚨 ТЕРМІНОВО")) {
+            keyInfo.append("🚨 Терміново ");
+        }
+        if (fullInfo.contains("💰 ЗНИЖКА")) {
+            // Витягуємо відсоток знижки
+            int start = fullInfo.indexOf("💰 ЗНИЖКА ") + 10;
+            int end = fullInfo.indexOf("%", start);
+            if (end > start) {
+                keyInfo.append("💰 -").append(fullInfo.substring(start, end)).append("% ");
+            }
+        }
+        if (fullInfo.contains("🚚 БЕЗКОШТОВНА ДОСТАВКА")) {
+            keyInfo.append("🚚 Безкоштовна доставка ");
+        } else if (fullInfo.contains("🚚 З доставкою")) {
+            keyInfo.append("🚚 Доставка ");
+        }
+        if (fullInfo.contains("🛡️ ГАРАНТІЯ")) {
+            keyInfo.append("🛡️ Гарантія ");
+        }
+
+        return keyInfo.toString().trim();
     }
 
     private void setupActionButtons(Ad ad, HBox actionButtons) {
@@ -384,7 +474,13 @@ public class MainController {
         } else {
             ads = MainGuiApp.adService.getAllAds();
         }
-        adsObservableList.setAll(ads);
+
+        // Конвертуємо Ad в декоровані AdComponent
+        List<AdComponent> decoratedAds = ads.stream()
+                .map(this::createDecoratedAd)
+                .toList();
+
+        adsObservableList.setAll(decoratedAds);
         if (ads.isEmpty()){
             System.out.println("No ads found for categoryId: " + categoryId);
         }
@@ -394,7 +490,13 @@ public class MainController {
     private void handleSearchAds() {
         String keyword = searchField.getText();
         List<Ad> searchResult = MainGuiApp.adService.searchAds(keyword, null, null, currentSelectedCategoryId);
-        adsObservableList.setAll(searchResult);
+
+        // Конвертуємо результати пошуку в декоровані AdComponent
+        List<AdComponent> decoratedSearchResults = searchResult.stream()
+                .map(this::createDecoratedAd)
+                .toList();
+
+        adsObservableList.setAll(decoratedSearchResults);
 
         if(keyword.isEmpty() && currentSelectedCategoryId == null) {
             currentCategoryLabel.setText("Всі оголошення");

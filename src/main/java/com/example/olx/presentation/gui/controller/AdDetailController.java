@@ -53,6 +53,7 @@ public class AdDetailController {
     private List<String> imagePaths;
 
     // Основний контейнер з FXML
+    @FXML
     private VBox mainContainer;
 
     private Ad currentAd;
