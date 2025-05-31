@@ -42,7 +42,7 @@ public class AdDetailController {
     @FXML private Button deleteButton;
 
     // Додаткові елементи для декорованої інформації
-    @FXML private VBox decoratedInfoContainer;
+    private VBox decoratedInfoContainer;
     private Text decoratedInfoText;
 
     // Галерея зображень
@@ -52,31 +52,60 @@ public class AdDetailController {
     private int currentImageIndex = 0;
     private List<String> imagePaths;
 
+    // Основний контейнер з FXML
+    private VBox mainContainer;
+
     private Ad currentAd;
     private AdComponent decoratedAd;
 
     public void initialize() {
-        editButton.setVisible(true);
-        deleteButton.setVisible(true);
+        editButton.setVisible(false);
+        deleteButton.setVisible(false);
         setupImageGallery();
         setupDecoratedInfoContainer();
+
+        // Знаходимо основний контейнер
+        findMainContainer();
+    }
+
+    private void findMainContainer() {
+        // Знаходимо основний VBox контейнер через батьківську структуру
+        if (titleLabel.getParent() instanceof VBox) {
+            mainContainer = (VBox) titleLabel.getParent();
+        }
     }
 
     private void setupDecoratedInfoContainer() {
         // Створюємо контейнер для декорованої інформації
         decoratedInfoContainer = new VBox(10);
         decoratedInfoContainer.setAlignment(Pos.CENTER_LEFT);
-        decoratedInfoContainer.setPadding(new Insets(15, 0, 15, 0));
-        decoratedInfoContainer.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-radius: 8; -fx-background-radius: 8;");
+        decoratedInfoContainer.setPadding(new Insets(15));
+        decoratedInfoContainer.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #e8f4fd, #f8fbff); " +
+                        "-fx-border-color: #4a90e2; " +
+                        "-fx-border-width: 2; " +
+                        "-fx-border-radius: 10; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(74, 144, 226, 0.3), 8, 0.6, 0, 2);"
+        );
 
         // Створюємо текстовий елемент для декорованої інформації
         decoratedInfoText = new Text();
-        decoratedInfoText.setStyle("-fx-font-size: 14px; -fx-fill: #495057;");
+        decoratedInfoText.setStyle(
+                "-fx-font-size: 14px; " +
+                        "-fx-fill: #2c3e50; " +
+                        "-fx-font-family: 'System';"
+        );
         decoratedInfoText.setWrappingWidth(700.0);
 
         // Заголовок для декорованої інформації
-        Label decoratedInfoLabel = new Label("📋 Детальна інформація:");
-        decoratedInfoLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #343a40;");
+        Label decoratedInfoLabel = new Label("✨ Спеціальні умови та особливості:");
+        decoratedInfoLabel.setStyle(
+                "-fx-font-size: 16px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-padding: 0 0 10 0;"
+        );
 
         decoratedInfoContainer.getChildren().addAll(decoratedInfoLabel, decoratedInfoText);
     }
@@ -141,23 +170,23 @@ public class AdDetailController {
     public void initDataWithAutoDecorators(Ad ad) {
         // Автоматично визначаємо декоратори на основі властивостей оголошення
         boolean isPremium = ad.getTitle().toLowerCase().contains("преміум") ||
-                ad.getDescription() != null && ad.getDescription().toLowerCase().contains("преміум");
+                (ad.getDescription() != null && ad.getDescription().toLowerCase().contains("преміум"));
 
         boolean isUrgent = ad.getTitle().toLowerCase().contains("терміново") ||
-                ad.getDescription() != null && ad.getDescription().toLowerCase().contains("терміново");
+                (ad.getDescription() != null && ad.getDescription().toLowerCase().contains("терміново"));
 
         Double discount = null;
         String discountReason = null;
         if (ad.getDescription() != null && ad.getDescription().toLowerCase().contains("знижка")) {
-            discount = 10.0; // 10% знижка за замовчуванням
-            discountReason = "Спеціальна пропозиція";
+            discount = 15.0; // 15% знижка за замовчуванням
+            discountReason = "Сезонна розпродаж";
         }
 
         Integer warranty = null;
         String warrantyType = null;
         if (ad.getDescription() != null && ad.getDescription().toLowerCase().contains("гарантія")) {
             warranty = 12; // 12 місяців за замовчуванням
-            warrantyType = "Офіційна гарантія";
+            warrantyType = "Офіційна гарантія виробника";
         }
 
         Boolean freeDelivery = null;
@@ -168,16 +197,24 @@ public class AdDetailController {
                         ad.getDescription().toLowerCase().contains("безкоштовна доставка"))) {
             if (ad.getDescription().toLowerCase().contains("безкоштовна")) {
                 freeDelivery = true;
-                deliveryInfo = "Безкоштовна доставка по всій Україні";
+                deliveryInfo = "Безкоштовна доставка по всій Україні протягом 2-3 робочих днів";
             } else {
                 freeDelivery = false;
                 deliveryCost = 50.0;
-                deliveryInfo = "Доставка Новою Поштою";
+                deliveryInfo = "Доставка Новою Поштою або кур'єрською службою";
             }
         }
 
         initData(ad, isPremium, isUrgent, discount, discountReason,
                 warranty, warrantyType, freeDelivery, deliveryCost, deliveryInfo);
+    }
+
+    /**
+     * Метод для тестування декораторів з випадковими значеннями
+     */
+    public void initDataWithTestDecorators(Ad ad) {
+        initData(ad, true, true, 20.0, "Розпродаж залишків",
+                24, "Розширена гарантія", true, 0.0, "Експрес доставка безкоштовно");
     }
 
     private void populateAdDetails() {
@@ -186,7 +223,14 @@ public class AdDetailController {
 
         // Використовуємо розраховану ціну з декораторів
         double calculatedPrice = decoratedAd.getCalculatedPrice();
-        priceLabel.setText(String.format("%.2f грн", calculatedPrice));
+
+        // Якщо ціна змінилася через декоратори, показуємо це
+        if (Math.abs(calculatedPrice - currentAd.getPrice()) > 0.01) {
+            priceLabel.setText(String.format("%.2f грн", calculatedPrice));
+            priceLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold; -fx-font-size: 18px;");
+        } else {
+            priceLabel.setText(String.format("%.2f грн", calculatedPrice));
+        }
 
         // Основна інформація залишається з оригінального оголошення
         descriptionText.setText(currentAd.getDescription() != null ? currentAd.getDescription() : "Опис відсутній.");
@@ -204,36 +248,125 @@ public class AdDetailController {
     }
 
     private void displayDecoratedInfo() {
-        // Відображаємо повну декоровану інформацію
+        // Отримуємо повну декоровану інформацію
         String decoratedInfo = decoratedAd.getDisplayInfo();
-        decoratedInfoText.setText(decoratedInfo);
+
+        // Обробляємо текст для кращого відображення
+        String processedInfo = processDecoratedText(decoratedInfo);
+        decoratedInfoText.setText(processedInfo);
 
         // Додаємо контейнер до основного макету
         addDecoratedInfoToMainContainer();
     }
 
-    private void addDecoratedInfoToMainContainer() {
-        // Знаходимо батьківський VBox і додаємо декоровану інформацію після опису
-        if (descriptionText.getParent() instanceof VBox) {
-            VBox parentContainer = (VBox) descriptionText.getParent().getParent();
+    private String processDecoratedText(String originalText) {
+        // Замінюємо деякі символи для кращого відображення
+        return originalText
+                .replace("💰", "💰 ")
+                .replace("⭐", "⭐ ")
+                .replace("🚨", "🚨 ")
+                .replace("🛡️", "🛡️ ")
+                .replace("🚚", "🚚 ")
+                .replace("✨", "✨ ")
+                .replace("🚀", "🚀 ")
+                .replace("⚡", "⚡ ")
+                .replace("❌", "❌ ")
+                .replace("✅", "✅ ")
+                .replace("💸", "💸 ")
+                .replace("🎯", "🎯 ")
+                .replace("📦", "📦 ")
+                .replace("📋", "📋 ");
+    }
 
-            // Знаходимо індекс блоку з описом
-            int descriptionIndex = -1;
-            for (int i = 0; i < parentContainer.getChildren().size(); i++) {
-                if (parentContainer.getChildren().get(i) instanceof VBox) {
-                    VBox vbox = (VBox) parentContainer.getChildren().get(i);
-                    if (vbox.getChildren().contains(descriptionText.getParent())) {
-                        descriptionIndex = i;
+    private void addDecoratedInfoToMainContainer() {
+        if (mainContainer != null) {
+            // Знаходимо позицію після блоку з описом
+            int insertIndex = -1;
+
+            for (int i = 0; i < mainContainer.getChildren().size(); i++) {
+                if (mainContainer.getChildren().get(i) instanceof VBox) {
+                    VBox vbox = (VBox) mainContainer.getChildren().get(i);
+                    // Перевіряємо, чи містить цей VBox наш descriptionText
+                    if (containsDescriptionText(vbox)) {
+                        insertIndex = i + 1;
                         break;
                     }
                 }
             }
 
-            // Додаємо декоровану інформацію після опису
-            if (descriptionIndex >= 0) {
-                parentContainer.getChildren().add(descriptionIndex + 1, decoratedInfoContainer);
+            // Якщо не знайшли через описання, шукаємо через мета-інформацію
+            if (insertIndex == -1) {
+                for (int i = 0; i < mainContainer.getChildren().size(); i++) {
+                    if (mainContainer.getChildren().get(i) instanceof VBox) {
+                        VBox vbox = (VBox) mainContainer.getChildren().get(i);
+                        if (vbox.getStyleClass().contains("detail-section-meta")) {
+                            insertIndex = i + 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Додаємо декоровану інформацію
+            if (insertIndex > 0 && insertIndex <= mainContainer.getChildren().size()) {
+                // Перевіряємо, чи вже не додали контейнер
+                if (!mainContainer.getChildren().contains(decoratedInfoContainer)) {
+                    mainContainer.getChildren().add(insertIndex, decoratedInfoContainer);
+                }
+            } else {
+                // Якщо не знайшли підходящого місця, додаємо перед кнопками
+                int buttonBoxIndex = mainContainer.getChildren().indexOf(actionButtonsBox);
+                if (buttonBoxIndex > 0) {
+                    mainContainer.getChildren().add(buttonBoxIndex, decoratedInfoContainer);
+                } else {
+                    // В крайньому випадку додаємо в кінець перед останнім елементом
+                    mainContainer.getChildren().add(mainContainer.getChildren().size() - 1, decoratedInfoContainer);
+                }
             }
         }
+    }
+
+    private boolean containsDescriptionText(VBox container) {
+        for (var child : container.getChildren()) {
+            if (child == descriptionText) {
+                return true;
+            }
+            if (child instanceof VBox || child instanceof HBox) {
+                if (containsTextInContainer(child, descriptionText)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean containsTextInContainer(Object container, Text target) {
+        if (container instanceof VBox) {
+            VBox vbox = (VBox) container;
+            for (var child : vbox.getChildren()) {
+                if (child == target) {
+                    return true;
+                }
+                if (child instanceof VBox || child instanceof HBox) {
+                    if (containsTextInContainer(child, target)) {
+                        return true;
+                    }
+                }
+            }
+        } else if (container instanceof HBox) {
+            HBox hbox = (HBox) container;
+            for (var child : hbox.getChildren()) {
+                if (child == target) {
+                    return true;
+                }
+                if (child instanceof VBox || child instanceof HBox) {
+                    if (containsTextInContainer(child, target)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     // Методи для роботи з зображеннями залишаються без змін
@@ -379,9 +512,11 @@ public class AdDetailController {
 
             if (isOwner) {
                 editButton.setVisible(true);
+                editButton.setManaged(true);
             }
             if (isOwner || isAdmin) {
                 deleteButton.setVisible(true);
+                deleteButton.setManaged(true);
             }
         }
     }
@@ -462,5 +597,14 @@ public class AdDetailController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    // Додатковий метод для оновлення декорованої інформації
+    public void refreshDecoratedInfo() {
+        if (decoratedAd != null && decoratedInfoText != null) {
+            String decoratedInfo = decoratedAd.getDisplayInfo();
+            String processedInfo = processDecoratedText(decoratedInfo);
+            decoratedInfoText.setText(processedInfo);
+        }
     }
 }
