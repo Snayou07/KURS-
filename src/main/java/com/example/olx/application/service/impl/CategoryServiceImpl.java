@@ -19,9 +19,20 @@ public class CategoryServiceImpl implements CategoryServicePort {
 
     @Override
     public void initializeCategories(List<CategoryComponent> rootCategories) {
-        if (rootCategories == null || rootCategories.isEmpty()) {
+        if (rootCategories == null) {
+            throw new InvalidInputException("Cannot initialize with null list of categories.");
+        }
+        if (rootCategories.isEmpty()) {
             throw new InvalidInputException("Cannot initialize with empty list of categories.");
         }
+
+        // Перевіряємо, чи всі елементи в списку не null
+        for (CategoryComponent category : rootCategories) {
+            if (category == null) {
+                throw new InvalidInputException("Cannot initialize categories: one or more category elements are null.");
+            }
+        }
+
         categoryRepository.setAllCategories(rootCategories);
     }
 
@@ -29,7 +40,19 @@ public class CategoryServiceImpl implements CategoryServicePort {
     public List<CategoryComponent> getAllRootCategories() {
         List<CategoryComponent> categories = categoryRepository.findAllRoots();
         // Повертаємо порожній список замість null для безпеки
-        return categories != null ? categories : new ArrayList<>();
+        if (categories == null) {
+            return new ArrayList<>();
+        }
+
+        // Фільтруємо null елементи, якщо вони є
+        List<CategoryComponent> filteredCategories = new ArrayList<>();
+        for (CategoryComponent category : categories) {
+            if (category != null) {
+                filteredCategories.add(category);
+            }
+        }
+
+        return filteredCategories;
     }
 
     @Override
@@ -37,6 +60,14 @@ public class CategoryServiceImpl implements CategoryServicePort {
         if (id == null || id.trim().isEmpty()) {
             throw new InvalidInputException("Category ID cannot be empty.");
         }
-        return categoryRepository.findById(id);
+
+        Optional<CategoryComponent> result = categoryRepository.findById(id);
+
+        // Перевіряємо, чи результат не містить null
+        if (result != null && result.isPresent() && result.get() == null) {
+            return Optional.empty();
+        }
+
+        return result != null ? result : Optional.empty();
     }
 }
