@@ -10,6 +10,7 @@ import com.example.olx.domain.exception.InvalidInputException;
 import com.example.olx.domain.exception.UnauthorizedActionException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
+import com.example.olx.domain.model.AdState;
 import com.example.olx.domain.model.User;
 import com.example.olx.domain.model.UserType;
 import com.example.olx.domain.repository.AdRepository;
@@ -26,7 +27,31 @@ public class AdServiceImpl implements AdServicePort {
     private final CategoryRepository categoryRepository;
     private final NotificationServicePort notificationService;
     private final AdSearchStrategy searchStrategy;
+    @Override
+    public void changeAdState(String adId, AdState newState) throws UserNotFoundException {
+        // Validate input parameters
+        if (adId == null || adId.trim().isEmpty()) {
+            throw new InvalidInputException("Ad ID cannot be null or empty");
+        }
+        if (newState == null) {
+            throw new InvalidInputException("AdState cannot be null");
+        }
 
+        // Find the ad by ID
+        Ad ad = adRepository.findById(adId)
+                .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found"));
+
+        // Update the ad state
+        ad.setState(newState);
+
+        // Save the updated ad
+        adRepository.save(ad);
+
+        // Optional: Send notification about state change
+        if (notificationService != null) {
+            notificationService.notifyAdStateChanged(ad, newState);
+        }
+    }
     public AdServiceImpl(AdRepository adRepository, UserRepository userRepository,
                          CategoryRepository categoryRepository,
                          NotificationServicePort notificationService, AdSearchStrategy searchStrategy) {
@@ -79,6 +104,8 @@ public class AdServiceImpl implements AdServicePort {
                     request.getImagePaths()
             );
 
+            System.out.println("Створюється оголошення: " + newAd.getTitle()); // DEBUG
+
             // Зберігаємо оголошення в репозиторії
             Ad savedAd = adRepository.save(newAd);
 
@@ -86,6 +113,15 @@ public class AdServiceImpl implements AdServicePort {
             if (savedAd == null) {
                 throw new RuntimeException("Помилка при збереженні оголошення в репозиторії.");
             }
+
+            System.out.println("Оголошення збережено з ID: " + savedAd.getId()); // DEBUG
+
+            // Перевіряємо, чи з'являється оголошення в загальному списку
+            List<Ad> allAds = adRepository.findAll();
+            System.out.println("Загальна кількість оголошень після створення: " + allAds.size()); // DEBUG
+
+            boolean adFound = allAds.stream().anyMatch(ad -> ad.getId().equals(savedAd.getId()));
+            System.out.println("Нове оголошення знайдено в списку всіх: " + adFound); // DEBUG
 
             // Відправляємо сповіщення користувачам про нове оголошення
             try {
@@ -106,6 +142,13 @@ public class AdServiceImpl implements AdServicePort {
     }
 
     @Override
+    public List<Ad> getAllAds() {
+        List<Ad> ads = adRepository.findAll();
+        System.out.println("getAllAds() повертає " + ads.size() + " оголошень"); // DEBUG
+        return ads;
+    }
+
+    @Override
     public Optional<Ad> getAdById(String adId) {
         if (adId == null || adId.trim().isEmpty()) {
             throw new InvalidInputException("Ідентифікатор оголошення не може бути порожнім.");
@@ -113,10 +156,8 @@ public class AdServiceImpl implements AdServicePort {
         return adRepository.findById(adId.trim());
     }
 
-    @Override
-    public List<Ad> getAllAds() {
-        return adRepository.findAll();
-    }
+
+
 
     @Override
     public List<Ad> getAdsByUserId(String userId) {

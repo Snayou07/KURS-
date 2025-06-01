@@ -21,6 +21,8 @@ public class Ad implements Serializable, Cloneable {
     private AdState currentState;
     private boolean premium;
     private boolean urgent;
+    private AdState state;
+    private Object id;
 
     // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -34,6 +36,7 @@ public class Ad implements Serializable, Cloneable {
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
         this.currentState = new DraftAdState(); // Початковий стан - чернетка
         this.status = currentState.getStatusName();
+
     }
 
     // Конструктор без imagePaths (для зворотної сумісності)
@@ -47,6 +50,7 @@ public class Ad implements Serializable, Cloneable {
         this.imagePaths = new ArrayList<>();
         this.currentState = new DraftAdState();
         this.status = currentState.getStatusName();
+
     }
 
     // Методи для роботи зі станами
@@ -212,5 +216,13 @@ public class Ad implements Serializable, Cloneable {
 
     public boolean hasDiscount() {
         return false;
+    }
+
+    public void setState(AdState state) {
+        this.state = state;
+    }
+
+    public Object getId() {
+        return id;
     }
 }

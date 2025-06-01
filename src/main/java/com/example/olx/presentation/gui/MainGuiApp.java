@@ -14,6 +14,7 @@ import com.example.olx.application.service.port.UserService;
 import com.example.olx.application.service.strategy.AdSearchStrategy;
 import com.example.olx.application.service.strategy.DefaultAdSearchStrategy;
 import com.example.olx.domain.model.Ad;
+import com.example.olx.domain.model.AdState;
 import com.example.olx.domain.model.Category;
 import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.repository.AdRepository;
@@ -222,7 +223,12 @@ public class MainGuiApp extends Application {
         CategoryRepository categoryRepository = new FileCategoryRepositoryImpl(sessionManager);
         AdRepository adRepository = new FileAdRepositoryImpl(sessionManager);
 
-        NotificationServicePort notificationService = new ConsoleNotificationServiceImpl();
+        NotificationServicePort notificationService = new ConsoleNotificationServiceImpl() {
+            @Override
+            public void notifyAdStateChanged(Ad ad, AdState newState) {
+
+            }
+        };
         AdSearchStrategy adSearchStrategy = new DefaultAdSearchStrategy();
 
         // Ініціалізуємо сервіси

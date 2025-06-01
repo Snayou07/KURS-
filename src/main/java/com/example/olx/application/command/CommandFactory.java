@@ -31,12 +31,10 @@ public class CommandFactory {
     }
 
     public Command createArchiveAdCommand(String adId) {
-        // TODO: Реалізувати ArchiveAdCommand
-        return new PublishAdCommand(adService, adId); // Заглушка
+        return new ArchiveAdCommand(adService, adId);
     }
 
     public Command createMarkAsSoldCommand(String adId) {
-        // TODO: Реалізувати MarkAsSoldCommand
-        return new PublishAdCommand(adService, adId); // Заглушка
+        return new MarkAsSoldCommand(adService, adId);
     }
 }

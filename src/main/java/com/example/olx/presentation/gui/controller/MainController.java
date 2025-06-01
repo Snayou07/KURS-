@@ -479,25 +479,40 @@ public class MainController {
      * Застосування сортування
      */
     private void applySorting() {
-        ObservableList<AdComponent> sortedList = FXCollections.observableArrayList(adsObservableList);
+        System.out.println("Stub: applySorting called");
+        if (adsObservableList != null && !adsObservableList.isEmpty()) {
+            adsObservableList.sort((ac1, ac2) -> {
+                // Перевірка на null для AdComponent
+                if (ac1 == null && ac2 == null) return 0;
+                if (ac1 == null) return 1; // null елементи йдуть в кінець
+                if (ac2 == null) return -1; // null елементи йдуть в кінець
 
+                Ad ad1 = ac1.getAd();
+                Ad ad2 = ac2.getAd();
 
-        switch (currentSortBy) {
-            case "title":
-                sortedList.sort((a1, a2) -> isAscendingSort ?
-                        a1.getAd().getTitle().compareToIgnoreCase(a2.getAd().getTitle()) :
-                        a2.getAd().getTitle().compareToIgnoreCase(a1.getAd().getTitle()));
-                break;
-            case "price":
-                sortedList.sort((a1, a2) -> isAscendingSort ?
-                        Double.compare(a1.getCalculatedPrice(), a2.getCalculatedPrice()) :
-                        Double.compare(a2.getCalculatedPrice(), a1.getCalculatedPrice()));
-                break;
-            // Додати інші варіанти сортування за потребою
+                // Перевірка на null для Ad (якщо getAd() може повернути null)
+                if (ad1 == null && ad2 == null) return 0;
+                if (ad1 == null) return 1;
+                if (ad2 == null) return -1;
+
+                // Ваша поточна логіка сортування, наприклад, за назвою:
+                // Припустимо, currentSortBy = "За назвою"
+                // і isAscendingSort = true/false
+                int comparisonResult = 0;
+                // TODO: Реалізуйте логіку сортування на основі currentSortBy
+                // Наприклад:
+                // if ("За назвою".equals(currentSortBy)) {
+                //     comparisonResult = ad1.getTitle().compareToIgnoreCase(ad2.getTitle());
+                // } else if ("За ціною".equals(currentSortBy)) {
+                //     comparisonResult = Double.compare(ad1.getPrice(), ad2.getPrice());
+                // }
+                // ... інші поля для сортування
+
+                return isAscendingSort ? comparisonResult : -comparisonResult;
+            });
         }
-
-
-        adsObservableList.setAll(sortedList);
+        if (adListView != null) adListView.refresh();
+        System.out.println("Applying sort by: " + currentSortBy + (isAscendingSort ? " ASC" : " DESC"));
     }
 
 
@@ -1117,10 +1132,16 @@ public class MainController {
         }
     }
 
+
     @FXML
     private void handleCreateAd() {
         try {
             MainGuiApp.loadCreateAdScene();
+            // Після закриття форми створення - оновлюємо список
+            Platform.runLater(() -> {
+                refreshCurrentView();
+                updateStatus("Список оновлено після створення оголошення");
+            });
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("Помилка", "Не вдалося відкрити форму створення оголошення", e.getMessage());

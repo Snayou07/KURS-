@@ -4,10 +4,13 @@ package com.example.olx.application.service.port;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 import com.example.olx.application.dto.AdCreationRequest; // DTO для створення
+import com.example.olx.domain.model.AdState;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface AdServicePort {
+    void changeAdState(String adId, AdState newState) throws UserNotFoundException;
     Ad createAd(AdCreationRequest request) throws UserNotFoundException;
     Optional<Ad> getAdById(String adId);
     List<Ad> getAllAds();

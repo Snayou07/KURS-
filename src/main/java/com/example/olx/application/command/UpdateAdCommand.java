@@ -1,4 +1,3 @@
-// src/main/java/com/example/olx/application/command/UpdateAdCommand.java
 package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
@@ -52,21 +51,18 @@ public class UpdateAdCommand implements CommandWithResult<Ad> {
     }
 
     private Ad createAdCopy(Ad original) {
-        try {
-            return original.clone();
-        } catch (CloneNotSupportedException e) {
-            // Створюємо новий об'єкт з тими самими даними
-            Ad copy = new Ad(
-                    original.getTitle(),
-                    original.getDescription(),
-                    original.getPrice(),
-                    original.getCategoryId(),
-                    original.getSellerId(),
-                    original.getImagePaths()
-            );
-            copy.setStatus(original.getStatus());
-            return copy;
-        }
+        // Спрощена версія без використання clone()
+        Ad copy = new Ad(
+                original.getTitle(),
+                original.getDescription(),
+                original.getPrice(),
+                original.getCategoryId(),
+                original.getSellerId(),
+                original.getImagePaths()
+        );
+        copy.setStatus(original.getStatus());
+        copy.setCurrentState(original.getCurrentState());
+        return copy;
     }
 
     @Override

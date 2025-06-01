@@ -6,7 +6,7 @@ import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.User;
 import java.util.List;
 
-public class ConsoleNotificationServiceImpl implements NotificationServicePort {
+public abstract class ConsoleNotificationServiceImpl implements NotificationServicePort {
     @Override
     public void notifyUsersAboutNewAd(Ad ad, List<User> interestedUsers) {
         System.out.println("[NOTIFICATION] New Ad Posted: " + ad.getTitle());

@@ -21,15 +21,22 @@ public class PublishAdCommand implements Command {
                 .orElseThrow(() -> new IllegalArgumentException("Оголошення з ID " + adId + " не знайдено"));
 
         this.previousStatus = ad.getCurrentState();
-        adService.publishAd(adId);
+
+        // Використовуємо метод об'єкта Ad для публікації
+        ad.publishAd();
+
         System.out.println("Команда PublishAd виконана для оголошення ID: " + adId);
     }
 
     @Override
     public void undo() throws UserNotFoundException {
         if (previousStatus != null) {
-            // Повертаємо попередній статус
-            adService.changeAdState(adId, previousStatus);
+            Ad ad = adService.getAdById(adId)
+                    .orElseThrow(() -> new IllegalArgumentException("Оголошення з ID " + adId + " не знайдено"));
+
+            // Повертаємо попередній статус через метод об'єкта
+            ad.setCurrentState(previousStatus);
+
             System.out.println("Команда PublishAd скасована для оголошення ID: " + adId);
         }
     }
@@ -38,5 +45,4 @@ public class PublishAdCommand implements Command {
     public String getDescription() {
         return "Публікація оголошення ID: " + adId;
     }
-
 }
