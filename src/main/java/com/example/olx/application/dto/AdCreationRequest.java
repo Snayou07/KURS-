@@ -10,6 +10,7 @@ public class AdCreationRequest {
     private String categoryId;
     private String sellerId;
     private List<String> imagePaths;// ID користувача, який створює оголошення
+    private String userId;
 
 
     public AdCreationRequest(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -31,5 +32,9 @@ public class AdCreationRequest {
     }
     public List<String> getImagePaths() {
         return imagePaths;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 }

@@ -1,6 +1,11 @@
 package com.example.olx.domain.model;
 
-public class DraftAdState implements AdState {
+import java.io.Serializable; // Імпортуємо інтерфейс Serializable
+
+public class DraftAdState implements AdState, Serializable { // Додаємо Serializable
+
+    // Рекомендується додати serialVersionUID для контролю версій при серіалізації
+    private static final long serialVersionUID = 1L;
 
     @Override
     public void publish(Ad ad) {
