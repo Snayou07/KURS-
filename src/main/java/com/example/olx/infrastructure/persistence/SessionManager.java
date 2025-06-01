@@ -88,33 +88,23 @@ public class SessionManager {
         }
     }
 
-    public synchronized void loadState() {
-        File file = new File(filePath);
-        if (!file.exists()) {
-            System.out.println("No saved session file found at " + filePath + ". Starting with a new session state.");
-            this.currentAppState = new AppState();
-            return;
+    public synchronized void loadState() throws DataPersistenceException {
+        if (filePath == null) {
+            throw new DataPersistenceException("File path not set");
         }
 
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            Object loadedObject = ois.readObject();
-            if (loadedObject instanceof AppState) {
-                this.currentAppState = (AppState) loadedObject;
+        File file = new File(filePath);
+        if (file.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                this.currentAppState = (AppState) ois.readObject();
                 System.out.println("Session state loaded from " + filePath);
-            } else {
-                System.err.println("Loaded object is not of type AppState. Starting new session state.");
-                this.currentAppState = new AppState();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new DataPersistenceException("Error loading session state from file: " + filePath, e);
             }
-        } catch (FileNotFoundException e) {
-            System.out.println("Save file not found: " + filePath + ". Starting a new session state.");
-            this.currentAppState = new AppState();
-        } catch (IOException | ClassNotFoundException e) {
-            // Не кидаємо DataPersistenceException тут, щоб програма могла продовжити з чистим станом
-            System.err.println("Error loading session state from file: " + e.getMessage() + ". Starting with a new session state.");
-            e.printStackTrace();
-            this.currentAppState = new AppState();
         }
     }
+
+
 
     public synchronized void clearCurrentState() {
         this.currentAppState.clear();
