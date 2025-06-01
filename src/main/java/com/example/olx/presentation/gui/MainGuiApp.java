@@ -278,37 +278,84 @@ public class MainGuiApp extends Application {
     }
 
     private static void initializeDefaultCategories() {
-        List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
-        if (existingCategories != null && !existingCategories.isEmpty()) {
-            System.out.println("Categories already exist, skipping initialization.");
-            return;
-        }
-
-        System.out.println("Initializing default categories...");
-
-        List<CategoryComponent> rootCategories = new ArrayList<>();
-
-        Category electronics = new Category("root", "Всі категорії", "Електроніка");
-        rootCategories.add(electronics);
-
-        Category clothing = new Category("root", "Всі категорії", "Одяг і взуття");
-        rootCategories.add(clothing);
-
-        Category home = new Category("root", "Всі категорії", "Дім і сад");
-        rootCategories.add(home);
-
-        Category auto = new Category("root", "Всі категорії", "Авто");
-        rootCategories.add(auto);
-
-        Category sport = new Category("root", "Всі категорії", "Спорт і хобі");
-        rootCategories.add(sport);
-
         try {
+            List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
+
+            // Додаємо додаткову перевірку на безпеку
+            if (existingCategories != null && !existingCategories.isEmpty()) {
+                System.out.println("Categories already exist (" + existingCategories.size() + " found), skipping initialization.");
+                return;
+            }
+
+            System.out.println("Initializing default categories...");
+
+            List<CategoryComponent> rootCategories = new ArrayList<>();
+
+            // Створюємо категорії з перевіркою на null
+            try {
+                Category electronics = new Category("root", "Всі категорії", "Електроніка");
+                if (electronics != null) {
+                    rootCategories.add(electronics);
+                }
+
+                Category clothing = new Category("root", "Всі категорії", "Одяг і взуття");
+                if (clothing != null) {
+                    rootCategories.add(clothing);
+                }
+
+                Category home = new Category("root", "Всі категорії", "Дім і сад");
+                if (home != null) {
+                    rootCategories.add(home);
+                }
+
+                Category auto = new Category("root", "Всі категорії", "Авто");
+                if (auto != null) {
+                    rootCategories.add(auto);
+                }
+
+                Category sport = new Category("root", "Всі категорії", "Спорт і хобі");
+                if (sport != null) {
+                    rootCategories.add(sport);
+                }
+            } catch (Exception e) {
+                System.err.println("Error creating category objects: " + e.getMessage());
+                e.printStackTrace();
+                return;
+            }
+
+            // Перевіряємо чи створилися категорії
+            if (rootCategories.isEmpty()) {
+                System.err.println("No categories were created successfully.");
+                return;
+            }
+
+            System.out.println("Created " + rootCategories.size() + " categories, initializing...");
+
             categoryService.initializeCategories(rootCategories);
             System.out.println("Default categories initialized successfully.");
+
+            // Перевіряємо результат
+            List<CategoryComponent> verifyCategories = categoryService.getAllRootCategories();
+            System.out.println("Verification: " + (verifyCategories != null ? verifyCategories.size() : 0) + " categories in repository.");
+
         } catch (Exception e) {
             System.err.println("Error initializing categories: " + e.getMessage());
             e.printStackTrace();
+
+            // Створюємо мінімальний набір категорій як fallback
+            try {
+                System.out.println("Attempting fallback category initialization...");
+                List<CategoryComponent> fallbackCategories = new ArrayList<>();
+                Category basicCategory = new Category("root", "Всі категорії", "Основні товари");
+                if (basicCategory != null) {
+                    fallbackCategories.add(basicCategory);
+                    categoryService.initializeCategories(fallbackCategories);
+                    System.out.println("Fallback category created successfully.");
+                }
+            } catch (Exception fallbackException) {
+                System.err.println("Fallback category creation also failed: " + fallbackException.getMessage());
+                fallbackException.printStackTrace();
+            }
         }
     }
 

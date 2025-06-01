@@ -6,6 +6,7 @@ import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.exception.InvalidInputException;
 import com.example.olx.domain.repository.CategoryRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +27,9 @@ public class CategoryServiceImpl implements CategoryServicePort {
 
     @Override
     public List<CategoryComponent> getAllRootCategories() {
-        return categoryRepository.findAllRoots();
+        List<CategoryComponent> categories = categoryRepository.findAllRoots();
+        // Повертаємо порожній список замість null для безпеки
+        return categories != null ? categories : new ArrayList<>();
     }
 
     @Override
