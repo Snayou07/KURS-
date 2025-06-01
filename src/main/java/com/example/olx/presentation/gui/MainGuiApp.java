@@ -65,9 +65,9 @@ public class MainGuiApp extends Application {
      * Завантажує детальний вигляд оголошення з автоматичним визначенням декораторів
      */
     public static void loadAdDetailSceneWithAutoDecorators(Ad ad) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("view/AdDetailView.fxml");
+        URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/AdDetailView.fxml");
         if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file: view/AdDetailView.fxml");
+            throw new IOException("Cannot find FXML file: AdDetailView.fxml");
         }
         FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
         Parent root = fxmlLoader.load();
@@ -98,9 +98,9 @@ public class MainGuiApp extends Application {
                                                        Double discountPercentage, String discountReason,
                                                        Integer warrantyMonths, String warrantyType,
                                                        Boolean freeDelivery, Double deliveryCost, String deliveryInfo) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("view/AdDetailView.fxml");
+        URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/AdDetailView.fxml");
         if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file: view/AdDetailView.fxml");
+            throw new IOException("Cannot find FXML file: AdDetailView.fxml");
         }
         FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
         Parent root = fxmlLoader.load();
@@ -153,9 +153,9 @@ public class MainGuiApp extends Application {
      * Завантажує сцену редагування оголошення
      */
     public static void loadEditAdScene(Ad adToEdit) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("view/CreateAdView.fxml");
+        URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/CreateAdView.fxml");
         if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file: view/CreateAdView.fxml for editing");
+            throw new IOException("Cannot find FXML file: CreateAdView.fxml for editing");
         }
         FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
         Parent root = fxmlLoader.load();
@@ -202,12 +202,22 @@ public class MainGuiApp extends Application {
     @Override
     public void init() throws Exception {
         System.out.println("Initializing backend services...");
+
+        // Ініціалізуємо SessionManager
         sessionManager = SessionManager.getInstance();
         sessionManager.setStorageFilePath("olx_gui_data.dat");
-        sessionManager.loadState();
+
+        // Завантажуємо збережений стан
+        try {
+            sessionManager.loadState();
+            System.out.println("Session state loaded successfully.");
+        } catch (Exception e) {
+            System.out.println("No previous session state found or error loading state: " + e.getMessage());
+        }
 
         PasswordHasher passwordHasher = new DemoPasswordHasherImpl();
 
+        // Ініціалізуємо репозиторії
         UserRepository userRepository = new FileUserRepositoryImpl(sessionManager);
         CategoryRepository categoryRepository = new FileCategoryRepositoryImpl(sessionManager);
         AdRepository adRepository = new FileAdRepositoryImpl(sessionManager);
@@ -215,6 +225,7 @@ public class MainGuiApp extends Application {
         NotificationServicePort notificationService = new ConsoleNotificationServiceImpl();
         AdSearchStrategy adSearchStrategy = new DefaultAdSearchStrategy();
 
+        // Ініціалізуємо сервіси
         userService = new UserServiceImpl(userRepository, passwordHasher);
         categoryService = new CategoryServiceImpl(categoryRepository);
         adService = new AdServiceImpl(adRepository, userRepository, categoryRepository, notificationService, adSearchStrategy);
@@ -224,9 +235,10 @@ public class MainGuiApp extends Application {
         commandFactory = new CommandFactory(adService);
         adCommandManager = new AdCommandManager(commandInvoker, commandFactory);
 
+        // Ініціалізуємо категорії (якщо їх ще немає)
         initializeDefaultCategories();
 
-        System.out.println("Backend services initialized.");
+        System.out.println("Backend services initialized successfully.");
     }
 
     @Override
@@ -238,25 +250,40 @@ public class MainGuiApp extends Application {
     }
 
     public static void loadLoginScene() throws IOException {
-        loadScene("view/LoginView.fxml", "Вхід / Реєстрація");
+        loadScene("/com/example/olx/presentation/gui/view/LoginView.fxml", "Вхід / Реєстрація");
     }
 
     public static void loadMainScene() throws IOException {
-        loadScene("view/MainView.fxml", "Головна - OLX");
+        loadScene("/com/example/olx/presentation/gui/view/MainView.fxml", "Головна - OLX");
     }
 
     public static void loadCreateAdScene() throws IOException {
-        loadScene("view/CreateAdView.fxml", "Створити оголошення - OLX");
+        loadScene("/com/example/olx/presentation/gui/view/CreateAdView.fxml", "Створити оголошення - OLX");
     }
 
     private static void loadScene(String fxmlFile, String title) throws IOException {
+        System.out.println("Attempting to load FXML: " + fxmlFile);
+
         URL fxmlLocation = MainGuiApp.class.getResource(fxmlFile);
         if (fxmlLocation == null) {
             System.err.println("Cannot find FXML file: " + fxmlFile);
-            throw new IOException("Cannot find FXML file: " + fxmlFile + ". Make sure it's in the correct resources/com/example/olx/presentation/gui/view/ directory.");
+            // Спробуємо альтернативний шлях
+            String altPath = fxmlFile.replace("/com/example/olx/presentation/gui/", "/");
+            fxmlLocation = MainGuiApp.class.getResource(altPath);
+
+            if (fxmlLocation == null) {
+                throw new IOException("Cannot find FXML file at: " + fxmlFile + " or " + altPath +
+                        ". Make sure FXML files are in the correct resources directory.");
+            } else {
+                System.out.println("Found FXML at alternative path: " + altPath);
+            }
+        } else {
+            System.out.println("Found FXML at: " + fxmlLocation);
         }
+
         FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
         Parent root = fxmlLoader.load();
+
         Scene scene = primaryStage.getScene();
         if (scene == null) {
             scene = new Scene(root, 800, 600);
@@ -271,41 +298,52 @@ public class MainGuiApp extends Application {
     public void stop() throws Exception {
         System.out.println("Application stopping. Saving session state...");
         if (sessionManager != null) {
-            sessionManager.saveState();
-            System.out.println("Session state saved.");
+            try {
+                sessionManager.saveState();
+                System.out.println("Session state saved successfully.");
+            } catch (Exception e) {
+                System.err.println("Error saving session state: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
         super.stop();
     }
 
     private static void initializeDefaultCategories() {
-        List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
-        if (existingCategories != null && !existingCategories.isEmpty()) {
-            System.out.println("Categories already exist, skipping initialization.");
-            return;
-        }
-
-        System.out.println("Initializing default categories...");
-
-        List<CategoryComponent> rootCategories = new ArrayList<>();
-
-        Category electronics = new Category("root", "Всі категорії", "Електроніка");
-        rootCategories.add(electronics);
-
-        Category clothing = new Category("root", "Всі категорії", "Одяг і взуття");
-        rootCategories.add(clothing);
-
-        Category home = new Category("root", "Всі категорії", "Дім і сад");
-        rootCategories.add(home);
-
-        Category auto = new Category("root", "Всі категорії", "Авто");
-        rootCategories.add(auto);
-
-        Category sport = new Category("root", "Всі категорії", "Спорт і хобі");
-        rootCategories.add(sport);
-
         try {
+            List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
+            if (existingCategories != null && !existingCategories.isEmpty()) {
+                System.out.println("Categories already exist (" + existingCategories.size() + " found), skipping initialization.");
+                return;
+            }
+
+            System.out.println("Initializing default categories...");
+
+            List<CategoryComponent> rootCategories = new ArrayList<>();
+
+            Category electronics = new Category("electronics", "Всі категорії", "Електроніка");
+            rootCategories.add(electronics);
+
+            Category clothing = new Category("clothing", "Всі категорії", "Одяг і взуття");
+            rootCategories.add(clothing);
+
+            Category home = new Category("home", "Всі категорії", "Дім і сад");
+            rootCategories.add(home);
+
+            Category auto = new Category("auto", "Всі категорії", "Авто");
+            rootCategories.add(auto);
+
+            Category sport = new Category("sport", "Всі категорії", "Спорт і хобі");
+            rootCategories.add(sport);
+
             categoryService.initializeCategories(rootCategories);
-            System.out.println("Default categories initialized successfully.");
+            System.out.println("Default categories initialized successfully (" + rootCategories.size() + " categories).");
+
+            // Перевіряємо чи категорії справді додалися
+            List<CategoryComponent> checkCategories = categoryService.getAllRootCategories();
+            System.out.println("Categories after initialization: " +
+                    (checkCategories != null ? checkCategories.size() : "null"));
+
         } catch (Exception e) {
             System.err.println("Error initializing categories: " + e.getMessage());
             e.printStackTrace();
