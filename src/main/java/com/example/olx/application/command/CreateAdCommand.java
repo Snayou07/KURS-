@@ -1,4 +1,3 @@
-// src/main/java/com/example/olx/application/command/CreateAdCommand.java
 package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
@@ -6,7 +5,7 @@ import com.example.olx.application.service.port.AdServicePort;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 
-public class CreateAdCommand implements Command {
+public class CreateAdCommand implements CommandWithResult<Ad> {
     private final AdServicePort adService;
     private final AdCreationRequest request;
     private Ad createdAd;
@@ -27,12 +26,17 @@ public class CreateAdCommand implements Command {
         if (createdAd != null) {
             adService.deleteAd(createdAd.getAdId(), request.getSellerId());
             System.out.println("Команда CreateAd скасована для оголошення: " + createdAd.getTitle());
-            createdAd = null; // Очищуємо посилання після скасування
+            createdAd = null;
         }
     }
 
     @Override
     public String getDescription() {
         return "Створення оголошення: " + request.getTitle();
+    }
+
+    @Override
+    public Ad getResult() {
+        return createdAd;
     }
 }

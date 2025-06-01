@@ -6,11 +6,12 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Макрокоманда для виконання кількох команд разом
+ * Макрокоманда для виконання групи команд як єдиної операції
  */
 public class MacroCommand implements Command {
     private final List<Command> commands;
     private final String description;
+    private final List<Command> executedCommands = new ArrayList<>();
 
     public MacroCommand(List<Command> commands, String description) {
         this.commands = new ArrayList<>(commands);
@@ -19,28 +20,46 @@ public class MacroCommand implements Command {
 
     @Override
     public void execute() throws UserNotFoundException {
+        executedCommands.clear();
+
         for (Command command : commands) {
-            command.execute();
+            try {
+                command.execute();
+                executedCommands.add(command);
+            } catch (UserNotFoundException e) {
+                // Якщо команда не вдалася, скасовуємо всі попередні
+                undoExecutedCommands();
+                throw e;
+            }
         }
+
+        System.out.println("MacroCommand виконана: " + description);
     }
 
     @Override
     public void undo() throws UserNotFoundException {
-        // Скасовуємо команди у зворотному порядку
-        List<Command> reversedCommands = new ArrayList<>(commands);
+        undoExecutedCommands();
+        System.out.println("MacroCommand скасована: " + description);
+    }
+
+    private void undoExecutedCommands() throws UserNotFoundException {
+        // Скасовуємо команди в зворотному порядку
+        List<Command> reversedCommands = new ArrayList<>(executedCommands);
         Collections.reverse(reversedCommands);
 
         for (Command command : reversedCommands) {
             command.undo();
         }
+
+        executedCommands.clear();
     }
 
     @Override
     public String getDescription() {
-        return description + " (містить " + commands.size() + " команд)";
+        return description + " (" + commands.size() + " команд)";
     }
 
     public List<Command> getCommands() {
-        return Collections.unmodifiableList(commands);
+        return new ArrayList<>(commands);
     }
 }

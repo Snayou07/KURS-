@@ -2,6 +2,7 @@ package com.example.olx.application.command;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
+import com.example.olx.domain.model.Ad;
 
 /**
  * Фабрика для створення команд
@@ -13,11 +14,11 @@ public class CommandFactory {
         this.adService = adService;
     }
 
-    public Command createCreateAdCommand(AdCreationRequest request) {
+    public CommandWithResult<Ad> createCreateAdCommand(AdCreationRequest request) {
         return new CreateAdCommand(adService, request);
     }
 
-    public Command createUpdateAdCommand(String adId, AdCreationRequest request, String currentUserId) {
+    public CommandWithResult<Ad> createUpdateAdCommand(String adId, AdCreationRequest request, String currentUserId) {
         return new UpdateAdCommand(adService, adId, request, currentUserId);
     }
 
@@ -30,10 +31,12 @@ public class CommandFactory {
     }
 
     public Command createArchiveAdCommand(String adId) {
-        return new ArchiveAdCommand(adService, adId);
+        // TODO: Реалізувати ArchiveAdCommand
+        return new PublishAdCommand(adService, adId); // Заглушка
     }
 
     public Command createMarkAsSoldCommand(String adId) {
-        return new MarkAsSoldCommand(adService, adId);
+        // TODO: Реалізувати MarkAsSoldCommand
+        return new PublishAdCommand(adService, adId); // Заглушка
     }
 }

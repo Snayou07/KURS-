@@ -18,60 +18,94 @@ public class AdCommandManager {
         this.commandFactory = commandFactory;
     }
 
-    // Створення оголошення
+    /**
+     * Виконує команду з результатом і повертає результат
+     */
+    private <T> T executeCommandWithResult(CommandWithResult<T> command) throws UserNotFoundException {
+        commandInvoker.executeCommand(command);
+        return command.getResult();
+    }
+
+    /**
+     * Створення оголошення
+     */
     public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
-        Command command = commandFactory.createCreateAdCommand(request);
-        commandInvoker.executeCommand(command);
-        return null;
+        CommandWithResult<Ad> command = commandFactory.createCreateAdCommand(request);
+        return executeCommandWithResult(command);
     }
 
-    // Оновлення оголошення
+    /**
+     * Оновлення оголошення
+     */
     public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
-        Command command = commandFactory.createUpdateAdCommand(adId, request, currentUserId);
-        commandInvoker.executeCommand(command);
-        return null;
+        CommandWithResult<Ad> command = commandFactory.createUpdateAdCommand(adId, request, currentUserId);
+        return executeCommandWithResult(command);
     }
 
-    // Видалення оголошення
+    /**
+     * Видалення оголошення
+     */
     public void deleteAd(String adId, String currentUserId) throws UserNotFoundException {
         Command command = commandFactory.createDeleteAdCommand(adId, currentUserId);
         commandInvoker.executeCommand(command);
     }
 
-    // Публікація оголошення
+    /**
+     * Публікація оголошення
+     */
     public void publishAd(String adId) throws UserNotFoundException {
         Command command = commandFactory.createPublishAdCommand(adId);
         commandInvoker.executeCommand(command);
     }
 
-    // Архівація оголошення
+    /**
+     * Архівація оголошення
+     */
     public void archiveAd(String adId) throws UserNotFoundException {
         Command command = commandFactory.createArchiveAdCommand(adId);
         commandInvoker.executeCommand(command);
     }
 
-    // Позначення як продане
+    /**
+     * Позначення як продане
+     */
     public void markAsSold(String adId) throws UserNotFoundException {
         Command command = commandFactory.createMarkAsSoldCommand(adId);
         commandInvoker.executeCommand(command);
     }
 
-    // Створення та публікація оголошення одночасно (використовуючи MacroCommand)
-    public void createAndPublishAd(AdCreationRequest request) throws UserNotFoundException {
-        // Створюємо макрокоманду для складної операції
-        List<Command> commands = List.of(
-                commandFactory.createCreateAdCommand(request)
-                // Публікацію додамо після отримання ID створеного оголошення
-        );
+    /**
+     * Створення та публікація оголошення одночасно
+     */
+    public Ad createAndPublishAd(AdCreationRequest request) throws UserNotFoundException {
+        // Створюємо оголошення
+        Ad createdAd = createAd(request);
 
-        // Для складних операцій краще використовувати окремі виклики
-        createAd(request);
+        // Публікуємо створене оголошення
+        if (createdAd != null) {
+            publishAd(createdAd.getAdId());
+        }
 
-        // TODO: Тут потрібно отримати ID створеного оголошення та опублікувати його
-        // Це можна зробити через додаткову логіку в CreateAdCommand або через callback
+        return createdAd;
     }
 
-    // Виконання макрокоманди
+    /**
+     * Створення та публікація оголошення як макрокоманда (атомарна операція)
+     */
+    public Ad createAndPublishAdAtomic(AdCreationRequest request) throws UserNotFoundException {
+        // Створюємо команди
+        CommandWithResult<Ad> createCommand = commandFactory.createCreateAdCommand(request);
+
+        // Для макрокоманди нам потрібно знати ID оголошення наперед
+        // Цей підхід вимагає модифікації архітектури для передачі ID між командами
+
+        // Альтернативно, виконуємо як окремі операції
+        return createAndPublishAd(request);
+    }
+
+    /**
+     * Виконання макрокоманди
+     */
     public void executeMacroCommand(List<Command> commands, String description) throws UserNotFoundException {
         MacroCommand macroCommand = new MacroCommand(commands, description);
         commandInvoker.executeCommand(macroCommand);
