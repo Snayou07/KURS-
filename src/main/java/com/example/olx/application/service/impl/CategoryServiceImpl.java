@@ -1,4 +1,4 @@
-// com/example/olx/application/service/impl/CategoryServiceImpl.java
+// src/main/java/com/example/olx/application/service/impl/CategoryServiceImpl.java
 package com.example.olx.application.service.impl;
 
 import com.example.olx.application.service.port.CategoryServicePort;
@@ -33,26 +33,56 @@ public class CategoryServiceImpl implements CategoryServicePort {
             }
         }
 
-        categoryRepository.setAllCategories(rootCategories);
+        try {
+            categoryRepository.setAllCategories(rootCategories);
+            System.out.println("Категорії успішно ініціалізовано. Кількість кореневих категорій: " + rootCategories.size());
+
+            // Логування для дебагу
+            for (CategoryComponent category : rootCategories) {
+                System.out.println("Ініціалізована категорія: " + category.getName() + " (ID: " + category.getId() + ")");
+            }
+        } catch (Exception e) {
+            System.err.println("Помилка ініціалізації категорій: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Не вдалося ініціалізувати категорії", e);
+        }
     }
 
     @Override
     public List<CategoryComponent> getAllRootCategories() {
-        List<CategoryComponent> categories = categoryRepository.findAllRoots();
-        // Повертаємо порожній список замість null для безпеки
-        if (categories == null) {
-            return new ArrayList<>();
-        }
+        try {
+            List<CategoryComponent> categories = categoryRepository.findAllRoots();
 
-        // Фільтруємо null елементи, якщо вони є
-        List<CategoryComponent> filteredCategories = new ArrayList<>();
-        for (CategoryComponent category : categories) {
-            if (category != null) {
-                filteredCategories.add(category);
+            // Повертаємо порожній список замість null для безпеки
+            if (categories == null) {
+                System.out.println("Категорії не знайдено в репозиторії, повертаємо порожній список");
+                return new ArrayList<>();
             }
-        }
 
-        return filteredCategories;
+            // Фільтруємо null елементи, якщо вони є
+            List<CategoryComponent> filteredCategories = new ArrayList<>();
+            for (CategoryComponent category : categories) {
+                if (category != null) {
+                    filteredCategories.add(category);
+                } else {
+                    System.err.println("УВАГА: Знайдено null категорію в списку, пропускаємо її");
+                }
+            }
+
+            System.out.println("Повернуто кореневих категорій: " + filteredCategories.size());
+
+            // Додатковий дебаг
+            for (CategoryComponent category : filteredCategories) {
+                System.out.println("Категорія: " + category.getName() + " (ID: " + category.getId() + ")");
+            }
+
+            return filteredCategories;
+
+        } catch (Exception e) {
+            System.err.println("Помилка отримання кореневих категорій: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Повертаємо порожній список в разі помилки
+        }
     }
 
     @Override
@@ -61,13 +91,27 @@ public class CategoryServiceImpl implements CategoryServicePort {
             throw new InvalidInputException("Category ID cannot be empty.");
         }
 
-        Optional<CategoryComponent> result = categoryRepository.findById(id);
+        try {
+            Optional<CategoryComponent> result = categoryRepository.findById(id.trim());
 
-        // Перевіряємо, чи результат не містить null
-        if (result != null && result.isPresent() && result.get() == null) {
+            // Перевіряємо, чи результат не містить null
+            if (result != null && result.isPresent() && result.get() == null) {
+                System.err.println("УВАГА: Знайдено null категорію для ID: " + id);
+                return Optional.empty();
+            }
+
+            if (result != null && result.isPresent()) {
+                System.out.println("Знайдено категорію: " + result.get().getName() + " для ID: " + id);
+            } else {
+                System.out.println("Категорію з ID " + id + " не знайдено");
+            }
+
+            return result != null ? result : Optional.empty();
+
+        } catch (Exception e) {
+            System.err.println("Помилка пошуку категорії з ID " + id + ": " + e.getMessage());
+            e.printStackTrace();
             return Optional.empty();
         }
-
-        return result != null ? result : Optional.empty();
     }
 }

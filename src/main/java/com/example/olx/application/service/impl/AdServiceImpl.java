@@ -1,4 +1,4 @@
-// com/example/olx/application/service/impl/AdServiceImpl.java
+// src/main/java/com/example/olx/application/service/impl/AdServiceImpl.java
 package com.example.olx.application.service.impl;
 
 import com.example.olx.application.dto.AdCreationRequest;
@@ -39,31 +39,70 @@ public class AdServiceImpl implements AdServicePort {
 
     @Override
     public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
-        if (request.getTitle() == null || request.getTitle().trim().isEmpty() ||
-                request.getPrice() < 0 || request.getCategoryId() == null || request.getSellerId() == null) {
-            throw new InvalidInputException("Title, non-negative price, categoryId, and sellerId are required for an ad.");
+        // Валідація вхідних даних
+        if (request == null) {
+            throw new InvalidInputException("AdCreationRequest не може бути null.");
         }
 
-        userRepository.findById(request.getSellerId())
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new InvalidInputException("Назва оголошення є обов'язковою.");
+        }
+
+        if (request.getPrice() < 0) {
+            throw new InvalidInputException("Ціна не може бути від'ємною.");
+        }
+
+        if (request.getCategoryId() == null || request.getCategoryId().trim().isEmpty()) {
+            throw new InvalidInputException("ID категорії є обов'язковим.");
+        }
+
+        if (request.getSellerId() == null || request.getSellerId().trim().isEmpty()) {
+            throw new InvalidInputException("ID продавця є обов'язковим.");
+        }
+
+        // Перевірка існування продавця
+        User seller = userRepository.findById(request.getSellerId())
                 .orElseThrow(() -> new UserNotFoundException("Продавець з ідентифікатором " + request.getSellerId() + " не знайдений."));
 
+        // Перевірка існування категорії
         categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new InvalidInputException("Категорія з ідентифікатором " + request.getCategoryId() + " не знайдена."));
 
-        // Створюємо нове оголошення з усіма параметрами
-        Ad newAd = new Ad(
-                request.getTitle(),
-                request.getDescription(),
-                request.getPrice(),
-                request.getCategoryId(),
-                request.getSellerId(),
-                request.getImagePaths()
-        );
+        try {
+            // Створюємо нове оголошення з усіма параметрами
+            Ad newAd = new Ad(
+                    request.getTitle().trim(),
+                    request.getDescription() != null ? request.getDescription().trim() : "",
+                    request.getPrice(),
+                    request.getCategoryId().trim(),
+                    request.getSellerId().trim(),
+                    request.getImagePaths()
+            );
 
-        Ad savedAd = adRepository.save(newAd);
+            // Зберігаємо оголошення в репозиторії
+            Ad savedAd = adRepository.save(newAd);
 
-        notificationService.notifyUsersAboutNewAd(savedAd, userRepository.findAll());
-        return savedAd;
+            // Перевіряємо, що оголошення дійсно збережено
+            if (savedAd == null) {
+                throw new RuntimeException("Помилка при збереженні оголошення в репозиторії.");
+            }
+
+            // Відправляємо сповіщення користувачам про нове оголошення
+            try {
+                notificationService.notifyUsersAboutNewAd(savedAd, userRepository.findAll());
+            } catch (Exception e) {
+                // Логування помилки сповіщення, але не зупиняємо процес створення оголошення
+                System.err.println("Помилка відправки сповіщень про нове оголошення: " + e.getMessage());
+            }
+
+            return savedAd;
+
+        } catch (Exception e) {
+            // Логування детальної інформації про помилку
+            System.err.println("Помилка створення оголошення: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Не вдалося створити оголошення: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -71,7 +110,7 @@ public class AdServiceImpl implements AdServicePort {
         if (adId == null || adId.trim().isEmpty()) {
             throw new InvalidInputException("Ідентифікатор оголошення не може бути порожнім.");
         }
-        return adRepository.findById(adId);
+        return adRepository.findById(adId.trim());
     }
 
     @Override
@@ -84,7 +123,7 @@ public class AdServiceImpl implements AdServicePort {
         if (userId == null || userId.trim().isEmpty()) {
             throw new InvalidInputException("Ідентифікатор користувача не може бути порожнім.");
         }
-        return adRepository.findBySellerId(userId);
+        return adRepository.findBySellerId(userId.trim());
     }
 
     @Override
@@ -92,69 +131,78 @@ public class AdServiceImpl implements AdServicePort {
         if (categoryId == null || categoryId.trim().isEmpty()) {
             throw new InvalidInputException("Ідентифікатор категорії не може бути порожнім.");
         }
-        return adRepository.findByCategoryId(categoryId);
+        return adRepository.findByCategoryId(categoryId.trim());
     }
 
     @Override
     public List<Ad> searchAds(String keyword, Double minPrice, Double maxPrice, String categoryId) {
         Map<String, Object> criteria = Map.of(
-                "keyword", keyword == null ? "" : keyword,
+                "keyword", keyword == null ? "" : keyword.trim(),
                 "minPrice", minPrice == null ? Double.MIN_VALUE : minPrice,
                 "maxPrice", maxPrice == null ? Double.MAX_VALUE : maxPrice,
-                "categoryId", categoryId == null ? "" : categoryId
+                "categoryId", categoryId == null ? "" : categoryId.trim()
         );
         return searchStrategy.search(adRepository.findAll(), criteria);
     }
 
     @Override
     public void deleteAd(String adId, String currentUserId) throws UserNotFoundException {
-        if (adId == null || currentUserId == null) {
+        if (adId == null || adId.trim().isEmpty() || currentUserId == null || currentUserId.trim().isEmpty()) {
             throw new InvalidInputException("Ідентифікатор оголошення та поточного користувача є обов'язковими.");
         }
 
-        Ad adToDelete = adRepository.findById(adId)
+        Ad adToDelete = adRepository.findById(adId.trim())
                 .orElseThrow(() -> new AdNotFoundException("Оголошення з ідентифікатором " + adId + " не знайдено."));
 
-        User currentUser = userRepository.findById(currentUserId)
+        User currentUser = userRepository.findById(currentUserId.trim())
                 .orElseThrow(() -> new UserNotFoundException("Користувач з ідентифікатором " + currentUserId + " не знайдений."));
 
-        if (!adToDelete.getSellerId().equals(currentUserId) && currentUser.getUserType() != UserType.ADMIN) {
+        if (!adToDelete.getSellerId().equals(currentUserId.trim()) && currentUser.getUserType() != UserType.ADMIN) {
             throw new UnauthorizedActionException("Користувач не має права видаляти це оголошення.");
         }
 
-        adRepository.deleteById(adId);
-        notificationService.sendSystemMessage("Оголошення '" + adToDelete.getTitle() + "' було видалено.");
+        adRepository.deleteById(adId.trim());
+
+        try {
+            notificationService.sendSystemMessage("Оголошення '" + adToDelete.getTitle() + "' було видалено.");
+        } catch (Exception e) {
+            System.err.println("Помилка відправки сповіщення про видалення: " + e.getMessage());
+        }
     }
 
     @Override
     public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
-        if (adId == null || currentUserId == null) {
+        if (adId == null || adId.trim().isEmpty() || currentUserId == null || currentUserId.trim().isEmpty()) {
             throw new InvalidInputException("Ідентифікатор оголошення та поточного користувача є обов'язковими.");
         }
 
-        Ad existingAd = adRepository.findById(adId)
+        if (request == null) {
+            throw new InvalidInputException("Дані для оновлення оголошення не можуть бути null.");
+        }
+
+        Ad existingAd = adRepository.findById(adId.trim())
                 .orElseThrow(() -> new AdNotFoundException("Оголошення з ідентифікатором " + adId + " не знайдено."));
 
-        User currentUser = userRepository.findById(currentUserId)
+        User currentUser = userRepository.findById(currentUserId.trim())
                 .orElseThrow(() -> new UserNotFoundException("Користувач з ідентифікатором " + currentUserId + " не знайдений."));
 
-        if (!existingAd.getSellerId().equals(currentUserId) && currentUser.getUserType() != UserType.ADMIN) {
+        if (!existingAd.getSellerId().equals(currentUserId.trim()) && currentUser.getUserType() != UserType.ADMIN) {
             throw new UnauthorizedActionException("Користувач не має права оновлювати це оголошення.");
         }
 
         if (request.getTitle() == null || request.getTitle().trim().isEmpty() ||
-                request.getPrice() < 0 || request.getCategoryId() == null) {
+                request.getPrice() < 0 || request.getCategoryId() == null || request.getCategoryId().trim().isEmpty()) {
             throw new InvalidInputException("Назва, невід'ємна ціна та ідентифікатор категорії є обов'язковими для оновлення оголошення.");
         }
 
-        categoryRepository.findById(request.getCategoryId())
+        categoryRepository.findById(request.getCategoryId().trim())
                 .orElseThrow(() -> new InvalidInputException("Категорія з ідентифікатором " + request.getCategoryId() + " не знайдена під час оновлення."));
 
         // Оновлюємо поля існуючого оголошення
-        existingAd.setTitle(request.getTitle());
-        existingAd.setDescription(request.getDescription());
+        existingAd.setTitle(request.getTitle().trim());
+        existingAd.setDescription(request.getDescription() != null ? request.getDescription().trim() : "");
         existingAd.setPrice(request.getPrice());
-        existingAd.setCategoryId(request.getCategoryId());
+        existingAd.setCategoryId(request.getCategoryId().trim());
         existingAd.setImagePaths(request.getImagePaths());
 
         return adRepository.save(existingAd);
