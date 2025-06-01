@@ -37,6 +37,7 @@ import javafx.beans.value.ObservableValue;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -837,44 +838,122 @@ public class MainController {
 
 
     private void setupCategoryTree() {
-        List<CategoryComponent> rootCategories = MainGuiApp.categoryService.getAllRootCategories();
-        if (rootCategories.isEmpty()) {
-            System.out.println("Warning: No categories loaded. Consider initializing them.");
-        }
+        try {
+            List<CategoryComponent> rootCategories = MainGuiApp.categoryService.getAllRootCategories();
 
-        // Створюємо кореневу категорію
-        Category allCategoriesRoot = new Category("root", "Всі категорії", null);
-        TreeItem<CategoryComponent> rootItem = new TreeItem<>(allCategoriesRoot);
-        rootItem.setExpanded(true);
+            // Add null check for the service response
+            if (rootCategories == null) {
+                rootCategories = new ArrayList<>();
+                System.err.println("Warning: CategoryService.getAllRootCategories() returned null. Using empty list.");
+            }
 
-        for (CategoryComponent rootCategory : rootCategories) {
-            rootItem.getChildren().add(createTreeItem(rootCategory));
-        }
+            if (rootCategories.isEmpty()) {
+                System.out.println("Warning: No categories loaded. Consider initializing them.");
+            }
 
-        categoryTreeView.setRoot(rootItem);
-        categoryTreeView.setShowRoot(false);
+            // Створюємо кореневу категорію
+            Category allCategoriesRoot = new Category("root", "Всі категорії", null);
+            TreeItem<CategoryComponent> rootItem = new TreeItem<>(allCategoriesRoot);
+            rootItem.setExpanded(true);
 
-        categoryTreeView.setCellFactory(tv -> new TreeCell<CategoryComponent>() {
-            @Override
-            protected void updateItem(CategoryComponent item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
+            // Add null check for each root category
+            for (CategoryComponent rootCategory : rootCategories) {
+                if (rootCategory != null) {
+                    TreeItem<CategoryComponent> categoryItem = createTreeItem(rootCategory);
+                    if (categoryItem != null) {
+                        rootItem.getChildren().add(categoryItem);
+                    }
                 } else {
-                    setText(item.getName());
+                    System.err.println("Warning: Found null root category, skipping...");
                 }
             }
-        });
+
+            if (categoryTreeView != null) {
+                categoryTreeView.setRoot(rootItem);
+                categoryTreeView.setShowRoot(false);
+
+                categoryTreeView.setCellFactory(tv -> new TreeCell<CategoryComponent>() {
+                    @Override
+                    protected void updateItem(CategoryComponent item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                        } else {
+                            // Add null check for getName()
+                            String name = item.getName();
+                            setText(name != null ? name : "Unknown Category");
+                        }
+                    }
+                });
+            } else {
+                System.err.println("Error: categoryTreeView is null. Check FXML binding.");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error setting up category tree: " + e.getMessage());
+            e.printStackTrace();
+
+            // Create a minimal tree structure as fallback
+            Category fallbackRoot = new Category("root", "Всі категорії", null);
+            TreeItem<CategoryComponent> fallbackItem = new TreeItem<>(fallbackRoot);
+            fallbackItem.setExpanded(true);
+
+            if (categoryTreeView != null) {
+                categoryTreeView.setRoot(fallbackItem);
+                categoryTreeView.setShowRoot(false);
+            }
+        }
+    }
+
+    private TreeItem<CategoryComponent> createTreeItem(CategoryComponent categoryComponent) {
+        if (categoryComponent == null) {
+            System.err.println("Warning: Attempting to create TreeItem for null category");
+            return null;
+        }
+
+        try {
+            TreeItem<CategoryComponent> item = new TreeItem<>(categoryComponent);
+            item.setExpanded(true);
+
+            // Check if it's a Category and has children
+            if (categoryComponent instanceof Category) {
+                Category category = (Category) categoryComponent;
+
+                // Add null check for getChildren()
+                List<CategoryComponent> children = List.of(category.getChildren());
+                if (children != null && !children.isEmpty()) {
+                    for (CategoryComponent child : children) {
+                        if (child != null) {
+                            TreeItem<CategoryComponent> childItem = createTreeItem(child);
+                            if (childItem != null) {
+                                item.getChildren().add(childItem);
+                            }
+                        } else {
+                            System.err.println("Warning: Found null child category in category: " +
+                                    (category.getName() != null ? category.getName() : "Unknown"));
+                        }
+                    }
+                }
+            }
+
+            return item;
+
+        } catch (Exception e) {
+            System.err.println("Error creating TreeItem for category: " +
+                    (categoryComponent.getName() != null ? categoryComponent.getName() : "Unknown"));
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
-    private TreeItem<CategoryComponent> createTreeItem(CategoryComponent categoryComponent) {
+    private TreeItem<CategoryComponent> createTreeItem(CategoryComponent categoryComponent, boolean autoExpand) {
         TreeItem<CategoryComponent> item = new TreeItem<>(categoryComponent);
-        item.setExpanded(true);
+        item.setExpanded(autoExpand);
         if (categoryComponent instanceof Category) {
             Category category = (Category) categoryComponent;
             for (CategoryComponent child : category.getChildren()) {
-                item.getChildren().add(createTreeItem(child));
+                item.getChildren().add(createTreeItem(child, false));
             }
         }
         return item;
@@ -907,7 +986,66 @@ public class MainController {
             });
         }
     }
+    private void validateCategoryData() {
+        try {
+            List<CategoryComponent> rootCategories = MainGuiApp.categoryService.getAllRootCategories();
 
+            if (rootCategories == null) {
+                System.err.println("VALIDATION ERROR: getAllRootCategories() returned null");
+                return;
+            }
+
+            System.out.println("Validating " + rootCategories.size() + " root categories...");
+
+            for (int i = 0; i < rootCategories.size(); i++) {
+                CategoryComponent category = rootCategories.get(i);
+                if (category == null) {
+                    System.err.println("VALIDATION ERROR: Root category at index " + i + " is null");
+                    continue;
+                }
+
+                validateCategory(category, "Root[" + i + "]");
+            }
+
+            System.out.println("Category validation completed.");
+
+        } catch (Exception e) {
+            System.err.println("Error during category validation: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void validateCategory(CategoryComponent category, String path) {
+        if (category == null) {
+            System.err.println("VALIDATION ERROR: Category is null at path: " + path);
+            return;
+        }
+
+        String name = category.getName();
+        String id = category.getId();
+
+        if (name == null) {
+            System.err.println("VALIDATION WARNING: Category name is null at path: " + path);
+        }
+
+        if (id == null) {
+            System.err.println("VALIDATION WARNING: Category id is null at path: " + path);
+        }
+
+        if (category instanceof Category) {
+            Category cat = (Category) category;
+            List<CategoryComponent> children = List.of(cat.getChildren());
+
+            if (children == null) {
+                System.out.println("INFO: Category '" + name + "' has null children list");
+            } else {
+                for (int i = 0; i < children.size(); i++) {
+                    CategoryComponent child = children.get(i);
+                    validateCategory(child, path + " -> " + (name != null ? name : "null") + "[" + i + "]");
+                }
+            }
+        }
+    }
     private void loadAds(String categoryId) {
         showLoadingIndicator("Завантаження оголошень...");
 
