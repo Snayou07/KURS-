@@ -860,6 +860,10 @@ public class MainController {
             for (CategoryComponent rootCategory : rootCategories) {
                 if (rootCategory != null) {
                     TreeItem<CategoryComponent> categoryItem = createTreeItem(rootCategory);
+                    if (rootCategories == null) {
+                        rootCategories = new ArrayList<>();
+                        System.err.println("Warning: CategoryService.getAllRootCategories() returned null");
+                    }
                     if (categoryItem != null) {
                         rootItem.getChildren().add(categoryItem);
                     }
@@ -920,7 +924,8 @@ public class MainController {
                 Category category = (Category) categoryComponent;
 
                 // Add null check for getChildren()
-                List<CategoryComponent> children = List.of(category.getChildren());
+                CategoryComponent[] childrenArray = category.getChildren();
+                List<CategoryComponent> children = (childrenArray != null) ? List.of(childrenArray) : new ArrayList<>();
                 if (children != null && !children.isEmpty()) {
                     for (CategoryComponent child : children) {
                         if (child != null) {
@@ -952,8 +957,13 @@ public class MainController {
         item.setExpanded(autoExpand);
         if (categoryComponent instanceof Category) {
             Category category = (Category) categoryComponent;
-            for (CategoryComponent child : category.getChildren()) {
-                item.getChildren().add(createTreeItem(child, false));
+            CategoryComponent[] children = category.getChildren();
+            if (children != null) {
+                for (CategoryComponent child : children) {
+                    if (child != null) {
+                        item.getChildren().add(createTreeItem(child, false));
+                    }
+                }
             }
         }
         return item;
