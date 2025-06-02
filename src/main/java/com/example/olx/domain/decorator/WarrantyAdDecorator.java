@@ -1,10 +1,10 @@
 package com.example.olx.domain.decorator;
 
 public class WarrantyAdDecorator extends AdDecorator {
-    private final int warrantyMonths;
-    private final String warrantyType;
+    private int warrantyMonths;
+    private String warrantyType;
 
-    public WarrantyAdDecorator(AdComponent component, int warrantyMonths, String warrantyType) {
+    public WarrantyAdDecorator(AdComponent component) {
         super(component);
         this.warrantyMonths = Math.max(0, warrantyMonths);
         this.warrantyType = warrantyType != null ? warrantyType : "Стандартна гарантія";

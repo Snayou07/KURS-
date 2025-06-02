@@ -1,10 +1,10 @@
 package com.example.olx.domain.decorator;
 
 public class DiscountAdDecorator extends AdDecorator {
-    private final double discountPercentage;
-    private final String discountReason;
+    private double discountPercentage;
+    private String discountReason;
 
-    public DiscountAdDecorator(AdComponent component, double discountPercentage, String discountReason) {
+    public DiscountAdDecorator(AdComponent component) {
         super(component);
         this.discountPercentage = Math.max(0, Math.min(100, discountPercentage)); // від 0% до 100%
         this.discountReason = discountReason != null ? discountReason : "Спеціальна пропозиція";

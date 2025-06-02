@@ -43,15 +43,14 @@ public class AdDecoratorFactory {
     /**
      * Создает декоратор скидки для объявления.
      * Включает в себя базовый компонент.
+     *
      * @param ad Объявление
-     * @param discountPercentage Процент скидки
-     * @param reason Причина скидки
      * @return AdComponent, декорированный скидкой
      */
-    public static AdComponent createDiscountAd(Ad ad, double discountPercentage, String reason) {
+    public static AdComponent createDiscountAd(Ad ad) {
         if (ad == null) return null;
         // Предполагается, что DiscountAdDecorator(AdComponent, double, String) существует
-        return new DiscountAdDecorator(new BasicAdComponent(ad), discountPercentage, reason);
+        return new DiscountAdDecorator(new BasicAdComponent(ad));
     }
 
     /**
@@ -65,7 +64,7 @@ public class AdDecoratorFactory {
     public static AdComponent createWarrantyAd(Ad ad, int warrantyMonths, String warrantyType) {
         if (ad == null) return null;
         // Предполагается, что WarrantyAdDecorator(AdComponent, int, String) существует
-        return new WarrantyAdDecorator(new BasicAdComponent(ad), warrantyMonths, warrantyType);
+        return new WarrantyAdDecorator(new BasicAdComponent(ad));
     }
 
     /**
@@ -80,7 +79,7 @@ public class AdDecoratorFactory {
     public static AdComponent createDeliveryAd(Ad ad, boolean freeDelivery, double deliveryCost, String deliveryInfo) {
         if (ad == null) return null;
         // Предполагается, что DeliveryAdDecorator(AdComponent, boolean, double, String) существует
-        return new DeliveryAdDecorator(new BasicAdComponent(ad), freeDelivery, deliveryCost, deliveryInfo);
+        return new DeliveryAdDecorator(new BasicAdComponent(ad));
     }
 
     /**
@@ -145,17 +144,17 @@ public class AdDecoratorFactory {
         AdComponent component = new BasicAdComponent(ad);
 
         if (discountPercentage != null && discountPercentage > 0) {
-            component = new DiscountAdDecorator(component, discountPercentage, (discountReason == null ? "" : discountReason));
+            component = new DiscountAdDecorator(component);
         }
 
         if (warrantyMonths != null && warrantyMonths > 0) {
-            component = new WarrantyAdDecorator(component, warrantyMonths, (warrantyType == null ? "" : warrantyType));
+            component = new WarrantyAdDecorator(component);
         }
 
         if (freeDelivery != null || deliveryCost != null) {
             boolean free = freeDelivery != null && freeDelivery;
             double cost = deliveryCost != null ? deliveryCost : 0.0;
-            component = new DeliveryAdDecorator(component, free, cost, (deliveryInfo == null ? "" : deliveryInfo));
+            component = new DeliveryAdDecorator(component);
         }
 
         if (isUrgent) {

@@ -1,11 +1,11 @@
 package com.example.olx.domain.decorator;
 
 public class DeliveryAdDecorator extends AdDecorator {
-    private final boolean freeDelivery;
-    private final double deliveryCost;
-    private final String deliveryInfo;
+    private boolean freeDelivery;
+    private double deliveryCost;
+    private String deliveryInfo;
 
-    public DeliveryAdDecorator(AdComponent component, boolean freeDelivery, double deliveryCost, String deliveryInfo) {
+    public DeliveryAdDecorator(AdComponent component) {
         super(component);
         this.freeDelivery = freeDelivery;
         this.deliveryCost = freeDelivery ? 0 : Math.max(0, deliveryCost);
