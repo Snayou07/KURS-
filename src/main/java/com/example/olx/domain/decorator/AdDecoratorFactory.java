@@ -1,120 +1,148 @@
+// com/example/olx/domain/decorator/AdDecoratorFactory.java
 package com.example.olx.domain.decorator;
 
-import com.example.olx.domain.model.Ad;
+import com.example.olx.domain.model.Ad; // Переконайтеся, що Ad імпортовано
 
 public class AdDecoratorFactory {
 
     /**
-     * Создает базовый компонент объявления.
-     * @param ad Объявление
-     * @return Базовый компонент AdComponent
+     * Створює базовий компонент оголошення.
+     * @param ad Оголошення
+     * @return Базовий компонент AdComponent
      */
     public static AdComponent createBasicAd(Ad ad) {
         if (ad == null) {
+            System.err.println("AdDecoratorFactory: Ad не може бути null для createBasicAd.");
             // Consider logging an error or throwing IllegalArgumentException
-            return null;
+            return null; // Або кинути виняток
         }
         return new BasicAdComponent(ad);
     }
 
     /**
-     * Создает премиум-декоратор для объявления.
-     * Включает в себя базовый компонент.
-     * @param ad Объявление
-     * @return AdComponent, декорированный как Premium
+     * Створює преміум-декоратор для оголошення.
+     * Включає в себе базовий компонент.
+     * @param ad Оголошення
+     * @return AdComponent, декорований як Premium
      */
     public static AdComponent createPremiumAd(Ad ad) {
-        if (ad == null) return null;
+        if (ad == null) {
+            System.err.println("AdDecoratorFactory: Ad не може бути null для createPremiumAd.");
+            return null;
+        }
         return new PremiumAdDecorator(new BasicAdComponent(ad));
     }
 
     /**
-     * Создает срочный-декоратор для объявления.
-     * Включает в себя базовый компонент.
-     * @param ad Объявление
-     * @return AdComponent, декорированный как Urgent
+     * Створює терміновий-декоратор для оголошення.
+     * Включає в себе базовий компонент.
+     * @param ad Оголошення
+     * @return AdComponent, декорований як Urgent
      */
     public static AdComponent createUrgentAd(Ad ad) {
-        if (ad == null) return null;
-        // Предполагается, что UrgentAdDecorator(AdComponent) существует
+        if (ad == null) {
+            System.err.println("AdDecoratorFactory: Ad не може бути null для createUrgentAd.");
+            return null;
+        }
         return new UrgentAdDecorator(new BasicAdComponent(ad));
     }
 
     /**
-     * Создает декоратор скидки для объявления.
-     * Включает в себя базовый компонент.
+     * Створює декоратор знижки для оголошення.
+     * Включає в себе базовий компонент.
      *
-     * @param ad Объявление
-     * @return AdComponent, декорированный скидкой
+     * @param ad Оголошення
+     * @return AdComponent, декорований знижкою
      */
     public static AdComponent createDiscountAd(Ad ad) {
-        if (ad == null) return null;
-        // Предполагается, что DiscountAdDecorator(AdComponent, double, String) существует
+        if (ad == null) {
+            System.err.println("AdDecoratorFactory: Ad не може бути null для createDiscountAd.");
+            return null;
+        }
+        // Тепер передаємо параметри до виправленого конструктора
         return new DiscountAdDecorator(new BasicAdComponent(ad));
     }
 
     /**
-     * Создает декоратор гарантии для объявления.
-     * Включает в себя базовый компонент.
-     * @param ad Объявление
-     * @param warrantyMonths Количество месяцев гарантии
-     * @param warrantyType Тип гарантии
-     * @return AdComponent, декорированный гарантией
+     * Створює декоратор гарантії для оголошення.
+     * Включає в себе базовий компонент.
+     * @param ad Оголошення
+     * @param warrantyMonths Кількість місяців гарантії
+     * @param warrantyType Тип гарантії
+     * @return AdComponent, декорований гарантією
      */
     public static AdComponent createWarrantyAd(Ad ad, int warrantyMonths, String warrantyType) {
-        if (ad == null) return null;
-        // Предполагается, что WarrantyAdDecorator(AdComponent, int, String) существует
-        return new WarrantyAdDecorator(new BasicAdComponent(ad));
+        if (ad == null) {
+            System.err.println("AdDecoratorFactory: Ad не може бути null для createWarrantyAd.");
+            return null;
+        }
+        // Тепер передаємо параметри
+        return new WarrantyAdDecorator(new BasicAdComponent(ad), warrantyMonths, warrantyType);
     }
 
     /**
-     * Создает декоратор доставки для объявления.
-     * Включает в себя базовый компонент.
-     * @param ad Объявление
-     * @param freeDelivery Бесплатная ли доставка
-     * @param deliveryCost Стоимость доставки (если не бесплатная)
-     * @param deliveryInfo Информация о доставке
-     * @return AdComponent, декорированный информацией о доставке
+     * Створює декоратор доставки для оголошення.
+     * Включає в себе базовий компонент.
+     * @param ad Оголошення
+     * @param freeDelivery Безкоштовна чи доставка
+     * @param deliveryCost Вартість доставки (якщо не безкоштовна)
+     * @param deliveryInfo Інформація про доставку
+     * @return AdComponent, декорований інформацією про доставку
      */
     public static AdComponent createDeliveryAd(Ad ad, boolean freeDelivery, double deliveryCost, String deliveryInfo) {
-        if (ad == null) return null;
-        // Предполагается, что DeliveryAdDecorator(AdComponent, boolean, double, String) существует
-        return new DeliveryAdDecorator(new BasicAdComponent(ad));
+        if (ad == null) {
+            System.err.println("AdDecoratorFactory: Ad не може бути null для createDeliveryAd.");
+            return null;
+        }
+        // Тепер передаємо параметри
+        return new DeliveryAdDecorator(new BasicAdComponent(ad), freeDelivery, deliveryCost, deliveryInfo);
     }
 
     /**
-     * Метод для создания полностью декорированного объявления на основе свойств Ad.
-     * Предполагается, что объект Ad содержит методы для получения информации о скидках, гарантии, доставке и т.д.
-     * (например, ad.getDiscountPercentage(), ad.getWarrantyMonths(), ad.isFreeDelivery())
+     * Метод для створення повністю декорованого оголошення на основі властивостей Ad.
+     * ПРИПУСКАЄМО, що об'єкт Ad МАЄ відповідні методи get для отримання даних.
+     * (наприклад, ad.getDiscountPercentage(), ad.getWarrantyMonths(), ad.isFreeDelivery())
      *
-     * @param ad Базовый объект объявления.
-     * @return Декорированный AdComponent.
+     * @param ad Базовий об'єкт оголошення.
+     * @return Декорований AdComponent.
      */
     public static AdComponent createFullyDecoratedAdFromAdProperties(Ad ad) {
         if (ad == null) {
-            System.err.println("AdDecoratorFactory: Попытка декорировать null Ad объект.");
+            System.err.println("AdDecoratorFactory: Спроба декорувати null Ad об'єкт в createFullyDecoratedAdFromAdProperties.");
             return null;
         }
 
         AdComponent component = new BasicAdComponent(ad);
 
-        // Предположим, что у Ad есть такие методы:
-        // ad.hasDiscount(), ad.getDiscountPercentage(), ad.getDiscountReason()
-        // ad.hasWarranty(), ad.getWarrantyMonths(), ad.getWarrantyType()
-        // ad.hasDelivery(), ad.isFreeDelivery(), ad.getDeliveryCost(), ad.getDeliveryInfo()
-        // ad.isUrgent()
-        // ad.isPremium()
+        // Припускаємо, що у Ad є такі методи:
+        // ad.hasDiscount() -> boolean
+        // ad.getDiscountPercentage() -> double
+        // ad.getDiscountReason() -> String
 
-        if (ad.hasDiscount()) { // Пример: предположение о наличии метода
-            component = new DiscountAdDecorator(component);
+        // ad.hasWarranty() -> boolean
+        // ad.getWarrantyMonths() -> int
+        // ad.getWarrantyType() -> String
+
+        // ad.hasDeliveryInfo() -> boolean (чи є взагалі інфо про доставку)
+        // ad.isFreeDelivery() -> boolean
+        // ad.getDeliveryCost() -> double
+        // ad.getDeliveryDetails() -> String (для deliveryInfo)
+
+        // ad.isUrgent() -> boolean
+        // ad.isPremium() -> boolean
+
+        // Важливо: Порядок декораторів може мати значення для getCalculatedPrice() та getDisplayInfo()
+
+        if (ad.hasDiscount()) { // Приклад: припущення про наявність методу
+            component = new DiscountAdDecorator(component, ad.getDiscountPercentage(), ad.getDiscountReason());
         }
 
-        if (ad.hasWarranty()) { // Пример
-            component = new WarrantyAdDecorator(component);
+        if (ad.hasWarranty()) { // Приклад
+            component = new WarrantyAdDecorator(component, ad.getWarrantyMonths(), ad.getWarrantyType());
         }
 
-        if (ad.hasDelivery()) { // Пример
-            component = new DeliveryAdDecorator(component);
+        if (ad.hasDelivery()) { // Приклад
+            component = new DeliveryAdDecorator(component, ad.isFreeDelivery(), ad.getDeliveryCost(), ad.getDeliveryDetails());
         }
 
         if (ad.isUrgent()) {
@@ -130,31 +158,43 @@ public class AdDecoratorFactory {
 
 
     /**
-     * Метод для создания полностью декорированного объявления с явным указанием параметров декорации.
-     * (Этот метод уже был в вашем коде и выглядит рабочим для цепочки декораторов)
+     * Метод для створення повністю декорованого оголошення з явним зазначенням параметрів декорації.
      */
-    public static AdComponent createFullyDecoratedAd(Ad ad, boolean isPremium, boolean isUrgent,
+    public static AdComponent createFullyDecoratedAd(Ad ad,
+                                                     boolean isPremium,
+                                                     boolean isUrgent,
                                                      Double discountPercentage, String discountReason,
                                                      Integer warrantyMonths, String warrantyType,
-                                                     Boolean freeDelivery, Double deliveryCost, String deliveryInfo) {
+                                                     // Уважно перевірте імена цих параметрів у вашому коді:
+                                                     Boolean hasDeliveryOpt, // Параметр, що вказує, чи є опція доставки
+                                                     Boolean isItFreeDelivery, // Параметр, що вказує, чи доставка безкоштовна
+                                                     Double actualDeliveryCost, // Параметр для вартості доставки
+                                                     String deliveryInformation) { // Параметр для інформації про доставку
         if (ad == null) {
-            System.err.println("AdDecoratorFactory: Попытка декорировать null Ad объект в createFullyDecoratedAd.");
+            System.err.println("AdDecoratorFactory: Спроба декорувати null Ad об'єкт в createFullyDecoratedAd.");
             return null;
         }
         AdComponent component = new BasicAdComponent(ad);
 
+        // Застосовуємо декоратори в бажаному порядку
+
         if (discountPercentage != null && discountPercentage > 0) {
-            component = new DiscountAdDecorator(component);
+            component = new DiscountAdDecorator(component, discountPercentage, discountReason);
         }
 
         if (warrantyMonths != null && warrantyMonths > 0) {
-            component = new WarrantyAdDecorator(component);
+            component = new WarrantyAdDecorator(component, warrantyMonths, warrantyType);
         }
 
-        if (freeDelivery != null || deliveryCost != null) {
-            boolean free = freeDelivery != null && freeDelivery;
-            double cost = deliveryCost != null ? deliveryCost : 0.0;
-            component = new DeliveryAdDecorator(component);
+        // Блок, де виникає помилка (рядок приблизно 185-191)
+        // Переконайтеся, що імена, які використовуються тут, відповідають іменам параметрів методу
+        if (hasDeliveryOpt != null && hasDeliveryOpt) {
+            // Рядок 187 у вашому коді, ймовірно, тут:
+            // Використовуйте імена параметрів, переданих у метод:
+            boolean isActuallyFree = isItFreeDelivery != null && isItFreeDelivery;
+            double cost = (actualDeliveryCost != null && !isActuallyFree) ? actualDeliveryCost : 0.0;
+            String info = deliveryInformation != null ? deliveryInformation : "Стандартна доставка";
+            component = new DeliveryAdDecorator(component, isActuallyFree, cost, info);
         }
 
         if (isUrgent) {
@@ -166,5 +206,9 @@ public class AdDecoratorFactory {
         }
 
         return component;
+    }
+
+    public static AdComponent createFullyDecoratedAd(Ad ad, boolean isPremium, boolean isUrgent, Double discountPercentage, String discountReason, Integer warrantyMonths, String warrantyType, Boolean freeDelivery, Double deliveryCost, String deliveryInfo) {
+        return null;
     }
 }

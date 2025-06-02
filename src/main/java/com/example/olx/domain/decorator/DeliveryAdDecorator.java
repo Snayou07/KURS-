@@ -1,3 +1,4 @@
+// com/example/olx/domain/decorator/DeliveryAdDecorator.java
 package com.example.olx.domain.decorator;
 
 public class DeliveryAdDecorator extends AdDecorator {
@@ -5,10 +6,10 @@ public class DeliveryAdDecorator extends AdDecorator {
     private double deliveryCost;
     private String deliveryInfo;
 
-    public DeliveryAdDecorator(AdComponent component) {
+    public DeliveryAdDecorator(AdComponent component, boolean freeDelivery, double deliveryCost, String deliveryInfo) {
         super(component);
         this.freeDelivery = freeDelivery;
-        this.deliveryCost = freeDelivery ? 0 : Math.max(0, deliveryCost);
+        this.deliveryCost = this.freeDelivery ? 0 : Math.max(0, deliveryCost);
         this.deliveryInfo = deliveryInfo != null ? deliveryInfo : "Стандартна доставка";
     }
 
@@ -16,16 +17,17 @@ public class DeliveryAdDecorator extends AdDecorator {
     public String getDisplayInfo() {
         String deliveryText = freeDelivery ?
                 "\n🚚 БЕЗКОШТОВНА ДОСТАВКА! 🎉" :
-                String.format("\n🚚 Доставка: %.2f грн", deliveryCost);
+                String.format("\n🚚 Доставка: %.2f грн", this.deliveryCost);
 
         return super.getDisplayInfo() +
                 deliveryText +
-                "\n📦 " + deliveryInfo;
+                "\n📦 " + this.deliveryInfo;
     }
 
     @Override
     public double getCalculatedPrice() {
-        return super.getCalculatedPrice() + deliveryCost;
+        // Додаємо вартість доставки тільки якщо вона не безкоштовна
+        return super.getCalculatedPrice() + (this.freeDelivery ? 0 : this.deliveryCost);
     }
 
     @Override

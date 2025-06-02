@@ -154,10 +154,16 @@ public class AdDetailController {
         this.currentAd = ad;
 
         // Створюємо декорований компонент
-        this.decoratedAd = AdDecoratorFactory.createFullyDecoratedAd(
-                ad, isPremium, isUrgent, discountPercentage, discountReason,
-                warrantyMonths, warrantyType, freeDelivery, deliveryCost, deliveryInfo
-        );
+        this.decoratedAd = AdDecoratorFactory.createFullyDecoratedAd(ad,
+                isPremium,
+                isUrgent,
+                discountPercentage,
+                discountReason,
+                warrantyMonths,
+                warrantyType,
+                freeDelivery,
+                deliveryCost,
+                deliveryInfo);
 
         populateAdDetails();
         setupActionButtons();
