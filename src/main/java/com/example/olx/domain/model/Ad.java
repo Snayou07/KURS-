@@ -1,3 +1,4 @@
+// src/main/java/com/example/olx/domain/model/Ad.java
 package com.example.olx.domain.model;
 
 import java.io.Serializable;
@@ -22,35 +23,35 @@ public class Ad implements Serializable, Cloneable {
     private boolean premium;
     private boolean urgent;
     private AdState state;
-    private Object id;
+    // ВИПРАВЛЕННЯ: Змінюємо тип з Object на String і ініціалізуємо
+    private String id;
 
     // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
         this.adId = UUID.randomUUID().toString();
+        this.id = this.adId; // ВИПРАВЛЕННЯ: Ініціалізуємо id тим же значенням що й adId
         this.title = title;
         this.description = description;
         this.price = price;
         this.categoryId = categoryId;
         this.sellerId = sellerId;
-        // Створюємо захисну копію списку
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
-        this.currentState = new DraftAdState(); // Початковий стан - чернетка
+        this.currentState = new DraftAdState();
         this.status = currentState.getStatusName();
-
     }
 
-    // Конструктор без imagePaths (для зворотної сумісності)
+    // Конструктор без imagePaths
     public Ad(String title, String description, double price, String categoryId, String sellerId) {
         this(title, description, price, categoryId, sellerId, new ArrayList<>());
     }
 
-    // Порожній конструктор (може знадобитися для деяких фреймворків)
+    // Порожній конструктор
     public Ad() {
         this.adId = UUID.randomUUID().toString();
+        this.id = this.adId; // ВИПРАВЛЕННЯ: Ініціалізуємо id
         this.imagePaths = new ArrayList<>();
         this.currentState = new DraftAdState();
         this.status = currentState.getStatusName();
-
     }
 
     // Методи для роботи зі станами
@@ -109,7 +110,6 @@ public class Ad implements Serializable, Cloneable {
         return sellerId;
     }
 
-    // Повертаємо незмінну копію списку
     public List<String> getImagePaths() {
         return Collections.unmodifiableList(imagePaths);
     }
@@ -139,7 +139,6 @@ public class Ad implements Serializable, Cloneable {
         this.status = status;
     }
 
-    // Створюємо захисну копію списку при встановленні
     public void setImagePaths(List<String> imagePaths) {
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
     }
@@ -149,7 +148,6 @@ public class Ad implements Serializable, Cloneable {
     public Ad clone() throws CloneNotSupportedException {
         Ad cloned = (Ad) super.clone();
         cloned.imagePaths = new ArrayList<>(this.imagePaths);
-        // Створюємо новий стан на основі поточного
         cloned.currentState = createStateFromStatus(this.status);
         return cloned;
     }
@@ -222,7 +220,17 @@ public class Ad implements Serializable, Cloneable {
         this.state = state;
     }
 
-    public Object getId() {
+    // ВИПРАВЛЕННЯ: Безпечний геттер для id з перевіркою на null
+    public String getId() {
+        // Якщо id є null, повертаємо adId
+        if (id == null) {
+            id = adId; // Ініціалізуємо id, якщо він null
+        }
         return id;
+    }
+
+    // ВИПРАВЛЕННЯ: Додаємо сеттер для id
+    public void setId(String id) {
+        this.id = id;
     }
 }

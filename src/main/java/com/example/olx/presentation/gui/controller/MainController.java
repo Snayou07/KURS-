@@ -1,13 +1,12 @@
 package com.example.olx.presentation.gui.controller;
 
+import com.example.olx.domain.decorator.*;
 import com.example.olx.presentation.gui.mediator.components.SearchComponent;
 import com.example.olx.presentation.gui.mediator.components.AdListComponent;
 import com.example.olx.presentation.gui.mediator.components.FilterComponent;
 import com.example.olx.application.command.AdCommandManager;
 import com.example.olx.application.command.CommandFactory;
 import com.example.olx.application.command.CommandInvoker;
-import com.example.olx.domain.decorator.AdComponent;
-import com.example.olx.domain.decorator.AdDecoratorFactory;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.Category;
@@ -1133,20 +1132,7 @@ public class MainController {
     }
 
 
-    @FXML
-    private void handleCreateAd() {
-        try {
-            MainGuiApp.loadCreateAdScene();
-            // Після закриття форми створення - оновлюємо список
-            Platform.runLater(() -> {
-                refreshCurrentView();
-                updateStatus("Список оновлено після створення оголошення");
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-            showErrorAlert("Помилка", "Не вдалося відкрити форму створення оголошення", e.getMessage());
-        }
-    }
+
 
     @FXML
     private void handleLogout() {
@@ -1240,15 +1226,15 @@ public class MainController {
 
         // Застосовуємо декоратори на основі властивостей оголошення
         if (ad.isPremium()) {
-            baseComponent = decoratorFactory.createPremiumAd((Ad) baseComponent);
+            baseComponent = new PremiumAdDecorator(baseComponent);
         }
 
         if (ad.isUrgent()) {
-            baseComponent = decoratorFactory.createUrgentAd((Ad) baseComponent);
+            baseComponent = new UrgentAdDecorator(baseComponent);
         }
 
         if (ad.hasDiscount()) {
-            baseComponent = decoratorFactory.createDiscountAd(baseComponent);
+            baseComponent = new DiscountAdDecorator(baseComponent,25 ,"");
         }
 
         return baseComponent;
@@ -1310,7 +1296,22 @@ public class MainController {
     }
 
     // ========== CLEANUP ==========
+    @FXML
+    private void handleCreateAd() {
+        try {
+            // Правильний виклик сцени для СТВОРЕННЯ оголошення
+            MainGuiApp.loadCreateAdScene();
 
+            // Після закриття форми створення - оновлюємо список
+            Platform.runLater(() -> {
+                refreshCurrentView();
+                updateStatus("Список оновлено після створення оголошення");
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorAlert("Помилка", "Не вдалося відкрити форму створення оголошення", e.getMessage());
+        }
+    }
     /**
      * Метод очищення ресурсів при закритті контролера
      */

@@ -152,8 +152,10 @@ public class MainGuiApp extends Application {
 
     /**
      * Завантажує сцену редагування оголошення
+     *
+     * @return
      */
-    public static void loadEditAdScene(Ad adToEdit) throws IOException {
+    public static boolean loadEditAdScene(Ad adToEdit) throws IOException {
         URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/CreateAdView.fxml");
         if (fxmlLocation == null) {
             throw new IOException("Cannot find FXML file: CreateAdView.fxml for editing");
@@ -172,6 +174,7 @@ public class MainGuiApp extends Application {
             scene.setRoot(root);
         }
         primaryStage.setTitle("Редагувати оголошення: " + adToEdit.getTitle());
+        return false;
     }
 
     /**
