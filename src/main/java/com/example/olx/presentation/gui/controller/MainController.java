@@ -1301,7 +1301,7 @@ public class MainController {
         });
     }
 
-    // ========== CLEANUP ==========
+
 
     public void cleanup() {
         updateStatus("Очищення контролера...");
