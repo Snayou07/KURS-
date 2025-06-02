@@ -1,6 +1,7 @@
 package com.example.olx.domain.model;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,10 +24,15 @@ public class Ad implements Serializable, Cloneable {
     private boolean urgent;
     private AdState state;
     private Object id;
+    private LocalDateTime createdAt;
+    // Add fields for delivery and warranty
+    private boolean hasDelivery;
+    private boolean hasWarranty;
 
     // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
         this.adId = UUID.randomUUID().toString();
+        this.id = this.adId; // Ініціалізуємо id значенням adId
         this.title = title;
         this.description = description;
         this.price = price;
@@ -36,9 +42,18 @@ public class Ad implements Serializable, Cloneable {
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
         this.currentState = new DraftAdState(); // Початковий стан - чернетка
         this.status = currentState.getStatusName();
+        // Initialize new fields (optional, could be set via setters or another constructor)
+        this.hasDelivery = false;
+        this.hasWarranty = false;
 
     }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
     // Конструктор без imagePaths (для зворотної сумісності)
     public Ad(String title, String description, double price, String categoryId, String sellerId) {
         this(title, description, price, categoryId, sellerId, new ArrayList<>());
@@ -47,9 +62,12 @@ public class Ad implements Serializable, Cloneable {
     // Порожній конструктор (може знадобитися для деяких фреймворків)
     public Ad() {
         this.adId = UUID.randomUUID().toString();
+        this.id = this.adId; // Ініціалізуємо id значенням adId
         this.imagePaths = new ArrayList<>();
         this.currentState = new DraftAdState();
         this.status = currentState.getStatusName();
+        this.hasDelivery = false;
+        this.hasWarranty = false;
 
     }
 
@@ -149,8 +167,12 @@ public class Ad implements Serializable, Cloneable {
     public Ad clone() throws CloneNotSupportedException {
         Ad cloned = (Ad) super.clone();
         cloned.imagePaths = new ArrayList<>(this.imagePaths);
+        cloned.id = this.id; // Копіюємо поле id
         // Створюємо новий стан на основі поточного
         cloned.currentState = createStateFromStatus(this.status);
+        // Copy new fields
+        cloned.hasDelivery = this.hasDelivery;
+        cloned.hasWarranty = this.hasWarranty;
         return cloned;
     }
 
@@ -195,6 +217,8 @@ public class Ad implements Serializable, Cloneable {
                 ", sellerId='" + sellerId + '\'' +
                 ", status='" + status + '\'' +
                 ", imagePathsCount=" + (imagePaths != null ? imagePaths.size() : 0) +
+                ", hasDelivery=" + hasDelivery + // Added to toString
+                ", hasWarranty=" + hasWarranty + // Added to toString
                 '}';
     }
 
@@ -215,14 +239,34 @@ public class Ad implements Serializable, Cloneable {
     }
 
     public boolean hasDiscount() {
+        // This was hardcoded to false, if you have a discount field, use it
         return false;
     }
+
+    // Getter and Setter for hasDelivery
+    public boolean hasDelivery() {
+        return hasDelivery;
+    }
+
+    public void setHasDelivery(boolean hasDelivery) {
+        this.hasDelivery = hasDelivery;
+    }
+
+    // Getter and Setter for hasWarranty
+    public boolean hasWarranty() {
+        return hasWarranty;
+    }
+
+    public void setHasWarranty(boolean hasWarranty) {
+        this.hasWarranty = hasWarranty;
+    }
+
 
     public void setState(AdState state) {
         this.state = state;
     }
 
     public Object getId() {
-        return id;
+        return id != null ? id : adId;
     }
 }
