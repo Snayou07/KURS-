@@ -1,6 +1,6 @@
-// ArchiveAdCommand.java
 package com.example.olx.application.command;
 
+import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
@@ -23,6 +23,12 @@ public class ArchiveAdCommand implements Command {
 
         this.previousState = ad.getStatus();
         ad.archiveAd();
+
+        // ✅ КРИТИЧНО: Використовуємо існуючий метод оновлення
+        // Створюємо запит для збереження поточного стану
+        AdCreationRequest updateRequest = createRequestFromAd(ad);
+        adService.updateAd(adId, updateRequest, ad.getSellerId());
+
         System.out.println("Команда ArchiveAd виконана для оголошення: " + ad.getTitle());
     }
 
@@ -31,7 +37,22 @@ public class ArchiveAdCommand implements Command {
         if (ad != null && previousState != null) {
             System.out.println("Скасування архівації оголошення: " + ad.getTitle());
             restorePreviousState();
+
+            // ✅ КРИТИЧНО: Зберігаємо відновлений стан
+            AdCreationRequest updateRequest = createRequestFromAd(ad);
+            adService.updateAd(adId, updateRequest, ad.getSellerId());
         }
+    }
+
+    private AdCreationRequest createRequestFromAd(Ad ad) {
+        return new AdCreationRequest(
+                ad.getTitle(),
+                ad.getDescription(),
+                ad.getPrice(),
+                ad.getCategoryId(),
+                ad.getSellerId(),
+                ad.getImagePaths()
+        );
     }
 
     private void restorePreviousState() {

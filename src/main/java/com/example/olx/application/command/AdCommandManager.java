@@ -3,12 +3,9 @@ package com.example.olx.application.command;
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
-
 import java.util.List;
+import java.util.ArrayList;
 
-/**
- * Високорівневий менеджер для роботи з командами оголошень
- */
 public class AdCommandManager {
     private final CommandInvoker commandInvoker;
     private final CommandFactory commandFactory;
@@ -18,94 +15,64 @@ public class AdCommandManager {
         this.commandFactory = commandFactory;
     }
 
-    /**
-     * Виконує команду з результатом і повертає результат
-     */
-    private <T> T executeCommandWithResult(CommandWithResult<T> command) throws UserNotFoundException {
-        commandInvoker.executeCommand(command);
-        return command.getResult();
-    }
+    // ✅ Виправлена атомарна операція створення та публікації
+    public Ad createAndPublishAdAtomic(AdCreationRequest request) throws UserNotFoundException {
+        List<Command> commands = new ArrayList<>();
 
-    /**
-     * Створення оголошення
-     */
-    public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
-        CommandWithResult<Ad> command = commandFactory.createCreateAdCommand(request);
-        return executeCommandWithResult(command);
-    }
+        // Створюємо команди
+        CommandWithResult<Ad> createCommand = commandFactory.createCreateAdCommand(request);
 
-    /**
-     * Оновлення оголошення
-     */
-    public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
-        CommandWithResult<Ad> command = commandFactory.createUpdateAdCommand(adId, request, currentUserId);
-        return executeCommandWithResult(command);
-    }
+        // Виконуємо створення
+        executeCommandWithResult(createCommand);
+        Ad createdAd = createCommand.getResult();
 
-    /**
-     * Видалення оголошення
-     */
-    public void deleteAd(String adId, String currentUserId) throws UserNotFoundException {
-        Command command = commandFactory.createDeleteAdCommand(adId, currentUserId);
-        commandInvoker.executeCommand(command);
-    }
-
-    /**
-     * Публікація оголошення
-     */
-    public void publishAd(String adId) throws UserNotFoundException {
-        Command command = commandFactory.createPublishAdCommand(adId);
-        commandInvoker.executeCommand(command);
-    }
-
-    /**
-     * Архівація оголошення
-     */
-    public void archiveAd(String adId) throws UserNotFoundException {
-        Command command = commandFactory.createArchiveAdCommand(adId);
-        commandInvoker.executeCommand(command);
-    }
-
-    /**
-     * Позначення як продане
-     */
-    public void markAsSold(String adId) throws UserNotFoundException {
-        Command command = commandFactory.createMarkAsSoldCommand(adId);
-        commandInvoker.executeCommand(command);
-    }
-
-    /**
-     * Створення та публікація оголошення одночасно
-     */
-    public Ad createAndPublishAd(AdCreationRequest request) throws UserNotFoundException {
-        // Створюємо оголошення
-        Ad createdAd = createAd(request);
-
-        // Публікуємо створене оголошення
         if (createdAd != null) {
-            publishAd(createdAd.getAdId());
+            Command publishCommand = commandFactory.createPublishAdCommand(createdAd.getAdId());
+            commands.add(createCommand);
+            commands.add(publishCommand);
+
+            // Виконуємо як макрокоманду для атомарності
+            executeMacroCommand(commands, "Створення та публікація оголошення: " + request.getTitle());
         }
 
         return createdAd;
     }
 
-    /**
-     * Створення та публікація оголошення як макрокоманда (атомарна операція)
-     */
-    public Ad createAndPublishAdAtomic(AdCreationRequest request) throws UserNotFoundException {
-        // Створюємо команди
-        CommandWithResult<Ad> createCommand = commandFactory.createCreateAdCommand(request);
-
-        // Для макрокоманди нам потрібно знати ID оголошення наперед
-        // Цей підхід вимагає модифікації архітектури для передачі ID між командами
-
-        // Альтернативно, виконуємо як окремі операції
-        return createAndPublishAd(request);
+    private <T> T executeCommandWithResult(CommandWithResult<T> command) throws UserNotFoundException {
+        commandInvoker.executeCommand(command);
+        return command.getResult();
     }
 
-    /**
-     * Виконання макрокоманди
-     */
+    public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
+        CommandWithResult<Ad> command = commandFactory.createCreateAdCommand(request);
+        return executeCommandWithResult(command);
+    }
+
+    public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
+        CommandWithResult<Ad> command = commandFactory.createUpdateAdCommand(adId, request, currentUserId);
+        return executeCommandWithResult(command);
+    }
+
+    public void deleteAd(String adId, String currentUserId) throws UserNotFoundException {
+        Command command = commandFactory.createDeleteAdCommand(adId, currentUserId);
+        commandInvoker.executeCommand(command);
+    }
+
+    public void publishAd(String adId) throws UserNotFoundException {
+        Command command = commandFactory.createPublishAdCommand(adId);
+        commandInvoker.executeCommand(command);
+    }
+
+    public void archiveAd(String adId) throws UserNotFoundException {
+        Command command = commandFactory.createArchiveAdCommand(adId);
+        commandInvoker.executeCommand(command);
+    }
+
+    public void markAsSold(String adId) throws UserNotFoundException {
+        Command command = commandFactory.createMarkAsSoldCommand(adId);
+        commandInvoker.executeCommand(command);
+    }
+
     public void executeMacroCommand(List<Command> commands, String description) throws UserNotFoundException {
         MacroCommand macroCommand = new MacroCommand(commands, description);
         commandInvoker.executeCommand(macroCommand);
@@ -136,7 +103,6 @@ public class AdCommandManager {
         return commandInvoker.getCommandHistory();
     }
 
-    // Додаткові методи для GUI
     public String getLastExecutedCommandDescription() {
         List<String> history = getCommandHistory();
         return history.isEmpty() ? "Немає виконаних команд" : history.get(history.size() - 1);
