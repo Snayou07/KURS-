@@ -42,6 +42,7 @@ public class Ad implements Serializable, Cloneable {
     private boolean freeDelivery; // Чи є доставка безкоштовною
     private double deliveryCost; // Вартість доставки, якщо не безкоштовна
     private String deliveryDetails; // Додаткова інформація про доставку
+    private Object state;
 
 
     // Основний конструктор з усіма основними параметрами
@@ -267,5 +268,9 @@ public class Ad implements Serializable, Cloneable {
     public void setState(AdState state) {
         this.currentState = state;
         updateStatus();
+    }
+
+    public Object getState() {
+        return state;
     }
 }

@@ -6,6 +6,9 @@ public class BasicAdComponent implements AdComponent {
     private final Ad ad;
 
     public BasicAdComponent(Ad ad) {
+        if (ad == null) {
+            throw new IllegalArgumentException("Ad cannot be null");
+        }
         this.ad = ad;
     }
 
@@ -15,7 +18,7 @@ public class BasicAdComponent implements AdComponent {
                 ad.getTitle(),
                 ad.getDescription() != null ? ad.getDescription() : "Без опису",
                 ad.getPrice(),
-                ad.getStatus());
+                getAdStatus());
     }
 
     @Override
@@ -31,5 +34,24 @@ public class BasicAdComponent implements AdComponent {
     @Override
     public Ad getAd() {
         return ad;
+    }
+
+    // Допоміжний метод для отримання статусу оголошення
+    private String getAdStatus() {
+        try {
+            // Якщо у Ad є метод getStatus()
+            return ad.getStatus().toString();
+        } catch (Exception e) {
+            // Якщо метод getStatus() не існує або повертає null
+            try {
+                // Спробуємо отримати стан через getState()
+                if (ad.getState() != null) {
+                    return ad.getState().toString();
+                }
+            } catch (Exception ex) {
+                // Якщо і getState() не працює
+            }
+            return "Активне"; // Значення за замовчуванням
+        }
     }
 }

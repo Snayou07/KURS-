@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections; // Для потокобезпечних колекцій, якщо потрібно
 
+import static com.example.olx.presentation.gui.MainGuiApp.sessionManager;
+
 // SessionManager залишається Singleton
 public class SessionManager {
     private static final SessionManager INSTANCE = new SessionManager();

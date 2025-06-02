@@ -6,7 +6,7 @@ public abstract class AdDecorator implements AdComponent {
     protected AdComponent component;
 
     public AdDecorator(AdComponent component) {
-        this.component = component;
+        this.component = component != null ? component : new BasicAdComponent(null);
     }
 
     @Override

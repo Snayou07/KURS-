@@ -8,13 +8,11 @@ public class UrgentAdDecorator extends AdDecorator {
 
     @Override
     public String getDisplayInfo() {
-        return "🚨 ТЕРМІНОВО! 🚨\n" +
-                super.getDisplayInfo() +
-                "\n⚡ Потребує швидкого продажу";
+        return "🚨 ТЕРМІНОВО! 🚨\n" + super.getDisplayInfo();
     }
 
     @Override
     public String getFormattedTitle() {
-        return "🚨 ТЕРМІНОВО: " + super.getFormattedTitle();
+        return "🚨 " + super.getFormattedTitle();
     }
 }

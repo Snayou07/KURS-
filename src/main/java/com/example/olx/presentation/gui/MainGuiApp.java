@@ -320,7 +320,7 @@ public class MainGuiApp extends Application {
             List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
             if (existingCategories != null && !existingCategories.isEmpty()) {
                 System.out.println("Categories already exist (" + existingCategories.size() + " found), skipping initialization.");
-                return;
+                return; // Тут може бути проблема - якщо категорії "існують" але не завантажуються
             }
 
             System.out.println("Initializing default categories...");

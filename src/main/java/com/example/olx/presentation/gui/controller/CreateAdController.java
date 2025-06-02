@@ -330,12 +330,6 @@ public class CreateAdController {
         Boolean freeDelivery = null;
         Double deliveryCost = null; //
         String deliveryInfo = null;
-        AdComponent fullyDecoratedAd = AdDecoratorFactory.createFullyDecoratedAd( //
-                ad, isPremium, isUrgent,
-                discountPercentage, discountReason,
-                warrantyMonths, warrantyType,
-                freeDelivery, deliveryCost, deliveryInfo
-        );
         if (deliveryCheckBox != null && deliveryCheckBox.isSelected()) {
             freeDelivery = freeDeliveryCheckBox != null && freeDeliveryCheckBox.isSelected();
             deliveryInfo = deliveryInfoField != null ? deliveryInfoField.getText().trim() : ""; //
@@ -353,9 +347,19 @@ public class CreateAdController {
                     deliveryCost = 0.0; //
                 }
             }
-            return fullyDecoratedAd; //
+            return AdDecoratorFactory.createFullyDecoratedAd( //
+                    ad, isPremium, isUrgent,
+                    discountPercentage, discountReason,
+                    warrantyMonths, warrantyType,
+                    freeDelivery, deliveryCost, deliveryInfo
+            ); //
         } else {
-            return fullyDecoratedAd; //
+            return AdDecoratorFactory.createFullyDecoratedAd( //
+                    ad, isPremium, isUrgent,
+                    discountPercentage, discountReason,
+                    warrantyMonths, warrantyType,
+                    freeDelivery, deliveryCost, deliveryInfo
+            ); //
         }
 
     }
