@@ -24,7 +24,7 @@ public class CreateAdCommand implements CommandWithResult<Ad> {
     @Override
     public void undo() throws UserNotFoundException {
         if (createdAd != null) {
-            adService.deleteAd(createdAd.getAdId(), request.getSellerId());
+            adService.deleteAd((String) createdAd.getId(), request.getSellerId());
             System.out.println("Команда CreateAd скасована для оголошення: " + createdAd.getTitle());
             createdAd = null;
         }
