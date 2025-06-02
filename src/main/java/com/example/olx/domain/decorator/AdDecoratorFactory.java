@@ -107,15 +107,15 @@ public class AdDecoratorFactory {
         // ad.isPremium()
 
         if (ad.hasDiscount()) { // Пример: предположение о наличии метода
-            component = new DiscountAdDecorator(component, ad.getDiscountPercentage(), ad.getDiscountReason());
+            component = new DiscountAdDecorator(component);
         }
 
         if (ad.hasWarranty()) { // Пример
-            component = new WarrantyAdDecorator(component, ad.getWarrantyMonths(), ad.getWarrantyType());
+            component = new WarrantyAdDecorator(component);
         }
 
         if (ad.hasDelivery()) { // Пример
-            component = new DeliveryAdDecorator(component, ad.isFreeDelivery(), ad.getDeliveryCost(), ad.getDeliveryInfo());
+            component = new DeliveryAdDecorator(component);
         }
 
         if (ad.isUrgent()) {
