@@ -39,7 +39,7 @@ public class CategoryServiceImpl implements CategoryServicePort {
 
             // Логування для дебагу
             for (CategoryComponent category : rootCategories) {
-                System.out.println("Ініціалізована категорія: " + category.getName(t) + " (ID: " + category.getId() + ")");
+                System.out.println("Ініціалізована категорія: " + category.getName() + " (ID: " + category.getId() + ")");
             }
         } catch (Exception e) {
             System.err.println("Помилка ініціалізації категорій: " + e.getMessage());
@@ -73,7 +73,7 @@ public class CategoryServiceImpl implements CategoryServicePort {
 
             // Додатковий дебаг
             for (CategoryComponent category : filteredCategories) {
-                System.out.println("Категорія: " + category.getName(t) + " (ID: " + category.getId() + ")");
+                System.out.println("Категорія: " + category.getName() + " (ID: " + category.getId() + ")");
             }
 
             return filteredCategories;
@@ -101,7 +101,7 @@ public class CategoryServiceImpl implements CategoryServicePort {
             }
 
             if (result != null && result.isPresent()) {
-                System.out.println("Знайдено категорію: " + result.get().getName(t) + " для ID: " + id);
+                System.out.println("Знайдено категорію: " + result.get().getName() + " для ID: " + id);
             } else {
                 System.out.println("Категорію з ID " + id + " не знайдено");
             }

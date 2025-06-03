@@ -1,4 +1,4 @@
-// com/example/olx/domain/decorator/DeliveryAdDecorator.java
+// src/main/java/com/example/olx/domain/decorator/DeliveryAdDecorator.java
 package com.example.olx.domain.decorator;
 
 public class DeliveryAdDecorator extends AdDecorator {
@@ -9,30 +9,41 @@ public class DeliveryAdDecorator extends AdDecorator {
     public DeliveryAdDecorator(AdComponent component, boolean freeDelivery, double deliveryCost, String deliveryInfo) {
         super(component);
         this.freeDelivery = freeDelivery;
-        this.deliveryCost = this.freeDelivery ? 0 : Math.max(0, deliveryCost);
-        this.deliveryInfo = deliveryInfo != null ? deliveryInfo : "Стандартна доставка";
+        this.deliveryCost = deliveryCost;
+        this.deliveryInfo = deliveryInfo != null ? deliveryInfo : "Доставка доступна";
+    }
+
+    @Override
+    public String getTitle() {
+        if (freeDelivery) {
+            return super.getTitle() + " 🚚 БЕЗКОШТОВНА ДОСТАВКА";
+        } else {
+            return super.getTitle() + String.format(" 🚚 Доставка %.2f грн", deliveryCost);
+        }
     }
 
     @Override
     public String getDisplayInfo() {
-        String deliveryText = freeDelivery ?
-                "\n🚚 БЕЗКОШТОВНА ДОСТАВКА! 🎉" :
-                String.format("\n🚚 Доставка: %.2f грн", this.deliveryCost);
+        String deliveryText;
+        if (freeDelivery) {
+            deliveryText = "🚚 БЕЗКОШТОВНА ДОСТАВКА";
+        } else {
+            deliveryText = String.format("🚚 Доставка: %.2f грн", deliveryCost);
+        }
 
         return super.getDisplayInfo() +
-                deliveryText +
-                "\n📦 " + this.deliveryInfo;
+                String.format("\n%s - %s", deliveryText, deliveryInfo);
     }
 
-    @Override
-    public double getCalculatedPrice() {
-        // Додаємо вартість доставки тільки якщо вона не безкоштовна
-        return super.getCalculatedPrice() + (this.freeDelivery ? 0 : this.deliveryCost);
+    public boolean isFreeDelivery() {
+        return freeDelivery;
     }
 
-    @Override
-    public String getFormattedTitle() {
-        String deliveryLabel = freeDelivery ? " 🚚 [Безкоштовна доставка]" : " 🚚 [З доставкою]";
-        return super.getFormattedTitle() + deliveryLabel;
+    public double getDeliveryCost() {
+        return deliveryCost;
+    }
+
+    public String getDeliveryInfo() {
+        return deliveryInfo;
     }
 }

@@ -213,7 +213,7 @@ public class Ad implements Serializable, Cloneable {
     public boolean isUrgent() { return urgent; }
     public void setUrgent(boolean urgent) { this.urgent = urgent; }
 
-    public boolean hasDiscount() { return false; }
+
 
     // Імплементація клонування
     @Override
@@ -255,7 +255,92 @@ public class Ad implements Serializable, Cloneable {
     public int hashCode() {
         return Objects.hash(adId);
     }
+    private double discountPercentage;
+    private String discountReason;
+    private int warrantyMonths;
+    private String warrantyType;
+    private boolean freeDelivery;
+    private double deliveryCost;
+    private String deliveryInfo;
 
+    // Методи для роботи зі знижкою
+    public boolean hasDiscount() {
+        return hasDiscount;
+    }
+
+    public double getDiscountPercentage() {
+        return discountPercentage;
+    }
+
+    public void setDiscountPercentage(double discountPercentage) {
+        this.discountPercentage = discountPercentage;
+        this.hasDiscount = discountPercentage > 0;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public String getDiscountReason() {
+        return discountReason;
+    }
+
+    public void setDiscountReason(String discountReason) {
+        this.discountReason = discountReason;
+    }
+
+    // Методи для роботи з гарантією
+    public int getWarrantyMonths() {
+        return warrantyMonths;
+    }
+
+    public void setWarrantyMonths(int warrantyMonths) {
+        this.warrantyMonths = warrantyMonths;
+        this.hasWarranty = warrantyMonths > 0;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public String getWarrantyType() {
+        return warrantyType;
+    }
+
+    public void setWarrantyType(String warrantyType) {
+        this.warrantyType = warrantyType;
+    }
+
+    // Методи для роботи з доставкою
+    public boolean isFreeDelivery() {
+        return freeDelivery;
+    }
+
+    public void setFreeDelivery(boolean freeDelivery) {
+        this.freeDelivery = freeDelivery;
+        this.hasDelivery = true;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public double getDeliveryCost() {
+        return deliveryCost;
+    }
+
+    public void setDeliveryCost(double deliveryCost) {
+        this.deliveryCost = deliveryCost;
+        this.hasDelivery = true;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public String getDeliveryInfo() {
+        return deliveryInfo;
+    }
+
+    public void setDeliveryInfo(String deliveryInfo) {
+        this.deliveryInfo = deliveryInfo;
+    }
     @Override
     public String toString() {
         return "Ad{" +

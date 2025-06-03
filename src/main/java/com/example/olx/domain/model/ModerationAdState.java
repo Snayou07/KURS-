@@ -1,24 +1,19 @@
 package com.example.olx.domain.model;
 
-import java.io.Serializable;
-
-public class ModerationAdState implements AdState, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class ModerationAdState implements AdState {
     @Override
     public void publish(Ad ad) {
-        System.out.println("Оголошення '" + ad.getTitle() + "' проходить модерацію і не може бути опубліковане.");
+        ad.setCurrentState(new ActiveAdState());
     }
 
     @Override
     public void archive(Ad ad) {
-        System.out.println("Оголошення на модерації '" + ad.getTitle() + "' архівується...");
         ad.setCurrentState(new ArchivedAdState());
     }
 
     @Override
     public void markAsSold(Ad ad) {
-        System.out.println("Оголошення на модерації '" + ad.getTitle() + "' не може бути продане.");
+        throw new IllegalStateException("Неможливо продати оголошення на модерації");
     }
 
     @Override

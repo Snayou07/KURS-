@@ -1,3 +1,4 @@
+// src/main/java/com/example/olx/domain/decorator/PremiumAdDecorator.java
 package com.example.olx.domain.decorator;
 
 public class PremiumAdDecorator extends AdDecorator {
@@ -7,12 +8,12 @@ public class PremiumAdDecorator extends AdDecorator {
     }
 
     @Override
-    public String getDisplayInfo() {
-        return "⭐ ПРЕМІУМ ⭐\n" + super.getDisplayInfo();
+    public String getTitle() {
+        return "⭐ ПРЕМІУМ ⭐ " + super.getTitle();
     }
 
     @Override
-    public String getFormattedTitle() {
-        return "⭐ " + super.getFormattedTitle() + " [ПРЕМІУМ]";
+    public String getDisplayInfo() {
+        return super.getDisplayInfo() + "\n🌟 ПРЕМІУМ ОГОЛОШЕННЯ - підвищена видимість!";
     }
 }

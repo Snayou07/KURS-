@@ -1,4 +1,4 @@
-// com/example/olx/domain/decorator/WarrantyAdDecorator.java
+// src/main/java/com/example/olx/domain/decorator/WarrantyAdDecorator.java
 package com.example.olx.domain.decorator;
 
 public class WarrantyAdDecorator extends AdDecorator {
@@ -7,20 +7,26 @@ public class WarrantyAdDecorator extends AdDecorator {
 
     public WarrantyAdDecorator(AdComponent component, int warrantyMonths, String warrantyType) {
         super(component);
-        this.warrantyMonths = Math.max(0, warrantyMonths);
+        this.warrantyMonths = warrantyMonths;
         this.warrantyType = warrantyType != null ? warrantyType : "Стандартна гарантія";
+    }
+
+    @Override
+    public String getTitle() {
+        return super.getTitle() + String.format(" 🛡️ Гарантія %d міс.", warrantyMonths);
     }
 
     @Override
     public String getDisplayInfo() {
         return super.getDisplayInfo() +
-                "\n🛡️ ГАРАНТІЯ: " + warrantyMonths + " місяців" +
-                "\n📋 Тип гарантії: " + warrantyType +
-                "\n✅ Гарантований сервіс та підтримка";
+                String.format("\n🛡️ ГАРАНТІЯ: %d місяців (%s)", warrantyMonths, warrantyType);
     }
 
-    @Override
-    public String getFormattedTitle() {
-        return super.getFormattedTitle() + " 🛡️ [" + warrantyMonths + " міс. гарантії]";
+    public int getWarrantyMonths() {
+        return warrantyMonths;
+    }
+
+    public String getWarrantyType() {
+        return warrantyType;
     }
 }

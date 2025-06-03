@@ -1,3 +1,4 @@
+// src/main/java/com/example/olx/domain/decorator/AdDecorator.java
 package com.example.olx.domain.decorator;
 
 import com.example.olx.domain.model.Ad;
@@ -7,9 +8,24 @@ public abstract class AdDecorator implements AdComponent {
 
     public AdDecorator(AdComponent component) {
         if (component == null) {
-            throw new IllegalArgumentException("Component cannot be null in AdDecorator");
+            throw new IllegalArgumentException("Component cannot be null");
         }
         this.component = component;
+    }
+
+    @Override
+    public String getTitle() {
+        return component.getTitle();
+    }
+
+    @Override
+    public String getDescription() {
+        return component.getDescription();
+    }
+
+    @Override
+    public double getPrice() {
+        return component.getPrice();
     }
 
     @Override
@@ -18,27 +34,7 @@ public abstract class AdDecorator implements AdComponent {
     }
 
     @Override
-    public double getCalculatedPrice() {
-        return component.getCalculatedPrice();
-    }
-
-    @Override
-    public String getFormattedTitle() {
-        return component.getFormattedTitle();
-    }
-
-    @Override
     public Ad getAd() {
-        // Важливо: переконуємося, що завжди повертаємо оригінальний Ad
         return component.getAd();
-    }
-
-    // Додатковий helper метод для отримання базового Ad без декораторів
-    protected Ad getBaseAd() {
-        AdComponent current = this.component;
-        while (current instanceof AdDecorator) {
-            current = ((AdDecorator) current).component;
-        }
-        return current.getAd();
     }
 }

@@ -1,27 +1,45 @@
 // src/main/java/com/example/olx/domain/model/Category.java
 package com.example.olx.domain.model;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import com.example.olx.presentation.gui.context.GlobalContext;
+
 public class Category extends CategoryComponent {
     private static final long serialVersionUID = 6L;
     private List<CategoryComponent> subCategories = new ArrayList<>();
     private CategoryComponent[] children;
-    private JsonNode localizedNames;
+    private Map<Locale, String> localizedNames = new HashMap<>();
 
-    public Category(String root, String всіКатегорії, String name) { super(name); }
+    public Category(String root, String всіКатегорії, String name) {
+        super(name);
+    }
+
     @Override
-    public void add(CategoryComponent categoryComponent) { if (categoryComponent != null && !subCategories.contains(categoryComponent)) { subCategories.add(categoryComponent); } }
+    public void add(CategoryComponent categoryComponent) {
+        if (categoryComponent != null && !subCategories.contains(categoryComponent)) {
+            subCategories.add(categoryComponent);
+        }
+    }
+
     @Override
-    public void remove(CategoryComponent categoryComponent) { subCategories.remove(categoryComponent); }
+    public void remove(CategoryComponent categoryComponent) {
+        subCategories.remove(categoryComponent);
+    }
+
     @Override
-    public CategoryComponent getChild(int i) { return subCategories.get(i); }
-    public List<CategoryComponent> getSubCategories() { return new ArrayList<>(subCategories); }
+    public CategoryComponent getChild(int i) {
+        return subCategories.get(i);
+    }
+
+    public List<CategoryComponent> getSubCategories() {
+        return new ArrayList<>(subCategories);
+    }
+
     @Override
     public void displayCategory(String indent) {
         System.out.println(indent + "Категорія: " + getName() + " (ID: " + getId() + ")");
@@ -43,7 +61,6 @@ public class Category extends CategoryComponent {
         this.subCategories.add(category);
 
         // Встановлення батьківської категорії для доданої підкategorії
-
     }
 
     public CategoryComponent[] getChildren() {
@@ -60,6 +77,7 @@ public class Category extends CategoryComponent {
      *
      * @return Назва категорії або резервний варіант, якщо назва відсутня
      */
+    @Override
     public String getName() {
         // 1. Перевірка базової назви (не локалізованої)
         if (this.name != null && !this.name.trim().isEmpty()) {
@@ -92,5 +110,17 @@ public class Category extends CategoryComponent {
 
         // 3. Резервні варіанти, якщо назва не знайдена
         return this.id != null ? "Категорія #" + this.id : "Без назви";
+    }
+
+    // Метод для додавання локалізованих назв
+    public void addLocalizedName(Locale locale, String name) {
+        if (locale != null && name != null && !name.trim().isEmpty()) {
+            this.localizedNames.put(locale, name.trim());
+        }
+    }
+
+    // Метод для отримання всіх локалізованих назв
+    public Map<Locale, String> getLocalizedNames() {
+        return new HashMap<>(localizedNames);
     }
 }
