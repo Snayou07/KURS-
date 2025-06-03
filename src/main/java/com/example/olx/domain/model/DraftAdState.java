@@ -1,7 +1,11 @@
 // src/main/java/com/example/olx/domain/model/DraftAdState.java
 package com.example.olx.domain.model;
 
-public class DraftAdState implements AdState {
+import java.io.Serializable;
+
+public class DraftAdState implements AdState, Serializable {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public void publish(Ad ad) {
         ad.setCurrentState(new ActiveAdState());

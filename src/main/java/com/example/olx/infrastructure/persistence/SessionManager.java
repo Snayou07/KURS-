@@ -26,6 +26,17 @@ public class SessionManager {
         } catch (DataPersistenceException e) {
             System.out.println("⚠ Файл стану не знайдено або помилка завантаження. Починаємо з порожнього стану.");
             System.out.println("Деталі: " + e.getMessage());
+            // ДОДАТКОВЕ ВИПРАВЛЕННЯ: Видаляємо пошкоджений файл
+            if (filePath != null) {
+                File corruptedFile = new File(filePath);
+                if (corruptedFile.exists()) {
+                    if (corruptedFile.delete()) {
+                        System.out.println("⚠ Пошкоджений файл стану видалено: " + filePath);
+                    } else {
+                        System.out.println("⚠ Не вдалося видалити пошкоджений файл: " + filePath);
+                    }
+                }
+            }
             // Залишаємо порожній стан - це нормально для першого запуску
         }
     }
@@ -138,6 +149,11 @@ public class SessionManager {
                 System.out.println("   Категорій: " + currentAppState.getCategories().size());
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("❌ Помилка завантаження стану з файлу: " + filePath);
+                // ВИПРАВЛЕННЯ: Більш детальна обробка помилок серіалізації
+                if (e instanceof InvalidClassException) {
+                    System.err.println("❌ Файл стану несумісний з поточною версією програми");
+                    System.err.println("❌ Рекомендується видалити файл: " + filePath);
+                }
                 throw new DataPersistenceException("Error loading session state from file: " + filePath, e);
             }
         } else {
@@ -148,5 +164,22 @@ public class SessionManager {
     public synchronized void clearCurrentState() {
         this.currentAppState.clear();
         System.out.println("Поточний стан програми очищено в SessionManager.");
+    }
+
+    /**
+     * НОВИЙ МЕТОД: Очищення пошкодженого файлу стану
+     */
+    public synchronized void clearCorruptedStateFile() {
+        if (filePath != null) {
+            File file = new File(filePath);
+            if (file.exists()) {
+                if (file.delete()) {
+                    System.out.println("✅ Пошкоджений файл стану видалено: " + filePath);
+                    this.currentAppState = new AppState(); // Скидаємо до порожнього стану
+                } else {
+                    System.err.println("❌ Не вдалося видалити пошкоджений файл: " + filePath);
+                }
+            }
+        }
     }
 }
