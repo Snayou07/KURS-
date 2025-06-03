@@ -11,7 +11,10 @@ public abstract class CategoryComponent implements Serializable {
         this.name = name;
     }
     public String getId() { return id; }
-    public static String getName(Object t) { return name; }
+    public String getName() {
+        // return the name without requiring parameters
+        return name; // or whatever field stores the name
+    }
     public void setName(String name) { this.name = name; }
     public void add(CategoryComponent categoryComponent) { throw new UnsupportedOperationException(); }
     public void remove(CategoryComponent categoryComponent) { throw new UnsupportedOperationException(); }

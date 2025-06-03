@@ -6,16 +6,19 @@ public class BasicAdComponent implements AdComponent {
     private final Ad ad;
 
     public BasicAdComponent(Ad ad) {
+        if (ad == null) {
+            throw new IllegalArgumentException("Ad cannot be null in BasicAdComponent");
+        }
         this.ad = ad;
     }
 
     @Override
     public String getDisplayInfo() {
         return String.format("Назва: %s\nОпис: %s\nЦіна: %.2f грн\nСтатус: %s",
-                ad.getTitle(),
+                ad.getTitle() != null ? ad.getTitle() : "Без назви",
                 ad.getDescription() != null ? ad.getDescription() : "Без опису",
                 ad.getPrice(),
-                ad.getState()); // Fixed: Changed from getStatus() to getState()
+                ad.getState() != null ? ad.getState() : "Невідомий");
     }
 
     @Override
@@ -25,11 +28,16 @@ public class BasicAdComponent implements AdComponent {
 
     @Override
     public String getFormattedTitle() {
-        return ad.getTitle();
+        return ad.getTitle() != null ? ad.getTitle() : "Без назви";
     }
 
     @Override
     public Ad getAd() {
         return ad;
+    }
+
+    // Додатковий метод для перевірки валідності
+    public boolean isValid() {
+        return ad != null && ad.getTitle() != null && ad.getPrice() >= 0;
     }
 }

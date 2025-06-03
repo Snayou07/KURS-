@@ -6,7 +6,10 @@ public abstract class AdDecorator implements AdComponent {
     protected AdComponent component;
 
     public AdDecorator(AdComponent component) {
-        this.component = component != null ? component : new BasicAdComponent(null);
+        if (component == null) {
+            throw new IllegalArgumentException("Component cannot be null in AdDecorator");
+        }
+        this.component = component;
     }
 
     @Override
@@ -26,6 +29,16 @@ public abstract class AdDecorator implements AdComponent {
 
     @Override
     public Ad getAd() {
+        // Важливо: переконуємося, що завжди повертаємо оригінальний Ad
         return component.getAd();
+    }
+
+    // Додатковий helper метод для отримання базового Ad без декораторів
+    protected Ad getBaseAd() {
+        AdComponent current = this.component;
+        while (current instanceof AdDecorator) {
+            current = ((AdDecorator) current).component;
+        }
+        return current.getAd();
     }
 }

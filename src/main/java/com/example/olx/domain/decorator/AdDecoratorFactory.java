@@ -28,14 +28,20 @@ public class AdDecoratorFactory {
         return new DeliveryAdDecorator(new BasicAdComponent(ad), freeDelivery, deliveryCost, deliveryInfo);
     }
 
-    // Метод для створення повністю декорованого оголошення
+    // Виправлений метод для створення повністю декорованого оголошення
     public static AdComponent createFullyDecoratedAd(Ad ad, boolean isPremium, boolean isUrgent,
                                                      Double discountPercentage, String discountReason,
                                                      Integer warrantyMonths, String warrantyType,
                                                      Boolean freeDelivery, Double deliveryCost, String deliveryInfo) {
+
+        // Перевіряємо, що ad не null
+        if (ad == null) {
+            throw new IllegalArgumentException("Ad cannot be null");
+        }
+
         AdComponent component = new BasicAdComponent(ad);
 
-        // Додаємо декоратори по черзі
+        // Додаємо декоратори в правильному порядку (від внутрішнього до зовнішнього)
         if (discountPercentage != null && discountPercentage > 0) {
             component = new DiscountAdDecorator(component, discountPercentage, discountReason);
         }
@@ -61,12 +67,23 @@ public class AdDecoratorFactory {
         return component;
     }
 
-    // Виправлені методи
+    // Додатковий метод для створення декорованого компонента з існуючого
     public static AdComponent createDiscountAd(AdComponent baseComponent, double discountPercentage, String reason) {
+        if (baseComponent == null) {
+            throw new IllegalArgumentException("Base component cannot be null");
+        }
         return new DiscountAdDecorator(baseComponent, discountPercentage, reason);
     }
 
     public static AdComponent createBaseAdComponent(Ad ad) {
+        if (ad == null) {
+            throw new IllegalArgumentException("Ad cannot be null");
+        }
         return new BasicAdComponent(ad);
+    }
+
+    // Додатковий helper метод для перевірки чи компонент містить валідний Ad
+    public static boolean isValidComponent(AdComponent component) {
+        return component != null && component.getAd() != null;
     }
 }
