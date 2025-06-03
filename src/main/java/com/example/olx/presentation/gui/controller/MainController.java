@@ -31,6 +31,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.jetbrains.annotations.Contract;
 // import javafx.scene.text.Text; // Unused
 // import javafx.util.Callback;
 // Unused for now, commented out setupAdListView uses it
@@ -133,6 +134,7 @@ public class MainController {
     private boolean isAdvancedSearchVisible = false;
 
     // Fix 2: AdComponent Implementation - Add this class definition
+    /*
     private static class BaseAdComponent implements AdComponent {
         private final Ad ad;
 
@@ -154,6 +156,8 @@ public class MainController {
 
 
     }
+
+     */
 
 
     @FXML
@@ -273,12 +277,13 @@ public class MainController {
                     HBox infoBox = new HBox(15);
                     String categoryName = "Невідомо";
                     if (ad.getCategoryId() != null && categoryService != null) {
-                        // Fix 1: getName(t) Method Calls
-                        categoryName = categoryService.getCategoryById(ad.getCategoryId())
-                                .map(Category::getName) // Changed from getName(t)
+                        // If getCategoryById() returns Optional<Category>:
+                        Optional<Category> categoryOptional = categoryService.getCategoryById(ad.getCategoryId());
+                        categoryName = categoryOptional
+                                .map(Category::getName)
                                 .orElse("ID: " + ad.getCategoryId());
                     } else if (ad.getCategoryId() != null) {
-                        categoryName = "ID: " + ad.getCategoryId(); // Fallback if service is null
+                        categoryName = "ID: " + ad.getCategoryId();
                     }
                     Label categoryInfoLabel = new Label("Категорія: " + categoryName);
                     String dateStr = "Дата: невідома";
@@ -1313,11 +1318,161 @@ public class MainController {
 
 
     // ========== UTILITY METHODS ==========
-    // showError, showErrorAlert, showConfirmationAlert, showInfoAlert - без змін
-    private void showError(String message) { /* ... без змін ... */ }
-    private void showErrorAlert(String title, String header, String content) { /* ... без змін ... */ }
-    private Optional<ButtonType> showConfirmationAlert(String title, String header, String content) { /* ... без змін ... */ }
-    private void showInfoAlert(String title, String header, String content) { /* ... без змін ... */ }
+    // ========== UTILITY METHODS ==========
+// showError, showErrorAlert, showConfirmationAlert, showInfoAlert - без змін
+
+    @Contract(pure = true)
+    private void showError(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            System.err.println("Помилка: порожнє повідомлення про помилку");
+            return;
+        }
+
+        System.err.println("ПОМИЛКА: " + message);
+
+        // Також можна додати логування у файл, якщо потрібно
+        // Logger.getLogger(this.getClass().getName()).severe(message);
+    }
+
+    @Contract(pure = true)
+    private void showErrorAlert(String title, String header, String content) {
+        if (title == null) title = "Помилка";
+        if (header == null) header = "Виникла помилка";
+        if (content == null || content.trim().isEmpty()) {
+            content = "Невідома помилка";
+        }
+
+        String finalContent = content;
+        String finalHeader = header;
+        String finalTitle = title;
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(finalTitle);
+            alert.setHeaderText(finalHeader);
+            alert.setContentText(finalContent);
+
+            // Налаштування іконки та стилю
+            alert.getDialogPane().getStylesheets().add(
+                    getClass().getResource("/styles/alert-styles.css").toExternalForm()
+            );
+
+            alert.showAndWait();
+        });
+    }
+
+    @Contract(pure = true)
+    private Optional<ButtonType> showConfirmationAlert(String title, String header, String content) {
+        if (title == null) title = "Підтвердження";
+        if (header == null) header = "Підтвердьте дію";
+        if (content == null || content.trim().isEmpty()) {
+            content = "Ви впевнені, що хочете продовжити?";
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+
+        // Налаштування кнопок
+        alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+
+        // Налаштування тексту кнопок українською
+        Button yesButton = (Button) alert.getDialogPane().lookupButton(ButtonType.YES);
+        Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
+        yesButton.setText("Так");
+        noButton.setText("Ні");
+
+        // Налаштування стилю
+        try {
+            alert.getDialogPane().getStylesheets().add(
+                    getClass().getResource("/styles/alert-styles.css").toExternalForm()
+            );
+        } catch (Exception e) {
+            // Ігноруємо помилку стилів
+        }
+
+        return alert.showAndWait();
+    }
+
+    @Contract(pure = true)
+    private void showInfoAlert(String title, String header, String content) {
+        if (title == null) title = "Інформація";
+        if (header == null) header = "Повідомлення";
+        if (content == null || content.trim().isEmpty()) {
+            content = "Немає додаткової інформації";
+        }
+
+        String finalTitle = title;
+        String finalHeader = header;
+        String finalContent = content;
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(finalTitle);
+            alert.setHeaderText(finalHeader);
+            alert.setContentText(finalContent);
+
+            // Налаштування кнопки
+            Button okButton = (Button) alert.getDialogPane().lookupButton(ButtonType.OK);
+            okButton.setText("Гаразд");
+
+            // Налаштування стилю
+            try {
+                alert.getDialogPane().getStylesheets().add(
+                        getClass().getResource("/styles/alert-styles.css").toExternalForm()
+                );
+            } catch (Exception e) {
+                // Ігноруємо помилку стилів
+            }
+
+            alert.showAndWait();
+        });
+    }
+
+// Додаткові utility методи для зручності
+
+    @Contract(pure = true)
+    private void showSuccessAlert(String message) {
+        showInfoAlert("Успіх", "Операція виконана успішно", message);
+    }
+
+    @Contract(pure = true)
+    private void showWarningAlert(String title, String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle(title != null ? title : "Попередження");
+            alert.setHeaderText("Увага!");
+            alert.setContentText(message != null ? message : "Виявлено потенційну проблему");
+
+            Button okButton = (Button) alert.getDialogPane().lookupButton(ButtonType.OK);
+            okButton.setText("Зрозуміло");
+
+            alert.showAndWait();
+        });
+    }
+
+    @Contract(pure = true)
+    private boolean confirmAction(String message) {
+        Optional<ButtonType> result = showConfirmationAlert(
+                "Підтвердження",
+                "Підтвердьте дію",
+                message
+        );
+        return result.isPresent() && result.get() == ButtonType.YES;
+    }
+
+    // Метод для відображення помилок з exception
+    @Contract(pure = true)
+    private void showErrorAlert(String title, Exception exception) {
+        String message = exception.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = "Виникла невідома помилка: " + exception.getClass().getSimpleName();
+        }
+
+        showErrorAlert(title, "Помилка виконання", message);
+
+        // Логуємо повний stack trace
+        exception.printStackTrace();
+    }
 
     /**
      * Створює декорований AdComponent з Ad.
