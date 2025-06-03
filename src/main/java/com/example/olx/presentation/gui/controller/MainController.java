@@ -1340,9 +1340,7 @@ public class MainController {
         // Create base component
         AdComponent currentComponent = new BaseAdComponent(ad); // Using the new static inner class
 
-        // Apply decorators if the factory methods are available
-        // These assume AdDecoratorFactory has methods like decorateWithPremium(AdComponent)
-        // If not, those methods need to be implemented in AdDecoratorFactory
+
         if (ad.isPremium()) {
             currentComponent = decoratorFactory.decorateWithPremium(currentComponent);
         }
