@@ -21,24 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 import com.example.olx.presentation.gui.MainGuiApp;
 import com.example.olx.presentation.gui.util.GlobalContext;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.application.Platform;
-import javafx.util.Duration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class AdDetailController {
@@ -71,6 +61,18 @@ public class AdDetailController {
     @FXML
     private VBox mainContainer;
 
+    // Додаткові FXML елементи для методів initializeWithConfig
+    @FXML private TextArea descriptionTextArea;
+    @FXML private Label authorLabel;
+    @FXML private Label statusLabel;
+    @FXML private Label createdDateLabel;
+    @FXML private VBox decoratorsContainer;
+    @FXML private VBox premiumFeaturesContainer;
+    @FXML private VBox imageContainer;
+    @FXML private Button contactButton;
+    @FXML private Button favoriteButton;
+    @FXML private Button shareButton;
+
     private Ad currentAd;
     private AdComponent decoratedAd;
 
@@ -101,9 +103,7 @@ public class AdDetailController {
                 while (parent != null && !(parent instanceof VBox)) {
                     parent = parent.getParent();
                 }
-                if (parent instanceof VBox vbox) {
-                    mainContainer = vbox;
-                } else if (parent instanceof VBox) {
+                if (parent instanceof VBox) {
                     mainContainer = (VBox) parent;
                 }
             }
@@ -122,7 +122,6 @@ public class AdDetailController {
             System.err.println("Помилка при пошуку основного контейнера: " + e.getMessage());
         }
     }
-
     private void setupDecoratedInfoContainer() {
         try {
             // Створюємо контейнер для декорованої інформації
@@ -460,33 +459,46 @@ public class AdDetailController {
      * Ініціалізує базову інформацію про оголошення
      */
     private void initializeBasicAdInfo(Ad ad) {
-        // Припускаємо, що у вас є такі FXML елементи:
         if (titleLabel != null) {
             titleLabel.setText(ad.getTitle());
         }
 
         if (descriptionTextArea != null) {
-            descriptionTextArea.setText(ad.getDescription());
+            descriptionTextArea.setText(ad.getDescription() != null ? ad.getDescription() : "Опис відсутній.");
         }
 
         if (priceLabel != null) {
             priceLabel.setText(String.format("%.2f грн", ad.getPrice()));
         }
 
-        if (authorLabel != null && ad.getAuthor() != null) {
-            authorLabel.setText("Автор: " + ad.getAuthor().getUsername());
+        // Обробка автора (seller)
+        if (authorLabel != null && MainGuiApp.userService != null) {
+            try {
+                User author = MainGuiApp.userService.getUserById(ad.getSellerId());
+                authorLabel.setText("Автор: " + (author != null ? author.getUsername() : "Невідомий"));
+            } catch (Exception e) {
+                authorLabel.setText("Автор: Невідомий");
+                System.err.println("Помилка при завантаженні автора: " + e.getMessage());
+            }
         }
 
-        if (categoryLabel != null && ad.getCategory() != null) {
-            categoryLabel.setText("Категорія: " + ad.getCategory().getName());
+        // Обробка категорії
+        if (categoryLabel != null && MainGuiApp.categoryService != null) {
+            try {
+                Optional<CategoryComponent> categoryOpt = MainGuiApp.categoryService.findCategoryById(ad.getCategoryId());
+                categoryLabel.setText("Категорія: " + categoryOpt.map(CategoryComponent::getName).orElse("Невідома"));
+            } catch (Exception e) {
+                categoryLabel.setText("Категорія: Невідома");
+                System.err.println("Помилка при завантаженні категорії: " + e.getMessage());
+            }
         }
 
         if (statusLabel != null) {
-            statusLabel.setText("Статус: " + ad.getState().toString());
+            statusLabel.setText("Статус: " + (ad.getState() != null ? ad.getState().toString() : "Невідомий"));
         }
 
-        if (createdDateLabel != null && ad.getCreatedAt() != null) {
-            createdDateLabel.setText("Створено: " + ad.getCreatedAt().toString());
+        if (createdDateLabel != null) {
+            createdDateLabel.setText("Створено: " + (ad.getCreatedAt() != null ? ad.getCreatedAt().toString() : "Невідомо"));
         }
 
         // Завантажуємо зображення якщо є
@@ -497,7 +509,7 @@ public class AdDetailController {
      * Застосовує декоратори на основі конфігурації
      */
     private void applyDecorators(Ad ad, AdDisplayConfig config) {
-        // Контейнер для декораторів (припускаємо VBox або HBox)
+        // Контейнер для декораторів
         if (decoratorsContainer != null) {
             decoratorsContainer.getChildren().clear();
         }
