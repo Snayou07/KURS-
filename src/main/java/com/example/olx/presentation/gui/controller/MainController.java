@@ -153,15 +153,7 @@ public class MainController {
             return ad.getTitle() + " - " + String.format("%.2f грн", ad.getPrice());
         }
 
-        @Override
-        public double getPrice() {
-            return ad != null ? ad.getPrice() : 0.0;
-        }
 
-        @Override
-        public String getTitle() {
-            return ad != null ? ad.getTitle() : "No title";
-        }
     }
 
 
@@ -195,9 +187,8 @@ public class MainController {
 
         // Initial data load via mediator and UI updates
         if (this.mediator != null) {
-            // Переконайтесь, що AdBrowserMediator має метод setController
-            // і що він викликає відповідний метод в MainController (наприклад, updateAdsList)
-            // для оновлення списку оголошень після завантаження
+
+
             this.mediator.loadAllAds();
         } else {
             // Fallback or direct load if mediator is not central to initial load
