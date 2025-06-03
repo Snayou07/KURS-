@@ -87,7 +87,9 @@ public class AdDetailController {
                 while (parent != null && !(parent instanceof VBox)) {
                     parent = parent.getParent();
                 }
-                if (parent instanceof VBox) {
+                if (parent instanceof VBox vbox) {
+                    mainContainer = vbox;
+                } else if (parent instanceof VBox) {
                     mainContainer = (VBox) parent;
                 }
             }
@@ -216,10 +218,57 @@ public class AdDetailController {
         } catch (Exception e) {
             System.err.println("Помилка при ініціалізації даних: " + e.getMessage());
             e.printStackTrace();
-            showErrorAlert("Помилка ініціалізації", "Не вдалося повністю завантажити дані оголошення: " + e.getMessage());
+            // Намагаємося завантажити базову версію без декораторів
+            try {
+                populateBasicAdDetails();
+                setupActionButtons();
+                loadImages();
+            } catch (Exception fallbackException) {
+                showErrorAndGoBack("Критична помилка завантаження оголошення: " + fallbackException.getMessage());
+            }
         }
     }
+    private void populateBasicAdDetails() {
+        if (currentAd == null) return;
 
+        if (titleLabel != null) {
+            titleLabel.setText(currentAd.getTitle());
+        }
+
+        if (priceLabel != null) {
+            priceLabel.setText(String.format("%.2f грн", currentAd.getPrice()));
+        }
+
+        if (descriptionText != null) {
+            descriptionText.setText(currentAd.getDescription() != null ?
+                    currentAd.getDescription() : "Опис відсутній.");
+        }
+
+        if (adIdLabel != null) {
+            adIdLabel.setText(currentAd.getAdId());
+        }
+        if (categoryLabel != null && MainGuiApp.categoryService != null) {
+            try {
+                Optional<CategoryComponent> catOpt = MainGuiApp.categoryService.findCategoryById(currentAd.getCategoryId());
+                categoryLabel.setText(catOpt.map(CategoryComponent::getName).orElse("Невідома категорія"));
+            } catch (Exception e) {
+                categoryLabel.setText("Невідома категорія");
+                System.err.println("Помилка при завантаженні категорії: " + e.getMessage());
+            }
+        }
+
+// Обробка продавця
+        if (sellerLabel != null && MainGuiApp.userService != null) {
+            try {
+                User seller = MainGuiApp.userService.getUserById(currentAd.getSellerId());
+                sellerLabel.setText(seller != null ? seller.getUsername() : "Невідомий продавець");
+            } catch (Exception e) {
+                sellerLabel.setText("Невідомий продавець");
+                System.err.println("Помилка при завантаженні продавця: " + e.getMessage());
+            }
+        }
+        // Інші базові поля...
+    }
     /**
      * Альтернативний метод для швидкого створення декорованого оголошення
      */
@@ -283,9 +332,11 @@ public class AdDetailController {
     }
 
     private void populateAdDetails() {
+
         try {
             if (decoratedAd == null || currentAd == null) {
-                throw new IllegalStateException("Дані оголошення не ініціалізовані");
+                System.err.println("Дані оголошення не ініціалізовані");
+                return; // замість throw new IllegalStateException
             }
 
             // Використовуємо декорований заголовок
@@ -402,8 +453,10 @@ public class AdDetailController {
             int insertIndex = findInsertPosition();
 
             // Додаємо декоровану інформацію
-            if (insertIndex >= 0 && insertIndex <= mainContainer.getChildren().size()) {
+            if (insertIndex >= 0 && insertIndex < mainContainer.getChildren().size()) {
                 mainContainer.getChildren().add(insertIndex, decoratedInfoContainer);
+            } else if (insertIndex == mainContainer.getChildren().size()) {
+                mainContainer.getChildren().add(decoratedInfoContainer);
             } else {
                 // В крайньому випадку додаємо перед кнопками або в кінець
                 if (actionButtonsBox != null) {
@@ -576,6 +629,7 @@ public class AdDetailController {
     }
 
     private void loadThumbnails() {
+
         if (thumbnailContainer == null || imagePaths == null) {
             return;
         }
@@ -585,6 +639,9 @@ public class AdDetailController {
 
             for (int i = 0; i < imagePaths.size(); i++) {
                 String imagePath = imagePaths.get(i);
+                if (imagePath == null || imagePath.trim().isEmpty()) {
+                    continue; // пропускаємо порожні шляхи
+                }
                 Image thumbnailImage = loadImageFromPath(imagePath);
 
                 if (thumbnailImage != null) {
@@ -639,8 +696,8 @@ public class AdDetailController {
 
         try {
             for (int i = 0; i < thumbnailContainer.getChildren().size(); i++) {
-                if (thumbnailContainer.getChildren().get(i) instanceof ImageView) {
-                    ImageView thumbnail = (ImageView) thumbnailContainer.getChildren().get(i);
+                var child = thumbnailContainer.getChildren().get(i);
+                if (child instanceof ImageView thumbnail) {
                     updateThumbnailStyle(thumbnail, i == currentImageIndex);
                 }
             }
