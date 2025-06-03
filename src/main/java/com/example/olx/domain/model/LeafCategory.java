@@ -4,5 +4,5 @@ public class LeafCategory extends CategoryComponent {
     private static final long serialVersionUID = 7L;
     public LeafCategory(String name) { super(name); }
     @Override
-    public void displayCategory(String indent) { System.out.println(indent + "Кінцева категорія: " + getName() + " (ID: " + getId() + ")"); }
+    public void displayCategory(String indent) { System.out.println(indent + "Кінцева категорія: " + getName(t) + " (ID: " + getId() + ")"); }
 }

@@ -3,6 +3,7 @@ package com.example.olx.presentation.gui.mediator;
 import com.example.olx.application.service.port.AdServicePort;
 import com.example.olx.application.service.port.CategoryServicePort;
 import com.example.olx.domain.model.Ad;
+import com.example.olx.presentation.gui.controller.MainController;
 import com.example.olx.presentation.gui.mediator.components.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ public class AdBrowserMediator implements UIMediator {
 
     // Флаг для перевірки ініціалізації компонентів
     private boolean componentsInitialized = false;
+    private MainController controller;
 
     public AdBrowserMediator(AdServicePort adService, CategoryServicePort categoryService) {
         this.adService = adService;
@@ -361,5 +363,9 @@ public class AdBrowserMediator implements UIMediator {
 
     public FilterComponent getFilterComponent() {
         return filterComponent;
+    }
+
+    public void setController(MainController controller) {
+        this.controller = controller;
     }
 }

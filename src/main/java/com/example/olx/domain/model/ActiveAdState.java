@@ -1,7 +1,10 @@
-// src/main/java/com/example/olx/domain/model/ActiveAdState.java
 package com.example.olx.domain.model;
 
-public class ActiveAdState implements AdState {
+import java.io.Serializable;
+
+public class ActiveAdState implements AdState, Serializable {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public void publish(Ad ad) {
         System.out.println("Оголошення '" + ad.getTitle() + "' вже опубліковане.");

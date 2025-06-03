@@ -1,7 +1,10 @@
-// src/main/java/com/example/olx/domain/model/ArchivedAdState.java
 package com.example.olx.domain.model;
 
-public class ArchivedAdState implements AdState {
+import java.io.Serializable;
+
+public class ArchivedAdState implements AdState, Serializable {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public void publish(Ad ad) {
         System.out.println("Архівоване оголошення '" + ad.getTitle() + "' публікується знову...");

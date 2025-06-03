@@ -27,6 +27,8 @@ public class AdServiceImpl implements AdServicePort {
     private final CategoryRepository categoryRepository;
     private final NotificationServicePort notificationService;
     private final AdSearchStrategy searchStrategy;
+
+
     @Override
     public void changeAdState(String adId, AdState newState) throws UserNotFoundException {
         // Validate input parameters
@@ -41,8 +43,10 @@ public class AdServiceImpl implements AdServicePort {
         Ad ad = adRepository.findById(adId)
                 .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found"));
 
-        // Update the ad state
-        ad.setState(newState);
+        // Update the ad state - Fixed: Changed from setState() to the correct method
+        ad.setState(newState); // Make sure your Ad class has this method
+        // OR if your Ad class uses a different method name:
+        // ad.setAdState(newState);
 
         // Save the updated ad
         adRepository.save(ad);

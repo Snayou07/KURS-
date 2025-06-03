@@ -1,7 +1,10 @@
-// src/main/java/com/example/olx/domain/model/SoldAdState.java
 package com.example.olx.domain.model;
 
-public class SoldAdState implements AdState {
+import java.io.Serializable;
+
+public class SoldAdState implements AdState, Serializable {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public void publish(Ad ad) {
         System.out.println("Продане оголошення '" + ad.getTitle() + "' не може бути опубліковане знову.");

@@ -1,11 +1,18 @@
 // src/main/java/com/example/olx/domain/model/Category.java
 package com.example.olx.domain.model;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.logging.Logger;
+import com.example.olx.presentation.gui.context.GlobalContext;
 public class Category extends CategoryComponent {
     private static final long serialVersionUID = 6L;
     private List<CategoryComponent> subCategories = new ArrayList<>();
     private CategoryComponent[] children;
+    private JsonNode localizedNames;
 
     public Category(String root, String всіКатегорії, String name) { super(name); }
     @Override
@@ -45,5 +52,45 @@ public class Category extends CategoryComponent {
 
     public void setChildren(CategoryComponent[] children) {
         this.children = children;
+    }
+
+    /**
+     * Повертає назву категорії з урахуванням локалізації.
+     * Якщо назва відсутня, повертає "Без назви" або ID категорії.
+     *
+     * @return Назва категорії або резервний варіант, якщо назва відсутня
+     */
+    public String getName() {
+        // 1. Перевірка базової назви (не локалізованої)
+        if (this.name != null && !this.name.trim().isEmpty()) {
+            return this.name.trim();
+        }
+
+        // 2. Обробка локалізованих назв (якщо вони є)
+        if (this.localizedNames != null && !this.localizedNames.isEmpty()) {
+            try {
+                // Отримуємо поточну локаль користувача
+                Locale userLocale = GlobalContext.getCurrentLocale();
+
+                // Спроба отримати назву для поточної локалі
+                String localizedName = localizedNames.get(userLocale);
+                if (localizedName != null && !localizedName.trim().isEmpty()) {
+                    return localizedName.trim();
+                }
+
+                // Якщо немає для поточної локалі - шукаємо будь-яку доступну
+                for (Map.Entry<Locale, String> entry : localizedNames.entrySet()) {
+                    if (entry.getValue() != null && !entry.getValue().trim().isEmpty()) {
+                        return entry.getValue().trim();
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Помилка при отриманні локалізованої назви: " + e.getMessage());
+                // Продовжуємо далі, спробуємо інші варіанти
+            }
+        }
+
+        // 3. Резервні варіанти, якщо назва не знайдена
+        return this.id != null ? "Категорія #" + this.id : "Без назви";
     }
 }

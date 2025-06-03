@@ -1,7 +1,10 @@
-// src/main/java/com/example/olx/domain/model/ModerationAdState.java
 package com.example.olx.domain.model;
 
-public class ModerationAdState implements AdState {
+import java.io.Serializable;
+
+public class ModerationAdState implements AdState, Serializable {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public void publish(Ad ad) {
         System.out.println("Оголошення '" + ad.getTitle() + "' проходить модерацію і не може бути опубліковане.");

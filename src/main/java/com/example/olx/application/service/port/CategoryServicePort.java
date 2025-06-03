@@ -8,4 +8,6 @@ public interface CategoryServicePort {
     void initializeCategories(List<CategoryComponent> rootCategories);
     List<CategoryComponent> getAllRootCategories();
     Optional<CategoryComponent> findCategoryById(String id);
+
+    <T> Optional<T> getCategoryById(String categoryId);
 }

@@ -5,13 +5,13 @@ import java.util.UUID;
 public abstract class CategoryComponent implements Serializable {
     private static final long serialVersionUID = 5L;
     protected String id;
-    protected String name;
+    protected static String name;
     public CategoryComponent(String name) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
     }
     public String getId() { return id; }
-    public String getName() { return name; }
+    public static String getName(Object t) { return name; }
     public void setName(String name) { this.name = name; }
     public void add(CategoryComponent categoryComponent) { throw new UnsupportedOperationException(); }
     public void remove(CategoryComponent categoryComponent) { throw new UnsupportedOperationException(); }

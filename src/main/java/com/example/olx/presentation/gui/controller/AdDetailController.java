@@ -244,7 +244,8 @@ public class AdDetailController {
         adIdLabel.setText(currentAd.getAdId());
 
         Optional<CategoryComponent> catOpt = MainGuiApp.categoryService.findCategoryById(currentAd.getCategoryId());
-        categoryLabel.setText(catOpt.map(CategoryComponent::getName).orElse("Невідома категорія"));
+
+        categoryLabel.setText(catOpt.map(categoryComponent -> categoryComponent.getName()).orElse("Невідома категорія"));
 
         try {
             User seller = MainGuiApp.userService.getUserById(currentAd.getSellerId());

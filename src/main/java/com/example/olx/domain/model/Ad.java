@@ -1,7 +1,10 @@
+// src/main/java/com/example/olx/domain/model/Ad.java
 package com.example.olx.domain.model;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,7 +12,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class Ad implements Serializable, Cloneable {
-    private static final long serialVersionUID = 5L; // Оновлено serialVersionUID
+    private static final long serialVersionUID = 4L;
 
     private String adId;
     private String title;
@@ -19,33 +22,19 @@ public class Ad implements Serializable, Cloneable {
     private String sellerId;
     private List<String> imagePaths;
     private String status;
-    private AdState currentState;
-    private LocalDateTime createdAt;
-    private Object id; // Зазвичай це той же adId або може бути іншим ідентифікатором з БД
-
-    // Поля для декораторів
+    private AdState currentState; // Залишаємо тільки це поле
     private boolean premium;
     private boolean urgent;
-
-    // Поля для знижки
-    private boolean hasDiscount; // Прапорець наявності знижки
-    private double discountPercentage;
-    private String discountReason;
-
-    // Поля для гарантії (прапорець hasWarranty вже існував)
-    private boolean hasWarranty; // Прапорець наявності гарантії
-    private int warrantyMonths;
-    private String warrantyType;
-
-    // Поля для доставки (прапорець hasDelivery вже існував)
-    private boolean hasDelivery; // Прапорець наявності опції доставки
-    private boolean freeDelivery; // Чи є доставка безкоштовною
-    private double deliveryCost; // Вартість доставки, якщо не безкоштовна
-    private String deliveryDetails; // Додаткова інформація про доставку
+    private String id;
     private Object state;
+    private LocalDateTime createdAt;
+    private boolean hasDelivery;
+    private boolean hasWarranty;
+    private LocalDateTime updatedAt;
+    private boolean hasDiscount;
 
 
-    // Основний конструктор з усіма основними параметрами
+    // Основний конструктор з усіма параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
         this.adId = UUID.randomUUID().toString();
         this.id = this.adId;
@@ -55,25 +44,51 @@ public class Ad implements Serializable, Cloneable {
         this.categoryId = categoryId;
         this.sellerId = sellerId;
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
-        this.currentState = new DraftAdState(); // Початковий стан - чернетка
+        this.currentState = new DraftAdState();
         this.status = currentState.getStatusName();
-        this.createdAt = LocalDateTime.now(); // Встановлюємо час створення
-
-        // Ініціалізація значень за замовчуванням для нових полів
-        this.premium = false;
-        this.urgent = false;
-        this.hasDiscount = false;
-        this.discountPercentage = 0.0;
-        this.discountReason = "";
-        this.hasWarranty = false;
-        this.warrantyMonths = 0;
-        this.warrantyType = "";
-        this.hasDelivery = false;
-        this.freeDelivery = false;
-        this.deliveryCost = 0.0;
-        this.deliveryDetails = "";
+    }
+    public boolean hasDelivery() {
+        return this.hasDelivery;
     }
 
+    /**
+     * Встановлює опцію доставки
+     */
+    public void setHasDelivery(boolean hasDelivery) {
+        this.hasDelivery = hasDelivery;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    /**
+     * Перевіряє чи має оголошення гарантію
+     */
+    public boolean hasWarranty() {
+        return this.hasWarranty;
+    }
+
+    /**
+     * Встановлює опцію гарантії
+     */
+    public void setHasWarranty(boolean hasWarranty) {
+        this.hasWarranty = hasWarranty;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    // Також додайте інші методи, якщо потрібно:
+
+  
+   
+
+    public void setHasDiscount(boolean hasDiscount) {
+        this.hasDiscount = hasDiscount;
+        if (this.updatedAt != null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
     // Конструктор без imagePaths
     public Ad(String title, String description, double price, String categoryId, String sellerId) {
         this(title, description, price, categoryId, sellerId, new ArrayList<>());
@@ -81,26 +96,33 @@ public class Ad implements Serializable, Cloneable {
 
     // Порожній конструктор
     public Ad() {
-        this(null, null, 0.0, null, null, new ArrayList<>());
-        // Для порожнього конструктора можна залишити adId і id, що генеруються в основному
-        // або генерувати їх тут, якщо основний не викликається.
-        // Оскільки this(...) викликає основний конструктор, там все ініціалізується.
+        this.adId = UUID.randomUUID().toString();
+        this.id = this.adId;
+        this.imagePaths = new ArrayList<>();
+        this.currentState = new DraftAdState();
+        this.status = currentState.getStatusName();
     }
 
-    // --- Методи для роботи зі станами ---
+    // Методи для роботи зі станами
     public void publishAd() {
-        currentState.publish(this);
-        updateStatus();
+        if (currentState != null) {
+            currentState.publish(this);
+            updateStatus();
+        }
     }
 
     public void archiveAd() {
-        currentState.archive(this);
-        updateStatus();
+        if (currentState != null) {
+            currentState.archive(this);
+            updateStatus();
+        }
     }
 
     public void markAsSold() {
-        currentState.markAsSold(this);
-        updateStatus();
+        if (currentState != null) {
+            currentState.markAsSold(this);
+            updateStatus();
+        }
     }
 
     public void setCurrentState(AdState state) {
@@ -117,117 +139,116 @@ public class Ad implements Serializable, Cloneable {
             this.status = currentState.getStatusName();
         }
     }
+    public static class DateUtils {
 
-    // --- Геттери ---
+        /**
+         * Конвертує LocalDate в строку
+         */
+        public static String toLocalDate(LocalDate date) {
+            if (date == null) {
+                return "";
+            }
+            return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        }
+
+        /**
+         * Конвертує строку в LocalDate
+         */
+        public static LocalDate fromString(String dateString) {
+            if (dateString == null || dateString.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return LocalDate.parse(dateString, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+
+// АБО додайте цей метод безпосередньо в клас, де він використовується:
+
+    /**
+     * Конвертує LocalDate в строкове представлення
+     */
+    public String toLocalDate(LocalDate date) {
+        if (date == null) {
+            return "";
+        }
+        return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
+
+    // Геттери та сеттери
     public String getAdId() { return adId; }
+    public String getId() { return id != null ? id : adId; }
+    public void setId(String id) { this.id = id; }
+
     public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public double getPrice() { return price; }
-    public String getCategoryId() { return categoryId; }
-    public String getSellerId() { return sellerId; }
-    public List<String> getImagePaths() { return Collections.unmodifiableList(imagePaths); }
-    public String getStatus() { return status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public Object getId() { return id != null ? id : adId; }
-
-
-    // Геттери для полів декораторів
-    public boolean isPremium() { return premium; }
-    public boolean isUrgent() { return urgent; }
-
-    public boolean hasDiscount() { return hasDiscount; } // Використовується для прапорця
-    public double getDiscountPercentage() { return discountPercentage; }
-    public String getDiscountReason() { return discountReason; }
-
-    public boolean hasWarranty() { return hasWarranty; } // Використовується для прапорця
-    public int getWarrantyMonths() { return warrantyMonths; }
-    public String getWarrantyType() { return warrantyType; }
-
-    public boolean hasDelivery() { return hasDelivery; } // Використовується для прапорця
-    public boolean isFreeDelivery() { return freeDelivery; }
-    public double getDeliveryCost() { return deliveryCost; }
-    public String getDeliveryDetails() { return deliveryDetails; }
-
-
-    // --- Сеттери ---
     public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+
+    public String getCategoryId() { return categoryId; }
     public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
-    public void setStatus(String status) { // Сеттер для статусу має також оновлювати стан
-        this.status = status;
-        this.currentState = createStateFromStatus(status);
+
+    public String getSellerId() { return sellerId; }
+
+    public List<String> getImagePaths() {
+        return Collections.unmodifiableList(imagePaths);
     }
     public void setImagePaths(List<String> imagePaths) {
         this.imagePaths = imagePaths != null ? new ArrayList<>(imagePaths) : new ArrayList<>();
     }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    // setId не рекомендується, якщо adId - основний ідентифікатор, але якщо потрібно:
-    // public void setId(Object id) { this.id = id; }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    // Сеттери для полів декораторів
+    public boolean isPremium() { return premium; }
     public void setPremium(boolean premium) { this.premium = premium; }
+
+    public boolean isUrgent() { return urgent; }
     public void setUrgent(boolean urgent) { this.urgent = urgent; }
 
-    public void setHasDiscount(boolean hasDiscount) { this.hasDiscount = hasDiscount; }
-    public void setDiscountPercentage(double discountPercentage) { this.discountPercentage = discountPercentage; }
-    public void setDiscountReason(String discountReason) { this.discountReason = discountReason; }
+    public boolean hasDiscount() { return false; }
 
-    public void setHasWarranty(boolean hasWarranty) { this.hasWarranty = hasWarranty; }
-    public void setWarrantyMonths(int warrantyMonths) { this.warrantyMonths = warrantyMonths; }
-    public void setWarrantyType(String warrantyType) { this.warrantyType = warrantyType; }
-
-    public void setHasDelivery(boolean hasDelivery) { this.hasDelivery = hasDelivery; }
-    public void setFreeDelivery(boolean freeDelivery) { this.freeDelivery = freeDelivery; }
-    public void setDeliveryCost(double deliveryCost) { this.deliveryCost = deliveryCost; }
-    public void setDeliveryDetails(String deliveryDetails) { this.deliveryDetails = deliveryDetails; }
-
-
-    // --- Клонування ---
+    // Імплементація клонування
     @Override
     public Ad clone() throws CloneNotSupportedException {
         Ad cloned = (Ad) super.clone();
-        cloned.id = this.id; // Копіюємо поле id
-        cloned.imagePaths = new ArrayList<>(this.imagePaths); // Глибоке копіювання списку шляхів
-        cloned.currentState = createStateFromStatus(this.status); // Створюємо новий об'єкт стану
-
-        // Копіювання значень для нових полів
-        cloned.premium = this.premium;
-        cloned.urgent = this.urgent;
-        cloned.hasDiscount = this.hasDiscount;
-        cloned.discountPercentage = this.discountPercentage;
-        cloned.discountReason = this.discountReason;
-        cloned.hasWarranty = this.hasWarranty;
-        cloned.warrantyMonths = this.warrantyMonths;
-        cloned.warrantyType = this.warrantyType;
-        cloned.hasDelivery = this.hasDelivery;
-        cloned.freeDelivery = this.freeDelivery;
-        cloned.deliveryCost = this.deliveryCost;
-        cloned.deliveryDetails = this.deliveryDetails;
-        // createdAt копіюється автоматично при super.clone(), оскільки LocalDateTime immutable
+        cloned.imagePaths = new ArrayList<>(this.imagePaths);
+        cloned.currentState = createStateFromStatus(this.status);
         return cloned;
     }
 
-    private AdState createStateFromStatus(String statusString) {
-        if (statusString == null) return new DraftAdState();
-        switch (statusString) {
-            case "Чернетка": return new DraftAdState();
-            case "Активне": return new ActiveAdState();
-            case "Архівоване": return new ArchivedAdState();
-            case "Продано": return new SoldAdState();
-            case "На модерації": return new ModerationAdState();
-            default: return new DraftAdState(); // За замовчуванням
+    private AdState createStateFromStatus(String status) {
+        if (status == null) return new DraftAdState();
+
+        switch (status) {
+            case "Чернетка":
+                return new DraftAdState();
+            case "Активне":
+                return new ActiveAdState();
+            case "Архівоване":
+                return new ArchivedAdState();
+            case "Продано":
+                return new SoldAdState();
+            case "На модерації":
+                return new ModerationAdState();
+            default:
+                return new DraftAdState();
         }
     }
 
-    // --- equals, hashCode, toString ---
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Ad ad = (Ad) o;
-        return Objects.equals(adId, ad.adId); // Ідентифікація за adId
+        return Objects.equals(adId, ad.adId);
     }
 
     @Override
@@ -240,37 +261,24 @@ public class Ad implements Serializable, Cloneable {
         return "Ad{" +
                 "adId='" + adId + '\'' +
                 ", title='" + title + '\'' +
-                ", description='" + (description != null ? description.substring(0, Math.min(description.length(), 20)) + "..." : "N/A") + '\'' +
+                ", description='" + description + '\'' +
                 ", price=" + price +
                 ", categoryId='" + categoryId + '\'' +
                 ", sellerId='" + sellerId + '\'' +
                 ", status='" + status + '\'' +
-                ", createdAt=" + createdAt +
                 ", imagePathsCount=" + (imagePaths != null ? imagePaths.size() : 0) +
-                ", premium=" + premium +
-                ", urgent=" + urgent +
-                ", hasDiscount=" + hasDiscount +
-                (hasDiscount ? ", discountPercentage=" + discountPercentage + ", discountReason='" + discountReason + '\'' : "") +
-                ", hasWarranty=" + hasWarranty +
-                (hasWarranty ? ", warrantyMonths=" + warrantyMonths + ", warrantyType='" + warrantyType + '\'' : "") +
-                ", hasDelivery=" + hasDelivery +
-                (hasDelivery ? ", freeDelivery=" + freeDelivery + ", deliveryCost=" + deliveryCost + ", deliveryDetails='" + deliveryDetails + '\'' : "") +
                 '}';
-    }
-
-    // Методи setAdId та setId не рекомендовані, якщо adId має бути незмінним після створення.
-    // Якщо потрібно їх додати:
-    // public void setAdId(String adId) { this.adId = adId; }
-    // public void setId(Object id) { this.id = id; }
-
-    // Залишив старий метод setState, якщо він десь використовується, хоча setCurrentState краще
-    @Deprecated
-    public void setState(AdState state) {
-        this.currentState = state;
-        updateStatus();
     }
 
     public Object getState() {
         return state;
+    }
+
+    public void setState(AdState state) {
+        this.state = state;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return this.createdAt; // LocalDateTime implements Comparable
     }
 }
