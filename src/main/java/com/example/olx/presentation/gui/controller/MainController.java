@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 // import java.util.Random; // Unused
 import static com.example.olx.presentation.gui.MainGuiApp.adService;
 import static com.example.olx.presentation.gui.MainGuiApp.categoryService;
@@ -1258,9 +1259,58 @@ public class MainController {
 
 
     // handleCreateAd, handleLogout, handleExitApplication - без змін
-    @FXML private void handleCreateAd() { /* ... без змін ... */ }
-    @FXML private void handleLogout() { /* ... без змін ... */ }
-    @FXML private void handleExitApplication() { /* ... без змін ... */ }
+    // Виправлені методи-обробники подій для FXML
+// Замініть private на public у вашому контролері
+
+    @FXML
+    public void handleCreateAd() {
+        try {
+            MainGuiApp.loadCreateAdScene();
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Додайте обробку помилки для користувача
+            showErrorAlert("Помилка", "Не вдалося відкрити форму створення оголошення");
+        }
+    }
+
+    @FXML
+    public void handleLogout() {
+        try {
+            // Логіка виходу (очищення сесії, збереження даних тощо)
+            MainGuiApp.loadLoginScene();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorAlert("Помилка", "Не вдалося перейти до екрану входу");
+        }
+    }
+
+    @FXML
+    public void handleExitApplication() {
+        try {
+            // Збереження стану перед виходом
+            if (MainGuiApp.sessionManager != null) {
+                MainGuiApp.sessionManager.saveState();
+            }
+
+            // Закриття застосунку
+            Platform.exit();
+            System.exit(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Навіть при помилці збереження - закриваємо застосунок
+            Platform.exit();
+            System.exit(0);
+        }
+    }
+
+    // Допоміжний метод для показу помилок
+    private void showErrorAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
 
     // ========== COMMAND PATTERN HANDLERS ==========
@@ -1331,7 +1381,7 @@ public class MainController {
         System.err.println("ПОМИЛКА: " + message);
 
         // Також можна додати логування у файл, якщо потрібно
-        // Logger.getLogger(this.getClass().getName()).severe(message);
+        Logger.getLogger(this.getClass().getName()).severe(message);
     }
 
     @Contract(pure = true)
