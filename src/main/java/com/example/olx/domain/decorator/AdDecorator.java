@@ -12,7 +12,15 @@ public abstract class AdDecorator implements AdComponent {
         }
         this.component = component;
     }
+    @Override
+    public String getFormattedTitle() {
+        return component.getFormattedTitle();
+    }
 
+    @Override
+    public double getCalculatedPrice() {
+        return component.getCalculatedPrice();
+    }
     @Override
     public String getTitle() {
         return component.getTitle();

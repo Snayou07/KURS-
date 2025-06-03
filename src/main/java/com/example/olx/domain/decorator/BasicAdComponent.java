@@ -27,7 +27,16 @@ public class BasicAdComponent implements AdComponent {
     public double getPrice() {
         return ad.getPrice();
     }
+    // У файлі BasicAdComponent.java додати:
+    @Override
+    public String getFormattedTitle() {
+        return getTitle();
+    }
 
+    @Override
+    public double getCalculatedPrice() {
+        return getPrice();
+    }
     @Override
     public String getDisplayInfo() {
         return String.format("Назва: %s\nОпис: %s\nЦіна: %.2f грн",

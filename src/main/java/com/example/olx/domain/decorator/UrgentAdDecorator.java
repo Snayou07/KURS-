@@ -6,7 +6,10 @@ public class UrgentAdDecorator extends AdDecorator {
     public UrgentAdDecorator(AdComponent component) {
         super(component);
     }
-
+    @Override
+    public String getFormattedTitle() {
+        return getTitle();
+    }
     @Override
     public String getTitle() {
         return "🔥 ТЕРМІНОВО! " + super.getTitle();

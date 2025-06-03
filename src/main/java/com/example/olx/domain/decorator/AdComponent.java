@@ -9,4 +9,6 @@ public interface AdComponent {
     double getPrice();
     String getDisplayInfo();
     Ad getAd();
+    String getFormattedTitle();
+    double getCalculatedPrice();
 }

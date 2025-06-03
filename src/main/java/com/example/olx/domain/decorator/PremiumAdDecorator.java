@@ -11,7 +11,10 @@ public class PremiumAdDecorator extends AdDecorator {
     public String getTitle() {
         return "⭐ ПРЕМІУМ ⭐ " + super.getTitle();
     }
-
+    @Override
+    public String getFormattedTitle() {
+        return getTitle();
+    }
     @Override
     public String getDisplayInfo() {
         return super.getDisplayInfo() + "\n🌟 ПРЕМІУМ ОГОЛОШЕННЯ - підвищена видимість!";

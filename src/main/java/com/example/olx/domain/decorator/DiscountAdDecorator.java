@@ -21,7 +21,15 @@ public class DiscountAdDecorator extends AdDecorator {
         double originalPrice = super.getPrice();
         return originalPrice * (1 - discountPercentage / 100);
     }
+    @Override
+    public String getFormattedTitle() {
+        return String.format("💰 ЗНИЖКА %.0f%% - %s", discountPercentage, super.getFormattedTitle());
+    }
 
+    @Override
+    public double getCalculatedPrice() {
+        return getPrice(); // вже враховує знижку
+    }
     @Override
     public String getDisplayInfo() {
         double originalPrice = super.getPrice();
