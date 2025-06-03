@@ -228,7 +228,7 @@ public class AdDetailController {
         // Використовуємо декорований заголовок
         titleLabel.setText(decoratedAd.getFormattedTitle());
 
-        // Використовуємо розраховану ціну з декораторів
+
         double calculatedPrice = decoratedAd.getCalculatedPrice();
 
         // Якщо ціна змінилася через декоратори, показуємо це
