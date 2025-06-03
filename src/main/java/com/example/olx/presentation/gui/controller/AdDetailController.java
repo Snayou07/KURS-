@@ -9,8 +9,20 @@ import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.CategoryComponent;
 import com.example.olx.domain.model.User;
 import com.example.olx.domain.model.UserType;
+import com.example.olx.presentation.gui.AdDisplayConfig;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.util.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import com.example.olx.presentation.gui.MainGuiApp;
 import com.example.olx.presentation.gui.util.GlobalContext;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -21,9 +33,11 @@ import javafx.scene.text.Text;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.application.Platform;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -414,7 +428,341 @@ public class AdDetailController {
             System.err.println("Помилка при відображенні декорованої інформації: " + e.getMessage());
         }
     }
+    /**
+     * Універсальний метод ініціалізації контролера деталей оголошення
+     * з підтримкою всіх декораторів через конфігурацію
+     */
+    public void initializeWithConfig(Ad ad, AdDisplayConfig config) {
+        if (ad == null) {
+            System.err.println("Warning: Ad is null in initializeWithConfig");
+            return;
+        }
 
+        if (config == null) {
+            System.err.println("Warning: Config is null, using default config");
+            config = AdDisplayConfig.defaultConfig();
+        }
+
+        // Базова ініціалізація оголошення
+        initializeBasicAdInfo(ad);
+
+        // Застосовуємо декоратори на основі конфігурації
+        applyDecorators(ad, config);
+
+        // Налаштовуємо інтерактивні елементи
+        setupInteractiveElements(ad, config);
+
+        System.out.println("AdDetailController initialized for ad: " + ad.getTitle() +
+                " with config: " + getConfigDescription(config));
+    }
+
+    /**
+     * Ініціалізує базову інформацію про оголошення
+     */
+    private void initializeBasicAdInfo(Ad ad) {
+        // Припускаємо, що у вас є такі FXML елементи:
+        if (titleLabel != null) {
+            titleLabel.setText(ad.getTitle());
+        }
+
+        if (descriptionTextArea != null) {
+            descriptionTextArea.setText(ad.getDescription());
+        }
+
+        if (priceLabel != null) {
+            priceLabel.setText(String.format("%.2f грн", ad.getPrice()));
+        }
+
+        if (authorLabel != null && ad.getAuthor() != null) {
+            authorLabel.setText("Автор: " + ad.getAuthor().getUsername());
+        }
+
+        if (categoryLabel != null && ad.getCategory() != null) {
+            categoryLabel.setText("Категорія: " + ad.getCategory().getName());
+        }
+
+        if (statusLabel != null) {
+            statusLabel.setText("Статус: " + ad.getState().toString());
+        }
+
+        if (createdDateLabel != null && ad.getCreatedAt() != null) {
+            createdDateLabel.setText("Створено: " + ad.getCreatedAt().toString());
+        }
+
+        // Завантажуємо зображення якщо є
+        loadAdImages(ad);
+    }
+
+    /**
+     * Застосовує декоратори на основі конфігурації
+     */
+    private void applyDecorators(Ad ad, AdDisplayConfig config) {
+        // Контейнер для декораторів (припускаємо VBox або HBox)
+        if (decoratorsContainer != null) {
+            decoratorsContainer.getChildren().clear();
+        }
+
+        // Преміум декоратор
+        if (config.isPremium()) {
+            applyPremiumDecorator();
+        }
+
+        // Терміновий декоратор
+        if (config.isUrgent()) {
+            applyUrgentDecorator();
+        }
+
+        // Декоратор знижки
+        if (config.getDiscountPercentage() != null && config.getDiscountPercentage() > 0) {
+            applyDiscountDecorator(ad.getPrice(), config.getDiscountPercentage(), config.getDiscountReason());
+        }
+
+        // Декоратор гарантії
+        if (config.getWarrantyMonths() != null && config.getWarrantyMonths() > 0) {
+            applyWarrantyDecorator(config.getWarrantyMonths(), config.getWarrantyType());
+        }
+
+        // Декоратор доставки
+        if (config.getFreeDelivery() != null || config.getDeliveryCost() != null) {
+            applyDeliveryDecorator(config.getFreeDelivery(), config.getDeliveryCost(), config.getDeliveryInfo());
+        }
+    }
+
+    /**
+     * Застосовує преміум декоратор
+     */
+    private void applyPremiumDecorator() {
+        Label premiumLabel = new Label("⭐ ПРЕМІУМ ОГОЛОШЕННЯ");
+        premiumLabel.setStyle("-fx-background-color: #FFD700; -fx-text-fill: #000000; " +
+                "-fx-font-weight: bold; -fx-padding: 5px 10px; " +
+                "-fx-background-radius: 5px; -fx-font-size: 14px;");
+
+        if (decoratorsContainer != null) {
+            decoratorsContainer.getChildren().add(premiumLabel);
+        }
+
+        // Додаємо золотий бордер до основного контейнера
+        if (mainContainer != null) {
+            mainContainer.setStyle(mainContainer.getStyle() +
+                    "-fx-border-color: #FFD700; -fx-border-width: 2px; -fx-border-radius: 5px;");
+        }
+    }
+
+    /**
+     * Застосовує терміновий декоратор
+     */
+    private void applyUrgentDecorator() {
+        Label urgentLabel = new Label("🚨 ТЕРМІНОВО!");
+        urgentLabel.setStyle("-fx-background-color: #FF4444; -fx-text-fill: white; " +
+                "-fx-font-weight: bold; -fx-padding: 5px 10px; " +
+                "-fx-background-radius: 5px; -fx-font-size: 14px;");
+
+        if (decoratorsContainer != null) {
+            decoratorsContainer.getChildren().add(urgentLabel);
+        }
+
+        // Додаємо анімацію миготіння (опціонально)
+        addBlinkingEffect(urgentLabel);
+    }
+
+    /**
+     * Застосовує декоратор знижки
+     */
+    private void applyDiscountDecorator(double originalPrice, double discountPercentage, String reason) {
+        VBox discountBox = new VBox(5);
+        discountBox.setStyle("-fx-background-color: #E8F5E8; -fx-border-color: #4CAF50; " +
+                "-fx-border-width: 1px; -fx-border-radius: 5px; -fx-padding: 10px;");
+
+        double discountAmount = originalPrice * (discountPercentage / 100);
+        double newPrice = originalPrice - discountAmount;
+
+        Label discountTitle = new Label("💰 ЗНИЖКА " + String.format("%.0f%%", discountPercentage));
+        discountTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #2E7D32; -fx-font-size: 12px;");
+
+        Label oldPriceLabel = new Label(String.format("Було: %.2f грн", originalPrice));
+        oldPriceLabel.setStyle("-fx-text-fill: #666666; -fx-strikethrough: true; -fx-font-size: 11px;");
+
+        Label newPriceLabel = new Label(String.format("Тепер: %.2f грн", newPrice));
+        newPriceLabel.setStyle("-fx-text-fill: #2E7D32; -fx-font-weight: bold; -fx-font-size: 13px;");
+
+        discountBox.getChildren().addAll(discountTitle, oldPriceLabel, newPriceLabel);
+
+        if (reason != null && !reason.trim().isEmpty()) {
+            Label reasonLabel = new Label("Причина: " + reason);
+            reasonLabel.setStyle("-fx-text-fill: #555555; -fx-font-size: 10px; -fx-font-style: italic;");
+            discountBox.getChildren().add(reasonLabel);
+        }
+
+        if (decoratorsContainer != null) {
+            decoratorsContainer.getChildren().add(discountBox);
+        }
+
+        // Оновлюємо основну ціну
+        if (priceLabel != null) {
+            priceLabel.setText(String.format("%.2f грн", newPrice));
+            priceLabel.setStyle(priceLabel.getStyle() + "-fx-text-fill: #2E7D32; -fx-font-weight: bold;");
+        }
+    }
+
+    /**
+     * Застосовує декоратор гарантії
+     */
+    private void applyWarrantyDecorator(int warrantyMonths, String warrantyType) {
+        HBox warrantyBox = new HBox(10);
+        warrantyBox.setStyle("-fx-background-color: #E3F2FD; -fx-border-color: #2196F3; " +
+                "-fx-border-width: 1px; -fx-border-radius: 5px; -fx-padding: 8px;");
+
+        Label warrantyIcon = new Label("🛡️");
+        warrantyIcon.setStyle("-fx-font-size: 16px;");
+
+        VBox warrantyInfo = new VBox(2);
+
+        Label warrantyTitle = new Label("ГАРАНТІЯ " + warrantyMonths + " міс.");
+        warrantyTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976D2; -fx-font-size: 12px;");
+
+        warrantyInfo.getChildren().add(warrantyTitle);
+
+        if (warrantyType != null && !warrantyType.trim().isEmpty()) {
+            Label warrantyTypeLabel = new Label(warrantyType);
+            warrantyTypeLabel.setStyle("-fx-text-fill: #555555; -fx-font-size: 10px;");
+            warrantyInfo.getChildren().add(warrantyTypeLabel);
+        }
+
+        warrantyBox.getChildren().addAll(warrantyIcon, warrantyInfo);
+
+        if (decoratorsContainer != null) {
+            decoratorsContainer.getChildren().add(warrantyBox);
+        }
+    }
+
+    /**
+     * Застосовує декоратор доставки
+     */
+    private void applyDeliveryDecorator(Boolean freeDelivery, Double deliveryCost, String deliveryInfo) {
+        HBox deliveryBox = new HBox(10);
+        deliveryBox.setStyle("-fx-background-color: #FFF3E0; -fx-border-color: #FF9800; " +
+                "-fx-border-width: 1px; -fx-border-radius: 5px; -fx-padding: 8px;");
+
+        Label deliveryIcon = new Label("🚚");
+        deliveryIcon.setStyle("-fx-font-size: 16px;");
+
+        VBox deliveryInfo_vbox = new VBox(2);
+
+        if (freeDelivery != null && freeDelivery) {
+            Label freeDeliveryLabel = new Label("БЕЗКОШТОВНА ДОСТАВКА");
+            freeDeliveryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #E65100; -fx-font-size: 12px;");
+            deliveryInfo_vbox.getChildren().add(freeDeliveryLabel);
+        } else if (deliveryCost != null) {
+            Label deliveryCostLabel = new Label(String.format("Доставка: %.2f грн", deliveryCost));
+            deliveryCostLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #E65100; -fx-font-size: 12px;");
+            deliveryInfo_vbox.getChildren().add(deliveryCostLabel);
+        }
+
+        if (deliveryInfo != null && !deliveryInfo.trim().isEmpty()) {
+            Label infoLabel = new Label(deliveryInfo);
+            infoLabel.setStyle("-fx-text-fill: #555555; -fx-font-size: 10px;");
+            deliveryInfo_vbox.getChildren().add(infoLabel);
+        }
+
+        deliveryBox.getChildren().addAll(deliveryIcon, deliveryInfo_vbox);
+
+        if (decoratorsContainer != null) {
+            decoratorsContainer.getChildren().add(deliveryBox);
+        }
+    }
+
+    /**
+     * Налаштовує інтерактивні елементи
+     */
+    private void setupInteractiveElements(Ad ad, AdDisplayConfig config) {
+        // Налаштовуємо кнопки в залежності від конфігурації
+        if (contactButton != null) {
+            contactButton.setOnAction(e -> handleContactSeller(ad));
+        }
+
+        if (favoriteButton != null) {
+            favoriteButton.setOnAction(e -> handleAddToFavorites(ad));
+        }
+
+        if (shareButton != null) {
+            shareButton.setOnAction(e -> handleShareAd(ad));
+        }
+
+        // Якщо це преміум оголошення, додаємо спеціальні функції
+        if (config.isPremium() && premiumFeaturesContainer != null) {
+            setupPremiumFeatures(ad);
+        }
+    }
+
+    /**
+     * Завантажує зображення оголошення
+     */
+    private void loadAdImages(Ad ad) {
+        if (imageContainer != null && ad.getImagePaths() != null && !ad.getImagePaths().isEmpty()) {
+            imageContainer.getChildren().clear();
+
+            for (String imagePath : ad.getImagePaths()) {
+                try {
+                    ImageView imageView = new ImageView(new Image("file:" + imagePath));
+                    imageView.setFitHeight(200);
+                    imageView.setFitWidth(200);
+                    imageView.setPreserveRatio(true);
+                    imageView.setSmooth(true);
+                    imageContainer.getChildren().add(imageView);
+                } catch (Exception e) {
+                    System.err.println("Error loading image: " + imagePath + " - " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Додає ефект миготіння до елемента
+     */
+    private void addBlinkingEffect(Label label) {
+        Timeline timeline = new Timeline(
+                new KeyFrame(Duration.seconds(0.5), e -> label.setVisible(false)),
+                new KeyFrame(Duration.seconds(1.0), e -> label.setVisible(true))
+        );
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+    }
+
+    /**
+     * Створює опис конфігурації для логування
+     */
+    private String getConfigDescription(AdDisplayConfig config) {
+        List<String> features = new ArrayList<>();
+
+        if (config.isPremium()) features.add("Premium");
+        if (config.isUrgent()) features.add("Urgent");
+        if (config.getDiscountPercentage() != null) features.add("Discount");
+        if (config.getWarrantyMonths() != null) features.add("Warranty");
+        if (config.getFreeDelivery() != null) features.add("Delivery");
+
+        return features.isEmpty() ? "Basic" : String.join(", ", features);
+    }
+
+    // Обробники подій (приклади)
+    private void handleContactSeller(Ad ad) {
+        // Логіка контакту з продавцем
+        System.out.println("Contacting seller for ad: " + ad.getTitle());
+    }
+
+    private void handleAddToFavorites(Ad ad) {
+        // Логіка додавання в обрані
+        System.out.println("Adding to favorites: " + ad.getTitle());
+    }
+
+    private void handleShareAd(Ad ad) {
+        // Логіка поширення оголошення
+        System.out.println("Sharing ad: " + ad.getTitle());
+    }
+
+    private void setupPremiumFeatures(Ad ad) {
+        // Налаштування преміум функцій
+        System.out.println("Setting up premium features for: " + ad.getTitle());
+    }
     private String processDecoratedText(String originalText) {
         if (originalText == null) {
             return "";

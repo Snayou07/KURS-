@@ -32,6 +32,25 @@
                     </padding>
 
                     <children>
+                        <!-- Базова інформація -->
+                        <Label fx:id="titleLabel" />
+                        <TextArea fx:id="descriptionTextArea" />
+                        <Label fx:id="priceLabel" />
+                        <Label fx:id="authorLabel" />
+                        <Label fx:id="categoryLabel" />
+                        <Label fx:id="statusLabel" />
+                        <Label fx:id="createdDateLabel" />
+
+                        <!-- Контейнери -->
+                        <VBox fx:id="mainContainer" />
+                        <VBox fx:id="decoratorsContainer" />
+                        <HBox fx:id="imageContainer" />
+                        <VBox fx:id="premiumFeaturesContainer" />
+
+                        <!-- Кнопки -->
+                        <Button fx:id="contactButton" text="Контакт" />
+                        <Button fx:id="favoriteButton" text="В обрані" />
+                        <Button fx:id="shareButton" text="Поділитися" />
                         <!-- Заголовок оголошення -->
                         <Label fx:id="titleLabel"
                                styleClass="detail-title-label"

@@ -38,9 +38,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 public class MainGuiApp extends Application {
 
     private static Stage primaryStage;
+
     // Сервіси
     public static UserService userService;
     public static AdServicePort adService;
@@ -52,203 +54,233 @@ public class MainGuiApp extends Application {
     public static CommandInvoker commandInvoker;
     public static CommandFactory commandFactory;
 
+    // ===== ПОКРАЩЕНІ МЕТОДИ ДЛЯ ВІДОБРАЖЕННЯ ОГОЛОШЕНЬ =====
 
     /**
-     * Завантажує детальний вигляд оголошення з базовими параметрами
+     * Універсальний метод для завантаження деталей оголошення
+     * Використовує паттерн Builder для конфігурації
+     */
+    public static void loadAdDetailScene(Ad ad, AdDisplayConfig config) throws IOException {
+        if (ad == null) {
+            throw new IllegalArgumentException("Ad cannot be null");
+        }
+
+        ViewResult<AdDetailController> adDetailView = loadView(
+                "/com/example/olx/presentation/gui/view/AdDetailView.fxml",
+                AdDetailController.class
+        );
+
+        // Ініціалізуємо контролер з конфігурацією
+        adDetailView.controller.initializeWithConfig(ad, config);
+
+        // Налаштовуємо заголовок вікна
+        String windowTitle = buildWindowTitle(ad, config);
+
+        showScene(adDetailView.root, windowTitle, 800, 650);
+    }
+
+    /**
+     * Спрощений метод для звичайного відображення оголошення
      */
     public static void loadAdDetailScene(Ad ad) throws IOException {
-        // За замовчуванням використовуємо автоматичне визначення декораторів, якщо AdDetailController це підтримує
-        loadAdDetailSceneWithAutoDecorators(ad);
-    }
-
-
-    /**
-     * Завантажує детальний вигляд оголошення з автоматичним визначенням декораторів
-     */
-    public static void loadAdDetailSceneWithAutoDecorators(Ad ad) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/AdDetailView.fxml");
-        if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file: AdDetailView.fxml. Path: /com/example/olx/presentation/gui/view/AdDetailView.fxml");
-        }
-        FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
-        Parent root = fxmlLoader.load();
-        AdDetailController controller = fxmlLoader.getController();
-
-        if (controller == null) {
-            throw new IOException("Controller for AdDetailView.fxml is null. Check fx:controller attribute in FXML.");
-        }
-
-        // Перевірка чи контролер має метод initDataWithAutoDecorators
-        // Цей підхід з рефлексією не найкращий, краще мати інтерфейс або базовий клас для контролерів
-        if (hasAutoDecoratorsMethod(controller)) {
-            controller.initDataWithAutoDecorators(ad);
-        } else {
-            // Fallback до стандартного методу
-            controller.initData(ad); // Припускаємо, що initData(Ad ad) завжди існує
-        }
-
-        Scene scene = primaryStage.getScene();
-        if (scene == null) {
-            scene = new Scene(root, 800, 650); // Розміри за замовчуванням
-            primaryStage.setScene(scene);
-        } else {
-            scene.setRoot(root);
-        }
-        primaryStage.setTitle("Деталі оголошення: " + (ad != null ? ad.getTitle() : "Невідоме оголошення"));
+        loadAdDetailScene(ad, AdDisplayConfig.defaultConfig());
     }
 
     /**
-     * Завантажує детальний вигляд оголошення з повним контролем декораторів
-     * Цей метод може бути корисним, якщо декоратори визначаються не лише властивостями самого Ad.
-     */
-    public static void loadAdDetailSceneWithDecorators(Ad ad, boolean isPremium, boolean isUrgent,
-                                                       Double discountPercentage, String discountReason,
-                                                       Integer warrantyMonths, String warrantyType,
-                                                       Boolean freeDelivery, Double deliveryCost, String deliveryInfo) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/AdDetailView.fxml");
-        if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file: AdDetailView.fxml. Path: /com/example/olx/presentation/gui/view/AdDetailView.fxml");
-        }
-        FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
-        Parent root = fxmlLoader.load();
-        AdDetailController controller = fxmlLoader.getController();
-
-        if (controller == null) {
-            throw new IOException("Controller for AdDetailView.fxml is null. Check fx:controller attribute in FXML.");
-        }
-
-        // Перевірка чи контролер має метод з декораторами
-        if (hasDecoratorsMethod(controller)) {
-            controller.initData(ad, isPremium, isUrgent, discountPercentage, discountReason,
-                    warrantyMonths, warrantyType, freeDelivery, deliveryCost, deliveryInfo);
-        } else {
-            // Fallback до стандартного методу
-            controller.initData(ad);
-            System.out.println("Warning: AdDetailController doesn't support explicit decorators via initData overload, using basic initialization.");
-        }
-
-        Scene scene = primaryStage.getScene();
-        if (scene == null) {
-            scene = new Scene(root, 800, 650);
-            primaryStage.setScene(scene);
-        } else {
-            scene.setRoot(root);
-        }
-
-        // Використовуємо декорований заголовок для вікна
-        String windowTitle = "Деталі оголошення: " + (ad != null ? ad.getTitle() : "Невідоме оголошення");
-        if (isPremium) windowTitle = "⭐ " + windowTitle;
-        if (isUrgent) windowTitle = "🚨 " + windowTitle;
-
-        primaryStage.setTitle(windowTitle);
-    }
-
-    /**
-     * Приклад використання декорованого оголошення для преміум товарів
+     * Метод для преміум оголошень
      */
     public static void loadPremiumAdDetailScene(Ad ad) throws IOException {
-        loadAdDetailSceneWithDecorators(ad, true, false, null, null,
-                12, "Розширена гарантія", true, 0.0, "Безкоштовна експрес-доставка");
+        AdDisplayConfig config = AdDisplayConfig.builder()
+                .premium(true)
+                .warranty(12, "Розширена гарантія")
+                .freeDelivery(true)
+                .deliveryInfo("Безкоштовна експрес-доставка")
+                .build();
+
+        loadAdDetailScene(ad, config);
     }
 
     /**
-     * Приклад використання декорованого оголошення для термінових товарів зі знижкою
+     * Метод для термінових оголошень зі знижкою
      */
     public static void loadUrgentDiscountAdDetailScene(Ad ad, double discountPercent) throws IOException {
-        loadAdDetailSceneWithDecorators(ad, false, true, discountPercent, "Термінова розпродаж",
-                null, null, false, 30.0, "Швидка доставка");
-    }
+        AdDisplayConfig config = AdDisplayConfig.builder()
+                .urgent(true)
+                .discount(discountPercent, "Термінова розпродаж")
+                .delivery(30.0, "Швидка доставка")
+                .build();
 
+        loadAdDetailScene(ad, config);
+    }
 
     /**
      * Завантажує сцену редагування оголошення
      */
     public static void loadEditAdScene(Ad adToEdit) throws IOException {
-        URL fxmlLocation = MainGuiApp.class.getResource("/com/example/olx/presentation/gui/view/CreateAdView.fxml");
-        if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file: CreateAdView.fxml for editing. Path: /com/example/olx/presentation/gui/view/CreateAdView.fxml");
+        if (adToEdit == null) {
+            throw new IllegalArgumentException("Ad to edit cannot be null");
         }
-        FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
-        Parent root = fxmlLoader.load();
-        CreateAdController controller = fxmlLoader.getController();
 
-        if (controller == null) {
-            throw new IOException("Controller for CreateAdView.fxml is null. Check fx:controller attribute in FXML.");
+        ViewResult<CreateAdController> createAdView = loadView(
+                "/com/example/olx/presentation/gui/view/CreateAdView.fxml",
+                CreateAdController.class
+        );
+
+        createAdView.controller.initDataForEdit(adToEdit);
+
+        String title = "Редагувати оголошення: " + adToEdit.getTitle();
+        showScene(createAdView.root, title, 700, 600);
+    }
+
+    // ===== ДОПОМІЖНІ МЕТОДИ =====
+
+    /**
+     * Універсальний метод для завантаження будь-якого виду
+     */
+    private static <T> ViewResult<T> loadView(String fxmlPath, Class<T> controllerClass) throws IOException {
+        try {
+            URL fxmlLocation = MainGuiApp.class.getResource(fxmlPath);
+            if (fxmlLocation == null) {
+                throw new IOException("FXML file not found: " + fxmlPath +
+                        ". Make sure FXML files are in the correct resources directory.");
+            }
+
+            System.out.println("Loading FXML from: " + fxmlLocation);
+
+            FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
+            Parent root = fxmlLoader.load();
+            T controller = fxmlLoader.getController();
+
+            if (controller == null) {
+                throw new IOException("Controller is null for: " + fxmlPath +
+                        ". Check fx:controller attribute in FXML file.");
+            }
+
+            return new ViewResult<>(root, controller);
+
+        } catch (IOException e) {
+            System.err.println("Error loading view: " + fxmlPath + " - " + e.getMessage());
+            throw e;
         }
-        controller.initDataForEdit(adToEdit);
+    }
 
+    /**
+     * Універсальний метод для показу сцени
+     */
+    private static void showScene(Parent root, String title, double width, double height) {
         Scene scene = primaryStage.getScene();
         if (scene == null) {
-            scene = new Scene(root, 700, 600); // Розміри для форми створення/редагування
+            scene = new Scene(root, width, height);
             primaryStage.setScene(scene);
         } else {
             scene.setRoot(root);
         }
-        primaryStage.setTitle("Редагувати оголошення: " + (adToEdit != null ? adToEdit.getTitle() : ""));
-    }
-
-
-    /**
-     * Перевіряє чи контролер має метод initDataWithAutoDecorators(Ad ad)
-     */
-    private static boolean hasAutoDecoratorsMethod(AdDetailController controller) {
-        if (controller == null) return false;
-        try {
-            controller.getClass().getMethod("initDataWithAutoDecorators", Ad.class);
-            return true;
-        } catch (NoSuchMethodException e) {
-            return false;
-        }
+        primaryStage.setTitle(title);
     }
 
     /**
-     * Перевіряє чи контролер має метод initData з усіма параметрами декораторів
+     * Будує заголовок вікна на основі оголошення та конфігурації
      */
-    private static boolean hasDecoratorsMethod(AdDetailController controller) {
-        if (controller == null) return false;
+    private static String buildWindowTitle(Ad ad, AdDisplayConfig config) {
+        StringBuilder title = new StringBuilder();
+
+        // Додаємо префікси для спеціальних типів
+        if (config.isUrgent()) {
+            title.append("🚨 ");
+        }
+        if (config.isPremium()) {
+            title.append("⭐ ");
+        }
+
+        title.append("Деталі оголошення: ").append(ad.getTitle());
+
+        return title.toString();
+    }
+
+    // ===== ОСНОВНІ МЕТОДИ ЗАВАНТАЖЕННЯ СЦЕН =====
+
+    public static void loadLoginScene() throws IOException {
+        loadScene("/com/example/olx/presentation/gui/view/LoginView.fxml",
+                "Вхід / Реєстрація", 600, 400);
+    }
+
+    public static void loadMainScene() throws IOException {
+        loadScene("/com/example/olx/presentation/gui/view/MainView.fxml",
+                "Головна - OLX", 1200, 800);
+    }
+
+    public static void loadCreateAdScene() throws IOException {
+        loadScene("/com/example/olx/presentation/gui/view/CreateAdView.fxml",
+                "Створити оголошення - OLX", 700, 650);
+    }
+
+    /**
+     * Універсальний метод для завантаження простих сцен
+     */
+    private static void loadScene(String fxmlFile, String title, double width, double height) throws IOException {
         try {
-            controller.getClass().getMethod("initData", Ad.class, boolean.class, boolean.class,
-                    Double.class, String.class, Integer.class, String.class,
-                    Boolean.class, Double.class, String.class);
-            return true;
-        } catch (NoSuchMethodException e) {
-            return false;
+            System.out.println("Attempting to load FXML: " + fxmlFile);
+            URL fxmlLocation = MainGuiApp.class.getResource(fxmlFile);
+
+            if (fxmlLocation == null) {
+                throw new IOException("Cannot find FXML file at: " + fxmlFile +
+                        ". Make sure FXML files are in the correct resources directory and the path starts with '/' and reflects the package structure.");
+            }
+
+            System.out.println("Found FXML at: " + fxmlLocation);
+
+            FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
+            Parent root = fxmlLoader.load();
+
+            showScene(root, title, width, height);
+
+        } catch (IOException e) {
+            System.err.println("Error loading scene: " + fxmlFile + " - " + e.getMessage());
+            throw e;
         }
     }
+
+    // ===== МЕТОДИ ЖИТТЄВОГО ЦИКЛУ ДОДАТКУ =====
 
     @Override
     public void init() throws Exception {
-        super.init(); // Важливо викликати super.init()
+        super.init();
         System.out.println("Initializing backend services...");
-// Ініціалізуємо SessionManager
+
+        // Ініціалізуємо SessionManager
         sessionManager = SessionManager.getInstance();
-        sessionManager.setStorageFilePath("olx_gui_data.dat"); // Назва файлу для збереження даних
-// Завантажуємо збережений стан
+        sessionManager.setStorageFilePath("olx_gui_data.dat");
+
+        // Завантажуємо збережений стан
         sessionManager.loadState();
         System.out.println("Session state loaded successfully.");
 
         PasswordHasher passwordHasher = new DemoPasswordHasherImpl();
-// Ініціалізуємо репозиторії
+
+        // Ініціалізуємо репозиторії
         UserRepository userRepository = new FileUserRepositoryImpl(sessionManager);
         CategoryRepository categoryRepository = new FileCategoryRepositoryImpl(sessionManager);
         AdRepository adRepository = new FileAdRepositoryImpl(sessionManager);
 
-        // Приклад реалізації NotificationService, якщо AdState не використовується активно
+        // Ініціалізуємо NotificationService
         NotificationServicePort notificationService = new ConsoleNotificationServiceImpl() {
             @Override
             public void notifyAdStateChanged(Ad ad, AdState newState) {
-                // System.out.println("Ad " + ad.getId() + " state changed to " + newState);
+                System.out.println("Ad " + ad.getId() + " state changed to " + newState);
             }
         };
+
         AdSearchStrategy adSearchStrategy = new DefaultAdSearchStrategy();
 
         // Ініціалізуємо сервіси
         userService = new UserServiceImpl(userRepository, passwordHasher);
         categoryService = new CategoryServiceImpl(categoryRepository);
-        adService = new AdServiceImpl(adRepository, userRepository, categoryRepository, notificationService, adSearchStrategy);
-// Ініціалізація Command паттерну
+        adService = new AdServiceImpl(adRepository, userRepository, categoryRepository,
+                notificationService, adSearchStrategy);
+
+        // Ініціалізація Command паттерну
         commandInvoker = new CommandInvoker();
-        commandFactory = new CommandFactory(adService); // Передаємо вже ініціалізований adService
+        commandFactory = new CommandFactory(adService);
         adCommandManager = new AdCommandManager(commandInvoker, commandFactory);
 
         // Ініціалізуємо категорії (якщо їх ще немає)
@@ -260,53 +292,9 @@ public class MainGuiApp extends Application {
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
         primaryStage.setTitle("OLX-дошка оголошень");
-        loadLoginScene(); // Починаємо з екрану логіну
+        loadLoginScene();
         primaryStage.show();
     }
-
-    public static void loadLoginScene() throws IOException {
-        loadScene("/com/example/olx/presentation/gui/view/LoginView.fxml", "Вхід / Реєстрація", 600, 400);
-    }
-
-    public static void loadMainScene() throws IOException {
-        loadScene("/com/example/olx/presentation/gui/view/MainView.fxml", "Головна - OLX", 1200, 800);
-    }
-
-    public static void loadCreateAdScene() throws IOException {
-        loadScene("/com/example/olx/presentation/gui/view/CreateAdView.fxml", "Створити оголошення - OLX", 700, 650);
-    }
-
-    private static void loadScene(String fxmlFile, String title, double width, double height) throws IOException {
-        System.out.println("Attempting to load FXML: " + fxmlFile);
-        URL fxmlLocation = MainGuiApp.class.getResource(fxmlFile);
-
-        // Видалено спробу альтернативного шляху, оскільки це часто вказує на проблеми з конфігурацією проекту.
-        // FXML файли мають бути в classpath у відповідній структурі папок.
-        if (fxmlLocation == null) {
-            throw new IOException("Cannot find FXML file at: " + fxmlFile +
-                    ". Make sure FXML files are in the correct resources directory and the path starts with '/' and reflects the package structure.");
-        }
-        System.out.println("Found FXML at: " + fxmlLocation);
-
-        FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
-        Parent root = fxmlLoader.load();
-        Scene scene = primaryStage.getScene();
-        if (scene == null) {
-            scene = new Scene(root, width, height);
-            primaryStage.setScene(scene);
-        } else {
-            scene.setRoot(root);
-            // Опціонально: можна налаштувати розмір сцени, якщо він змінився
-            // primaryStage.setWidth(width);
-            // primaryStage.setHeight(height);
-        }
-        primaryStage.setTitle(title);
-    }
-    // Перевантажений метод для сумісності, якщо розміри не вказані
-    private static void loadScene(String fxmlFile, String title) throws IOException {
-        loadScene(fxmlFile, title, 800, 600); // Розміри за замовчуванням
-    }
-
 
     @Override
     public void stop() throws Exception {
@@ -315,34 +303,30 @@ public class MainGuiApp extends Application {
             sessionManager.saveState();
             System.out.println("Session state saved successfully.");
         }
-        super.stop(); // Важливо викликати super.stop()
+        super.stop();
     }
+
+    // ===== ІНІЦІАЛІЗАЦІЯ ДАНИХ =====
 
     private static void initializeDefaultCategories() {
         if (categoryService == null) {
             System.err.println("CategoryService is not initialized. Cannot initialize default categories.");
             return;
         }
+
         try {
             List<CategoryComponent> existingCategories = categoryService.getAllRootCategories();
             if (existingCategories != null && !existingCategories.isEmpty()) {
-                System.out.println("Categories already exist (" + existingCategories.size() + " root categories found), skipping initialization.");
-// Проблема [cite: 386] тут може бути, якщо getAllRootCategories() не повертає актуальні дані,
-                // або якщо дані пошкоджені. Потрібно забезпечити надійність categoryService.
+                System.out.println("Categories already exist (" + existingCategories.size() +
+                        " root categories found), skipping initialization.");
                 return;
             }
 
             System.out.println("Initializing default categories...");
             List<CategoryComponent> rootCategoriesToInitialize = new ArrayList<>();
 
-            // ВИПРАВЛЕНО: Конструктор Category(id, name, parentId)
-            // Для кореневих категорій parentId має бути null.
+            // Створюємо кореневі категорії
             Category electronics = new Category("electronics", "Електроніка", null);
-            // Додамо кілька підкатегорій для прикладу (якщо ваш Category це підтримує)
-            // Category phones = new Category("phones", "Телефони", "electronics");
-            // Category computers = new Category("computers", "Комп'ютери", "electronics");
-            // electronics.addChild(phones); // Якщо є такий метод
-            // electronics.addChild(computers);
             rootCategoriesToInitialize.add(electronics);
 
             Category clothing = new Category("clothing", "Одяг і взуття", null);
@@ -357,22 +341,25 @@ public class MainGuiApp extends Application {
             Category sport = new Category("sport", "Спорт і хобі", null);
             rootCategoriesToInitialize.add(sport);
 
-            // Передаємо список КОРЕНЕВИХ категорій.
-            // Метод initializeCategories має обробити їх та їхні дочірні елементи, якщо такі є.
+            // Ініціалізуємо категорії
             categoryService.initializeCategories(rootCategoriesToInitialize);
-            System.out.println("Default categories initialization requested for " + rootCategoriesToInitialize.size() + " root categories.");
+            System.out.println("Default categories initialization requested for " +
+                    rootCategoriesToInitialize.size() + " root categories.");
 
-// Перевіряємо чи категорії справді додалися
+            // Перевіряємо результат
             List<CategoryComponent> checkCategories = categoryService.getAllRootCategories();
-            System.out.println("Categories after initialization attempt: " +
-                    (checkCategories != null ? checkCategories.size() + " root categories found." : "null (service error)"));
-        } catch (Exception e) { // Ловимо будь-які винятки під час ініціалізації
+            System.out.println("Categories after initialization: " +
+                    (checkCategories != null ? checkCategories.size() + " root categories found." :
+                            "null (service error)"));
+
+        } catch (Exception e) {
             System.err.println("Error initializing default categories: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // Методи для доступу до команд з GUI (без змін)
+    // ===== ГЕТТЕРИ ДЛЯ ДОСТУПУ ДО КОМАНД =====
+
     public static AdCommandManager getAdCommandManager() {
         return adCommandManager;
     }
@@ -381,7 +368,138 @@ public class MainGuiApp extends Application {
         return commandInvoker;
     }
 
+    // ===== MAIN МЕТОД =====
+
     public static void main(String[] args) {
         launch(args);
+    }
+
+    // ===== ДОПОМІЖНІ КЛАСИ =====
+
+    /**
+     * Допоміжний клас для результату завантаження виду
+     */
+    private static class ViewResult<T> {
+        final Parent root;
+        final T controller;
+
+        ViewResult(Parent root, T controller) {
+            this.root = root;
+            this.controller = controller;
+        }
+    }
+}
+
+/**
+ * Конфігурація для відображення оголошення
+ * Використовує паттерн Builder для гнучкого налаштування
+ */
+class AdDisplayConfig {
+    private final boolean premium;
+    private final boolean urgent;
+    private final Double discountPercentage;
+    private final String discountReason;
+    private final Integer warrantyMonths;
+    private final String warrantyType;
+    private final Boolean freeDelivery;
+    private final Double deliveryCost;
+    private final String deliveryInfo;
+
+    private AdDisplayConfig(Builder builder) {
+        this.premium = builder.premium;
+        this.urgent = builder.urgent;
+        this.discountPercentage = builder.discountPercentage;
+        this.discountReason = builder.discountReason;
+        this.warrantyMonths = builder.warrantyMonths;
+        this.warrantyType = builder.warrantyType;
+        this.freeDelivery = builder.freeDelivery;
+        this.deliveryCost = builder.deliveryCost;
+        this.deliveryInfo = builder.deliveryInfo;
+    }
+
+    /**
+     * Створює конфігурацію за замовчуванням
+     */
+    public static AdDisplayConfig defaultConfig() {
+        return builder().build();
+    }
+
+    /**
+     * Створює новий Builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    // Геттери
+    public boolean isPremium() { return premium; }
+    public boolean isUrgent() { return urgent; }
+    public Double getDiscountPercentage() { return discountPercentage; }
+    public String getDiscountReason() { return discountReason; }
+    public Integer getWarrantyMonths() { return warrantyMonths; }
+    public String getWarrantyType() { return warrantyType; }
+    public Boolean getFreeDelivery() { return freeDelivery; }
+    public Double getDeliveryCost() { return deliveryCost; }
+    public String getDeliveryInfo() { return deliveryInfo; }
+
+    /**
+     * Builder для AdDisplayConfig
+     */
+    public static class Builder {
+        private boolean premium = false;
+        private boolean urgent = false;
+        private Double discountPercentage;
+        private String discountReason;
+        private Integer warrantyMonths;
+        private String warrantyType;
+        private Boolean freeDelivery;
+        private Double deliveryCost;
+        private String deliveryInfo;
+
+        public Builder premium(boolean premium) {
+            this.premium = premium;
+            return this;
+        }
+
+        public Builder urgent(boolean urgent) {
+            this.urgent = urgent;
+            return this;
+        }
+
+        public Builder discount(double percentage, String reason) {
+            this.discountPercentage = percentage;
+            this.discountReason = reason;
+            return this;
+        }
+
+        public Builder warranty(int months, String type) {
+            this.warrantyMonths = months;
+            this.warrantyType = type;
+            return this;
+        }
+
+        public Builder freeDelivery(boolean free) {
+            this.freeDelivery = free;
+            if (free) {
+                this.deliveryCost = 0.0;
+            }
+            return this;
+        }
+
+        public Builder delivery(double cost, String info) {
+            this.deliveryCost = cost;
+            this.deliveryInfo = info;
+            this.freeDelivery = (cost == 0.0);
+            return this;
+        }
+
+        public Builder deliveryInfo(String info) {
+            this.deliveryInfo = info;
+            return this;
+        }
+
+        public AdDisplayConfig build() {
+            return new AdDisplayConfig(this);
+        }
     }
 }
