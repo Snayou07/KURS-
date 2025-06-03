@@ -306,7 +306,7 @@ public class AdDetailController {
                 }
             }
 
-            // Основна інформація залишається з оригінального оголошення
+            // Основна інформація залишається з оригінального оголошенн
             if (descriptionText != null) {
                 descriptionText.setText(currentAd.getDescription() != null ? currentAd.getDescription() : "Опис відсутній.");
             }
