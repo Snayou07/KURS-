@@ -377,6 +377,32 @@ public class Ad implements Serializable, Cloneable {
                 return new DraftAdState();
         }
     }
+    // В Ad.java
+    private void readObject(java.io.ObjectInputStream in)
+            throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject(); // Стандартна десеріалізація всіх не-transient полів (включно з 'status')
+
+        // Тепер поле 'this.status' містить рядок статусу, збережений SessionManager.
+        // Поле 'this.currentState', ймовірно, є DraftAdState (якщо AdState серіалізується і був встановлений конструктором копії)
+        // або null (якщо AdState є transient і не оброблявся defaultReadObject).
+        // Нам потрібно відновити 'this.currentState' коректно.
+
+        if (this.status != null) {
+            // Використовуємо існуючий приватний метод для отримання об'єкта стану з рядка
+            AdState reconstructedState = createStateFromStatus(this.status); //
+            this.currentState = reconstructedState;
+            // Переконуємось, що this.status узгоджується з currentState.getStatusName(),
+            // хоча вони повинні бути узгоджені, якщо createStateFromStatus є оберненим до getStatusName.
+            // this.status = this.currentState.getStatusName(); // Може спричинити небажане оновлення updatedAt, якщо setStatus його викликає
+        } else {
+            // Якщо з якоїсь причини status є null, повертаємось до стану "Чернетка"
+            this.currentState = new DraftAdState();
+            this.status = this.currentState.getStatusName();
+        }
+        // Зауваження: createdAt та updatedAt також будуть відновлені до значень,
+        // які були в об'єкті Ad під час серіалізації. Якщо createSerializableAdCopy
+        // не встановлював їх з оригіналу, вони будуть ті, що встановив конструктор копії.
+    }
 
     @Override
     public boolean equals(Object o) {

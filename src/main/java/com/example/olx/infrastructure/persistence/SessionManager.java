@@ -33,7 +33,61 @@ public class SessionManager {
             clearCorruptedStateFile();
         }
     }
+    // В SessionManager.java
+    public Ad createSerializableAdCopy(Ad original) {
+        Ad copy = new Ad(
+                original.getTitle(),
+                original.getDescription(),
+                original.getPrice(),
+                original.getCategoryId(),
+                original.getSellerId(),
+                new ArrayList<>(original.getImagePaths()) // Забезпечити копіювання списку
+        );
+        copy.setAdId(original.getAdId()); //
 
+        // Встановлюємо ВСІ необхідні поля, що не встановлюються конструктором за замовчуванням
+        // або які треба перекрити з 'original'
+        copy.setStatus(original.getStatus()); // Встановлює рядок статусу
+        copy.setPremium(original.isPremium()); //
+        copy.setUrgent(original.isUrgent()); //
+
+        // Копіювання даних про доставку
+        if (original.hasDelivery()) { //
+            copy.setHasDelivery(true); //
+            copy.setFreeDelivery(original.isFreeDelivery()); //
+            copy.setDeliveryCost(original.getDeliveryCost()); //
+            copy.setDeliveryInfo(original.getDeliveryInfo()); //
+        } else {
+            copy.setHasDelivery(false);
+        }
+
+        // Копіювання даних про гарантію
+        if (original.hasWarranty()) { //
+            copy.setHasWarranty(true); //
+            copy.setWarrantyMonths(original.getWarrantyMonths()); //
+            copy.setWarrantyType(original.getWarrantyType()); //
+        } else {
+            copy.setHasWarranty(false);
+        }
+
+        // Копіювання даних про знижку
+        if (original.hasDiscount()) { //
+            copy.setHasDiscount(true); //
+            copy.setDiscountPercentage(original.getDiscountPercentage()); //
+            copy.setDiscountReason(original.getDiscountReason()); //
+        } else {
+            copy.setHasDiscount(false);
+        }
+
+        // Важливо: зберегти оригінальні дати створення/оновлення, якщо це потрібно.
+        // Конструктор Ad встановлює createdAt і updatedAt на LocalDateTime.now().
+        // Якщо потрібно зберегти оригінальні, потрібні сеттери в Ad.java для цих полів.
+        // Наприклад: copy.setCreatedAtInternal(original.getCreatedAt());
+        //            copy.setUpdatedAtInternal(original.getUpdatedAt());
+        // Або, якщо `Ad.clone()` підходить для копіювання, розглянути його.
+
+        return copy;
+    }
     public static SessionManager getInstance() {
         return INSTANCE;
     }
@@ -261,7 +315,7 @@ public class SessionManager {
 
         return copy;
     }
-
+/*
     private Ad createSerializableAdCopy(Ad original) {
         // Створюємо нове оголошення з базовими даними
         Ad copy = new Ad(
@@ -282,6 +336,8 @@ public class SessionManager {
 
         return copy;
     }
+    
+ */
 
     public void loadState() throws DataPersistenceException {
         lock.writeLock().lock();
