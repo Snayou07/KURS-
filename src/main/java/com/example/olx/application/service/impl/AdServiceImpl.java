@@ -3,7 +3,7 @@ package com.example.olx.application.service.impl;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
-import com.example.olx.application.service.port.CategoryServicePort;
+// Unused import: com.example.olx.application.service.port.CategoryServicePort;
 import com.example.olx.application.service.port.NotificationServicePort;
 
 import com.example.olx.application.service.strategy.AdSearchStrategy;
@@ -13,7 +13,7 @@ import com.example.olx.domain.exception.UnauthorizedActionException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.AdState;
-import com.example.olx.domain.model.ActiveAdState;
+import com.example.olx.domain.model.ActiveAdState; // Required for instanceof check
 import com.example.olx.domain.model.User;
 import com.example.olx.domain.model.UserType;
 import com.example.olx.domain.repository.AdRepository;
@@ -23,6 +23,7 @@ import com.example.olx.domain.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors; // Required for .toList() or explicit Collectors.toList()
 
 public class AdServiceImpl implements AdServicePort {
     private final AdRepository adRepository;
@@ -75,14 +76,14 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public List<Ad> getAllActiveAds() {
         List<Ad> ads = adRepository.findAll();
-        System.out.println("getAllActiveAds() повертає " + ads.size() + " оголошень"); // DEBUG
+        System.out.println("getAllActiveAds() initial count: " + ads.size() + " ads"); // DEBUG
 
         // Фільтруємо тільки активні оголошення для головного екрану
         List<Ad> activeAds = ads.stream()
-                .filter(ad -> "Активне".equals(ad.getStatus()))
-                .toList();
+                .filter(ad -> ad.getCurrentState() instanceof ActiveAdState) // MODIFIED: Check state type
+                .collect(Collectors.toList()); // Using .collect(Collectors.toList()) for wider Java compatibility than .toList()
 
-        System.out.println("Активних оголошень: " + activeAds.size()); // DEBUG
+        System.out.println("Active ads after filtering by instanceof ActiveAdState: " + activeAds.size()); // DEBUG
         return activeAds;
     }
 
@@ -131,25 +132,26 @@ public class AdServiceImpl implements AdServicePort {
             // Автоматично публікуємо оголошення для відображення на головному екрані
             newAd.setCurrentState(new ActiveAdState());
 
-            System.out.println("Створюється оголошення: " + newAd.getTitle()); // DEBUG
+            System.out.println("Creating ad: " + newAd.getTitle() + " with state: " + newAd.getCurrentState().getClass().getSimpleName()); // DEBUG
 
             // Зберігаємо оголошення в репозиторії
             Ad savedAd = adRepository.save(newAd);
 
             // Перевіряємо, що оголошення дійсно збережено
             if (savedAd == null) {
-                throw new RuntimeException("Помилка при збереженні оголошення в репозиторії.");
+                throw new RuntimeException("Error saving ad to repository.");
             }
 
-            System.out.println("Оголошення збережено з ID: " + savedAd.getId()); // DEBUG
-            System.out.println("Стан оголошення: " + savedAd.getStatus()); // DEBUG
+            System.out.println("Ad saved with ID: " + savedAd.getId()); // DEBUG
+            System.out.println("Ad status after save (from getStatus()): " + savedAd.getStatus()); // DEBUG
+            System.out.println("Ad state object after save: " + savedAd.getCurrentState().getClass().getSimpleName()); // DEBUG
 
             // Перевіряємо, чи з'являється оголошення в загальному списку
             List<Ad> allAds = adRepository.findAll();
-            System.out.println("Загальна кількість оголошень після створення: " + allAds.size()); // DEBUG
+            System.out.println("Total ads after creation: " + allAds.size()); // DEBUG
 
             boolean adFound = allAds.stream().anyMatch(ad -> ad.getId().equals(savedAd.getId()));
-            System.out.println("Нове оголошення знайдено в списку всіх: " + adFound); // DEBUG
+            System.out.println("New ad found in full list: " + adFound); // DEBUG
 
             // Відправляємо сповіщення користувачам про нове оголошення
             try {
@@ -158,37 +160,40 @@ public class AdServiceImpl implements AdServicePort {
                 }
             } catch (Exception e) {
                 // Логування помилки сповіщення, але не зупиняємо процес створення оголошення
-                System.err.println("Помилка відправки сповіщень про нове оголошення: " + e.getMessage());
+                System.err.println("Error sending new ad notifications: " + e.getMessage());
             }
 
             return savedAd;
 
         } catch (Exception e) {
             // Логування детальної інформації про помилку
-            System.err.println("Помилка створення оголошення: " + e.getMessage());
+            System.err.println("Error creating ad: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Не вдалося створити оголошення: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to create ad: " + e.getMessage(), e);
         }
     }
 
     @Override
     public List<Ad> getAllAds() {
         List<Ad> ads = adRepository.findAll();
-        System.out.println("getAllAds() повертає " + ads.size() + " оголошень"); // DEBUG
+        System.out.println("getAllAds() initial count: " + ads.size() + " ads"); // DEBUG
 
-        // Фільтруємо тільки активні оголошення для головного екрану
+        // This method's name implies all ads, but it was filtering for active ones.
+        // If it's truly meant to be "all active ads for general display",
+        // then filtering is appropriate. Otherwise, it should return 'ads' directly.
+        // For now, I'll keep the active filter but use the robust check.
         List<Ad> activeAds = ads.stream()
-                .filter(ad -> "Активне".equals(ad.getStatus()))
-                .toList();
+                .filter(ad -> ad.getCurrentState() instanceof ActiveAdState) // MODIFIED: Check state type
+                .collect(Collectors.toList()); // Using .collect(Collectors.toList())
 
-        System.out.println("Активних оголошень: " + activeAds.size()); // DEBUG
+        System.out.println("getAllAds() filtered for active (instanceof ActiveAdState): " + activeAds.size()); // DEBUG
         return activeAds;
     }
 
     @Override
     public Optional<Ad> getAdById(String adId) {
         if (adId == null || adId.trim().isEmpty()) {
-            throw new InvalidInputException("Ідентифікатор оголошення не може бути порожнім.");
+            throw new InvalidInputException("Ad ID cannot be empty.");
         }
         return adRepository.findById(adId.trim());
     }
@@ -196,7 +201,7 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public List<Ad> getAdsByUserId(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            throw new InvalidInputException("Ідентифікатор користувача не може бути порожнім.");
+            throw new InvalidInputException("User ID cannot be empty.");
         }
         return adRepository.findBySellerId(userId.trim());
     }
@@ -204,7 +209,7 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public List<Ad> getAdsByCategoryId(String categoryId) {
         if (categoryId == null || categoryId.trim().isEmpty()) {
-            throw new InvalidInputException("Ідентифікатор категорії не може бути порожнім.");
+            throw new InvalidInputException("Category ID cannot be empty.");
         }
         return adRepository.findByCategoryId(categoryId.trim());
     }
@@ -218,68 +223,76 @@ public class AdServiceImpl implements AdServicePort {
                 "categoryId", categoryId == null ? "" : categoryId.trim()
         );
 
-        // Пошук серед всіх активних оголошень
-        List<Ad> allActiveAds = adRepository.findAll().stream()
-                .filter(ad -> "Активне".equals(ad.getStatus()))
-                .toList();
+        // Пошук серед всіх оголошень, потім фільтрація за активним станом перед передачею стратегії
+        List<Ad> allAdsFromRepo = adRepository.findAll();
+        System.out.println("searchAds() initial count from repo: " + allAdsFromRepo.size() + " ads"); // DEBUG
 
-        return searchStrategy.search(allActiveAds, criteria);
+        List<Ad> adsToSearch = allAdsFromRepo.stream()
+                .filter(ad -> ad.getCurrentState() instanceof ActiveAdState) // MODIFIED: Check state type
+                .collect(Collectors.toList()); // Using .collect(Collectors.toList())
+
+        System.out.println("searchAds() count after filtering for active (instanceof ActiveAdState): " + adsToSearch.size()); // DEBUG
+
+        // Тепер передаємо відфільтровані (активні) оголошення до стратегії пошуку
+        List<Ad> result = searchStrategy.search(adsToSearch, criteria);
+        System.out.println("searchAds() count after searchStrategy: " + result.size()); //DEBUG
+        return result;
     }
 
     @Override
     public void deleteAd(String adId, String currentUserId) throws UserNotFoundException {
         if (adId == null || adId.trim().isEmpty() || currentUserId == null || currentUserId.trim().isEmpty()) {
-            throw new InvalidInputException("Ідентифікатор оголошення та поточного користувача є обов'язковими.");
+            throw new InvalidInputException("Ad ID and current User ID are required.");
         }
 
         Ad adToDelete = adRepository.findById(adId.trim())
-                .orElseThrow(() -> new AdNotFoundException("Оголошення з ідентифікатором " + adId + " не знайдено."));
+                .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found."));
 
         User currentUser = userRepository.findById(currentUserId.trim())
-                .orElseThrow(() -> new UserNotFoundException("Користувач з ідентифікатором " + currentUserId + " не знайдений."));
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + currentUserId + " not found."));
 
         if (!adToDelete.getSellerId().equals(currentUserId.trim()) && currentUser.getUserType() != UserType.ADMIN) {
-            throw new UnauthorizedActionException("Користувач не має права видаляти це оголошення.");
+            throw new UnauthorizedActionException("User is not authorized to delete this ad.");
         }
 
         adRepository.deleteById(adId.trim());
 
         try {
             if (notificationService != null) {
-                notificationService.sendSystemMessage("Оголошення '" + adToDelete.getTitle() + "' було видалено.");
+                notificationService.sendSystemMessage("Ad '" + adToDelete.getTitle() + "' was deleted.");
             }
         } catch (Exception e) {
-            System.err.println("Помилка відправки сповіщення про видалення: " + e.getMessage());
+            System.err.println("Error sending deletion notification: " + e.getMessage());
         }
     }
 
     @Override
     public Ad updateAd(String adId, AdCreationRequest request, String currentUserId) throws UserNotFoundException {
         if (adId == null || adId.trim().isEmpty() || currentUserId == null || currentUserId.trim().isEmpty()) {
-            throw new InvalidInputException("Ідентифікатор оголошення та поточного користувача є обов'язковими.");
+            throw new InvalidInputException("Ad ID and current User ID are required.");
         }
 
         if (request == null) {
-            throw new InvalidInputException("Дані для оновлення оголошення не можуть бути null.");
+            throw new InvalidInputException("Ad update data cannot be null.");
         }
 
         Ad existingAd = adRepository.findById(adId.trim())
-                .orElseThrow(() -> new AdNotFoundException("Оголошення з ідентифікатором " + adId + " не знайдено."));
+                .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found."));
 
         User currentUser = userRepository.findById(currentUserId.trim())
-                .orElseThrow(() -> new UserNotFoundException("Користувач з ідентифікатором " + currentUserId + " не знайдений."));
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + currentUserId + " not found."));
 
         if (!existingAd.getSellerId().equals(currentUserId.trim()) && currentUser.getUserType() != UserType.ADMIN) {
-            throw new UnauthorizedActionException("Користувач не має права оновлювати це оголошення.");
+            throw new UnauthorizedActionException("User is not authorized to update this ad.");
         }
 
         if (request.getTitle() == null || request.getTitle().trim().isEmpty() ||
                 request.getPrice() < 0 || request.getCategoryId() == null || request.getCategoryId().trim().isEmpty()) {
-            throw new InvalidInputException("Назва, невід'ємна ціна та ідентифікатор категорії є обов'язковими для оновлення оголошення.");
+            throw new InvalidInputException("Title, non-negative price, and category ID are required for updating an ad.");
         }
 
         categoryRepository.findById(request.getCategoryId().trim())
-                .orElseThrow(() -> new InvalidInputException("Категорія з ідентифікатором " + request.getCategoryId() + " не знайдена під час оновлення."));
+                .orElseThrow(() -> new InvalidInputException("Category with ID " + request.getCategoryId() + " not found during update."));
 
         // Оновлюємо поля існуючого оголошення
         existingAd.setTitle(request.getTitle().trim());
@@ -287,6 +300,8 @@ public class AdServiceImpl implements AdServicePort {
         existingAd.setPrice(request.getPrice());
         existingAd.setCategoryId(request.getCategoryId().trim());
         existingAd.setImagePaths(request.getImagePaths());
+        // Consider if the state should be updatable here, e.g., re-activating an ad.
+        // For now, it preserves the existing state unless explicitly changed.
 
         return adRepository.save(existingAd);
     }
@@ -300,11 +315,11 @@ public class AdServiceImpl implements AdServicePort {
     @Override
     public List<Ad> getAdsByState(AdState state) {
         if (state == null) {
-            throw new InvalidInputException("Стан оголошення не може бути null.");
+            throw new InvalidInputException("Ad state cannot be null.");
         }
 
         return adRepository.findAll().stream()
-                .filter(ad -> ad.getCurrentState().getClass().equals(state.getClass()))
-                .toList();
+                .filter(ad -> ad.getCurrentState().getClass().equals(state.getClass())) // This is a good way to check state by type
+                .collect(Collectors.toList()); // Using .collect(Collectors.toList())
     }
 }

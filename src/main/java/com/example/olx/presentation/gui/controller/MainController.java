@@ -206,6 +206,93 @@ public class MainController {
             LOGGER.severe("Error: adListView is null. Check FXML binding.");
             return;
         }
+        // ... всередині методу setupAdListView ...
+        if (adListView == null) {
+            LOGGER.severe("Error: adListView is null. Check FXML binding.");
+            return;
+        }
+        adListView.setCellFactory(listView -> new ListCell<AdComponent>() {
+            @Override
+            protected void updateItem(AdComponent adComponent, boolean empty) {
+                super.updateItem(adComponent, empty);
+
+                 System.out.println("CellFactory updateItem START: adComponent=" + (adComponent != null ? "Present" : "NULL") + ", adComponent.getAd()=" + (adComponent != null && adComponent.getAd() != null ? adComponent.getAd().getTitle() : "NULL_AD_OR_COMPONENT") + ", empty=" + empty); // DEBUG
+
+                if (empty) {
+                   System.out.println("CellFactory: Item is empty. Clearing cell."); // DEBUG
+                    setText(null);
+                    setGraphic(null);
+                } else if (adComponent == null) {
+                    System.out.println("CellFactory: adComponent is NULL. Clearing cell."); // DEBUG
+                    setText(null);
+                    setGraphic(null);
+                } else if (adComponent.getAd() == null) {
+                      System.out.println("CellFactory: adComponent.getAd() is NULL. AdComponent instance: " + adComponent.toString() + ". Clearing cell."); // DEBUG
+                    // You might want to log more details about adComponent if its .getAd() is null
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Ad ad = adComponent.getAd();
+                    System.out.println("CellFactory: Rendering Ad: " + ad.getTitle()); // DEBUG
+
+                    VBox container = new VBox(5);
+                    container.setPadding(new Insets(10));
+
+                    Label titleLabel = new Label(ad.getTitle());
+                    titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+                    Label priceLabel = new Label(String.format("%.2f грн", ad.getPrice()));
+                    priceLabel.setStyle("-fx-text-fill: #2E8B57; -fx-font-weight: bold;");
+
+                    String description = ad.getDescription();
+                    if (description != null && description.length() > 100) {
+                        description = description.substring(0, 100) + "...";
+                    }
+                    Label descLabel = new Label(description != null ? description : "Немає опису");
+                    descLabel.setStyle("-fx-text-fill: #666666;");
+
+                    HBox infoBox = new HBox(15);
+                    String categoryName = "Невідомо";
+                    if (ad.getCategoryId() != null && categoryService != null) {
+                        Optional<Category> categoryOptional = categoryService.getCategoryById(ad.getCategoryId());
+                        categoryName = categoryOptional
+                                .map(Category::getName)
+                                .orElse("ID: " + ad.getCategoryId());
+                    } else if (ad.getCategoryId() != null) {
+                        categoryName = "ID: " + ad.getCategoryId();
+                    }
+                    Label categoryInfoLabel = new Label("Категорія: " + categoryName);
+
+                    String dateStr = "Дата: невідома";
+                    if (ad.getCreatedAt() != null) {
+                        try {
+                            dateStr = "Дата: " + DateUtils.formatDate(ad.getCreatedAt());
+                        } catch (Exception e) {
+                            LOGGER.log(Level.WARNING, "Error formatting date for ad: " + ad.getId(), e);
+                            dateStr = "Дата: " + (ad.getCreatedAt() != null ?
+                                    ad.getCreatedAt().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) :
+                            LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))) +
+                            " (fallback format error)";
+                        }
+                    }
+                    Label dateLabel = new Label(dateStr);
+                    infoBox.getChildren().addAll(categoryInfoLabel, dateLabel);
+
+                    // System.out.println("CellFactory: AdComponent display info: " + adComponent.getDisplayInfo()); // DEBUG
+                    Label decoratedInfoLabel = new Label(adComponent.getDisplayInfo());
+                    decoratedInfoLabel.setStyle("-fx-font-style: italic; -fx-text-fill: blue;");
+
+                    if(titleLabel.getText() == null || titleLabel.getText().isEmpty()){ // DEBUG
+                         System.out.println("CellFactory WARNING: Title is null or empty for Ad ID: " + ad.getId()); // DEBUG
+                    }
+
+                    container.getChildren().addAll(titleLabel, priceLabel, descLabel, infoBox, decoratedInfoLabel);
+                    setGraphic(container);
+                    System.out.println("CellFactory updateItem END: Graphic set for " + ad.getTitle()); // DEBUG
+                }
+            }
+        });
+// ... решта методу ...
         adListView.setCellFactory(listView -> new ListCell<AdComponent>() {
             @Override
             protected void updateItem(AdComponent adComponent, boolean empty) {
@@ -700,12 +787,12 @@ public class MainController {
                 paginationControls.setVisible(false);
                 paginationControls.setManaged(false);
             }
-            updateStatistics();
+            updateStatistics(); // Потрібно переконатися, що updateStatistics коректно обробляє null adsObservableList
             return;
         }
 
         int totalItems = adsObservableList.size();
-        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / pageSize));
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / pageSize)); // totalPages має бути доступний тут
         currentPage = Math.max(1, Math.min(currentPage, totalPages));
 
         if (pageInfoLabel != null) {
@@ -721,6 +808,52 @@ public class MainController {
             paginationControls.setVisible(paginationVisible);
             paginationControls.setManaged(paginationVisible);
         }
+
+        if (adListView != null) {
+            if (totalItems == 0) {
+                // System.out.println("updatePaginationControls: totalItems is 0, clearing adListView."); // DEBUG
+                adListView.setItems(FXCollections.emptyObservableList());
+            } else {
+                int fromIndex = (currentPage - 1) * pageSize;
+                int toIndex = Math.min(fromIndex + pageSize, totalItems);
+
+                // System.out.println("updatePaginationControls: currentPage=" + currentPage + ", pageSize=" + pageSize + ", totalItems=" + totalItems + " => fromIndex=" + fromIndex + ", toIndex=" + toIndex); // DEBUG
+
+                if (fromIndex >= 0 && fromIndex < totalItems && toIndex <= totalItems && fromIndex <= toIndex) {
+                    List<AdComponent> pageData = adsObservableList.subList(fromIndex, toIndex);
+                    // System.out.println("updatePaginationControls: pageData size: " + pageData.size()); // DEBUG
+                    // for (AdComponent comp : pageData) { // DEBUG
+                    //     System.out.println("updatePaginationControls: Ad in pageData: " + (comp != null && comp.getAd() != null ? comp.getAd().getTitle() : "NULL AdComponent or Ad")); // DEBUG
+                    // } // DEBUG
+                    adListView.setItems(FXCollections.observableArrayList(pageData));
+                } else if (fromIndex >= totalItems && totalItems > 0) { // Цей блок обробляє випадок, коли fromIndex за межами, але дані є
+                    // System.out.println("updatePaginationControls: Attempting to display page beyond total items, adjusting to last page. Current totalPages: " + totalPages); // DEBUG
+                    currentPage = totalPages; // totalPages визначено вище
+                    int adjustedFromIndex = (currentPage - 1) * pageSize; // Нові локальні змінні для індексів
+                    int adjustedToIndex = Math.min(adjustedFromIndex + pageSize, totalItems);
+                    // System.out.println("updatePaginationControls: (adjusted) currentPage=" + currentPage + " => adjustedFromIndex=" + adjustedFromIndex + ", adjustedToIndex=" + adjustedToIndex); // DEBUG
+
+                    if (adjustedFromIndex < adjustedToIndex) {
+                        List<AdComponent> pageData = adsObservableList.subList(adjustedFromIndex, adjustedToIndex); // pageData оголошено тут локально
+                        // System.out.println("updatePaginationControls: (adjusted) pageData size: " + pageData.size()); // DEBUG
+                        adListView.setItems(FXCollections.observableArrayList(pageData));
+                    } else {
+                        // System.out.println("updatePaginationControls: (adjusted) adjustedFromIndex >= adjustedToIndex, clearing adListView. adjustedFromIndex=" + adjustedFromIndex + ", adjustedToIndex=" + adjustedToIndex); // DEBUG
+                        adListView.setItems(FXCollections.emptyObservableList());
+                    }
+                } else if (fromIndex >= toIndex) { // Обробка інших випадків, де індекси некоректні (включаючи totalItems == 0, який вже оброблено, але для безпеки)
+                    // System.out.println("updatePaginationControls: fromIndex ("+ fromIndex +") >= toIndex ("+ toIndex +") or totalItems is 0 after initial check, clearing adListView."); // DEBUG
+                    adListView.setItems(FXCollections.emptyObservableList());
+                } else { // Запасний варіант для непередбачених помилок з індексами
+                    LOGGER.severe("Pagination error (unexpected state): fromIndex=" + fromIndex + ", toIndex=" + toIndex + ", totalItems=" + totalItems + ", currentPage=" + currentPage);
+                    adListView.setItems(FXCollections.emptyObservableList());
+                }
+            }
+        }
+        updateStatistics();
+
+
+
 
         if (adListView != null) {
             if (totalItems == 0) {
