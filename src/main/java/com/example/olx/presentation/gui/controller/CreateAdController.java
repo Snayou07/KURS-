@@ -50,11 +50,9 @@ public class CreateAdController {
     @FXML private HBox photoPreviewBox;
     private List<File> selectedImageFiles = new ArrayList<>();
     private List<String> existingImagePaths = new ArrayList<>();
-
     // Декоратори
     @FXML private CheckBox premiumCheckBox;
     @FXML private CheckBox urgentCheckBox;
-
     // Знижка
     @FXML private CheckBox discountCheckBox;
     @FXML private HBox discountOptionsBox;
@@ -74,7 +72,6 @@ public class CreateAdController {
     @FXML private HBox deliveryCostBox;
     @FXML private TextField deliveryCostField;
     @FXML private TextField deliveryInfoField;
-
     // Попередній перегляд
     @FXML private Button previewButton;
     @FXML private TextArea previewArea;
@@ -83,11 +80,9 @@ public class CreateAdController {
     private Ad adToEdit = null;
     private static final String IMAGE_STORAGE_DIR = "user_images";
     private AdCommandManager commandManager;
-
     @FXML
     public void initialize() {
         System.out.println("CreateAdController initialize() called");
-
         // Перевірка наявності обов'язкових компонентів
         if (errorLabel == null) {
             System.err.println("ERROR: errorLabel is null - check FXML file");
@@ -95,7 +90,6 @@ public class CreateAdController {
         }
 
         errorLabel.setText("");
-
         try {
             // Ініціалізація компонентів
             loadCategories();
@@ -276,9 +270,11 @@ public class CreateAdController {
         }
 
         try {
-            String title = titleField != null ? titleField.getText().trim() : "";
+            String title = titleField != null ?
+                    titleField.getText().trim() : "";
             String description = descriptionArea != null ? descriptionArea.getText().trim() : "";
-            String priceStr = priceField != null ? priceField.getText().replace(',', '.').trim() : "";
+            String priceStr = priceField != null ?
+                    priceField.getText().replace(',', '.').trim() : "";
 
             if (title.isEmpty() || description.isEmpty() || priceStr.isEmpty()) {
                 previewArea.setText("Заповніть всі основні поля для перегляду");
@@ -500,7 +496,6 @@ public class CreateAdController {
                     new FileChooser.ExtensionFilter("Зображення", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"),
                     new FileChooser.ExtensionFilter("Всі файли", "*.*")
             );
-
             if (addPhotoButton == null || addPhotoButton.getScene() == null) {
                 System.err.println("ERROR: addPhotoButton or scene is null");
                 return;
@@ -595,7 +590,6 @@ public class CreateAdController {
                         addPhotoButton.setDisable(false);
                     }
                 });
-
                 VBox imageContainer = new VBox(5, imageView, removeButton);
                 imageContainer.setAlignment(javafx.geometry.Pos.CENTER);
                 photoPreviewBox.getChildren().add(imageContainer);
@@ -619,7 +613,6 @@ public class CreateAdController {
             }
 
             System.out.println("Current user: " + currentUser.getUsername());
-
             if (commandManager == null) {
                 System.err.println("ERROR: AdCommandManager is null");
                 showError("Помилка системи. Спробуйте перезапустити додаток.");
@@ -627,12 +620,13 @@ public class CreateAdController {
             }
 
             // Отримання та валідація даних
-            String title = titleField != null ? titleField.getText().trim() : "";
+            String title = titleField != null ?
+                    titleField.getText().trim() : "";
             String description = descriptionArea != null ? descriptionArea.getText().trim() : "";
-            String priceStr = priceField != null ? priceField.getText().replace(',', '.').trim() : "";
+            String priceStr = priceField != null ?
+                    priceField.getText().replace(',', '.').trim() : "";
             CategoryDisplayItem selectedCategoryItem = categoryComboBox != null ?
                     categoryComboBox.getSelectionModel().getSelectedItem() : null;
-
             if (errorLabel != null) {
                 errorLabel.setText("");
             }
@@ -642,7 +636,6 @@ public class CreateAdController {
             System.out.println("Description: '" + description + "'");
             System.out.println("Price: '" + priceStr + "'");
             System.out.println("Category: " + (selectedCategoryItem != null ? selectedCategoryItem.getDisplayName() : "null"));
-
             // Валідація обов'язкових полів
             if (title.isEmpty() || description.isEmpty() || priceStr.isEmpty() || selectedCategoryItem == null) {
                 showError("Всі поля є обов'язковими для заповнення.");
@@ -663,7 +656,6 @@ public class CreateAdController {
             }
 
             System.out.println("Parsed price: " + price);
-
             // Обробка зображень
             List<String> finalImagePaths = new ArrayList<>(existingImagePaths);
             System.out.println("Processing " + selectedImageFiles.size() + " new images");
@@ -678,7 +670,8 @@ public class CreateAdController {
                 } catch (IOException e) {
                     System.err.println("Error copying image " + imageFile.getName() + ": " + e.getMessage());
                     showError("Помилка збереження фото: " + imageFile.getName() + " - " + e.getMessage());
-                    return; // Зупиняємось при помилці збереження фото
+                    return;
+                    // Зупиняємось при помилці збереження фото
                 }
             }
 
@@ -689,7 +682,6 @@ public class CreateAdController {
                     currentUser.getUserId(),
                     finalImagePaths
             );
-
             System.out.println("Created AdCreationRequest:");
             System.out.println("- Title: " + request.getTitle());
             System.out.println("- CategoryId: " + request.getCategoryId());
@@ -716,87 +708,61 @@ public class CreateAdController {
 
             // Збереження метаданих декораторів
             saveDecoratorMetadata(savedAd);
-
             // Оновлення списку оголошень у головному меню
 
-            System.out.println("Created AdCreationRequest:");
-            System.out.println("- Title: " + request.getTitle());
-            System.out.println("- CategoryId: " + request.getCategoryId());
-            System.out.println("- UserId: " + request.getUserId());
-            System.out.println("- Images count: " + finalImagePaths.size()); //
-
-
-            if (adToEdit == null) {
-                System.out.println("Creating new ad..."); //
-                savedAd = commandManager.createAd(request);
-                if (savedAd == null) { // //
-                    showError("Помилка створення оголошення: метод повернув null");
-                    return;
-                }
-            } else {
-                System.out.println("Updating existing ad...");
-                savedAd = commandManager.updateAd(adToEdit.getAdId(), request, currentUser.getUserId()); //
-                if (savedAd == null) {
-                    showError("Помилка оновлення оголошення: метод повернув null");
-                    return; //
-                }
-            }
-
-            saveDecoratorMetadata(savedAd); //
             String successMessage = (adToEdit == null) ?
-                    "Оголошення успішно створено з усіма декораторами!" //
+                    "Оголошення успішно створено з усіма декораторами!"
                     :
-                    "Оголошення успішно оновлено з усіма декораторами!"; //
+                    "Оголошення успішно оновлено з усіма декораторами!";
             showSuccessAndReturn(successMessage);
-
         } catch (InvalidInputException | IllegalArgumentException | UserNotFoundException e) {
-            showError(e.getMessage()); //
+            showError(e.getMessage());
         } catch (Exception e) {
-            showError("Сталася помилка: " + e.getMessage()); //
+            showError("Сталася помилка: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     void saveDecoratorMetadata(Ad ad) {
         StringBuilder decoratorInfo = new StringBuilder();
-        if (premiumCheckBox != null && premiumCheckBox.isSelected()) { //
-            decoratorInfo.append("premium;"); //
+        if (premiumCheckBox != null && premiumCheckBox.isSelected()) {
+            decoratorInfo.append("premium;");
         }
 
-        if (urgentCheckBox != null && urgentCheckBox.isSelected()) { //
+        if (urgentCheckBox != null && urgentCheckBox.isSelected()) {
             decoratorInfo.append("urgent;");
         }
 
-        if (discountCheckBox != null && discountCheckBox.isSelected() && discountPercentageField != null && !discountPercentageField.getText().trim().isEmpty()) { //
+        if (discountCheckBox != null && discountCheckBox.isSelected() && discountPercentageField != null && !discountPercentageField.getText().trim().isEmpty()) {
             decoratorInfo.append("discount:").append(discountPercentageField.getText().trim()).append(";");
         }
 
-        if (warrantyCheckBox != null && warrantyCheckBox.isSelected() && warrantyMonthsField != null && !warrantyMonthsField.getText().trim().isEmpty()) { //
+        if (warrantyCheckBox != null && warrantyCheckBox.isSelected() && warrantyMonthsField != null && !warrantyMonthsField.getText().trim().isEmpty()) {
             decoratorInfo.append("warranty:").append(warrantyMonthsField.getText().trim()).append(";");
         }
 
         if (deliveryCheckBox != null && deliveryCheckBox.isSelected()) {
-            if (freeDeliveryCheckBox != null && freeDeliveryCheckBox.isSelected()) { //
+            if (freeDeliveryCheckBox != null && freeDeliveryCheckBox.isSelected()) {
                 decoratorInfo.append("delivery:free;");
-            } else if (deliveryCostField != null && !deliveryCostField.getText().trim().isEmpty()) { //
+            } else if (deliveryCostField != null && !deliveryCostField.getText().trim().isEmpty()) {
                 decoratorInfo.append("delivery:").append(deliveryCostField.getText().trim()).append(";");
             }
         }
-        System.out.println("Декоратори для оголошення " + ad.getAdId() + ": " + decoratorInfo.toString()); //
+        System.out.println("Декоратори для оголошення " + ad.getAdId() + ": " + decoratorInfo.toString());
     }
 
     @FXML
     void handleCancel() {
-        Alert confirmationDialog = new Alert(Alert.AlertType.CONFIRMATION); //
+        Alert confirmationDialog = new Alert(Alert.AlertType.CONFIRMATION);
         confirmationDialog.setTitle("Підтвердження скасування");
         confirmationDialog.setHeaderText("Скасувати " + (adToEdit == null ? "створення" : "редагування") + " оголошення?");
-        confirmationDialog.setContentText("Всі незбережені зміни будуть втрачені."); //
+        confirmationDialog.setContentText("Всі незбережені зміни будуть втрачені.");
         Optional<ButtonType> result = confirmationDialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                MainGuiApp.loadMainScene(); //
+                MainGuiApp.loadMainScene();
             } catch (IOException e) {
-                e.printStackTrace(); //
+                e.printStackTrace();
                 showError("Помилка повернення на головний екран: " + e.getMessage());
             }
         }
@@ -804,7 +770,7 @@ public class CreateAdController {
 
     private void showError(String message) {
         if (errorLabel != null) { // Added null check for safety
-            errorLabel.setText(message); //
+            errorLabel.setText(message);
             errorLabel.setStyle("-fx-text-fill: red;");
         } else {
             System.err.println("Error Label is null, cannot show error: " + message);
@@ -812,34 +778,33 @@ public class CreateAdController {
     }
 
     private void showSuccessAndReturn(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION); //
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Успіх");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
         try {
-            MainGuiApp.loadMainScene(); //
+            MainGuiApp.loadMainScene();
         } catch (IOException e) {
-            e.printStackTrace(); //
+            e.printStackTrace();
             System.err.println("Error returning to main scene: " + e.getMessage());
         }
     }
 
     private class CategoryDisplayItem {
-        private final String id; //
+        private final String id;
         private final String displayName;
-
         public CategoryDisplayItem(String id, String displayName) {
-            this.id = id; //
+            this.id = id;
             this.displayName = displayName;
         }
 
         public String getId() {
-            return id; //
+            return id;
         }
 
         public String getDisplayName() {
-            return displayName; //
+            return displayName;
         }
     }
 }
