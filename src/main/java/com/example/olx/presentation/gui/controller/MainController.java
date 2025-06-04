@@ -740,6 +740,7 @@ public class MainController {
 
     // Fix 8: Pagination Fixes
     private void updatePaginationControls() {
+
         if (adsObservableList == null) { // Check if the list itself is null
             if (adListView != null) adListView.setItems(FXCollections.emptyObservableList());
             if (pageInfoLabel != null) pageInfoLabel.setText("Сторінка 0 з 0");
@@ -758,6 +759,8 @@ public class MainController {
 
         int totalItems = adsObservableList.size();
         int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / pageSize));
+        System.out.println("Total items: " + totalItems);
+
 
         // Ensure current page is within bounds
         currentPage = Math.max(1, Math.min(currentPage, totalPages));
@@ -1098,6 +1101,7 @@ public class MainController {
 
 
     private void loadAds(String categoryId) {
+        System.out.println("Loading ads for category: " + categoryId);
         if (adService == null) {
             showErrorAlert("Помилка", "Сервіс оголошень недоступний.", "Неможливо завантажити оголошення.");
             hideLoadingIndicator(); // Важливо сховати індикатор у разі помилки
@@ -1137,12 +1141,17 @@ public class MainController {
         updateActiveFiltersDisplay(); // Оновлюємо відображення активних фільтрів
         updateStatistics(); // Оновлюємо статистику
         hideLoadingIndicator();
+        System.out.println("Total ads loaded: " + ads.size());
+        System.out.println("After filtering: " + filteredByQuickFilters.size());
+        System.out.println("After decoration: " + decoratedAds.size());
         updateStatus("Завантажено " + adsObservableList.size() + " відповідних оголошень (до пагінації). На сторінці: " + (adListView != null && adListView.getItems() != null ? adListView.getItems().size() : 0) );
     }
 
 
 
     private void refreshCurrentView() {
+        loadAds(currentSelectedCategoryId);
+
         boolean advancedFiltersActive = (minPriceField != null && !minPriceField.getText().isEmpty()) ||
                 (maxPriceField != null && !maxPriceField.getText().isEmpty()) ||
                 (statusFilterCombo != null && statusFilterCombo.getValue() != null && !"Всі".equals(statusFilterCombo.getValue())) ||
@@ -1154,6 +1163,8 @@ public class MainController {
         } else {
             loadAds(currentSelectedCategoryId); // Це врахує швидкі фільтри
         }
+
+
     }
 
     // handleOpenAdDetails - без змін
@@ -1171,6 +1182,8 @@ public class MainController {
     public void handleCreateAd() {
         try {
             MainGuiApp.loadCreateAdScene();
+            // Після повернення зі сцени створення оновіть список
+            refreshCurrentView();
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("Помилка", "Не вдалося відкрити форму створення оголошення");
@@ -1423,6 +1436,11 @@ public class MainController {
     }
 
     private AdComponent createDecoratedAd(Ad ad) {
+        if (ad == null) {
+            System.out.println("Attempted to decorate null ad");
+            return null;
+        }
+        System.out.println("Decorating ad: " + ad.getTitle() + " (ID: " + ad.getId() + ")");
         if (ad == null) return null;
         AdComponent currentComponent = AdDecoratorFactory.createBasicAd(ad);
 
@@ -1474,18 +1492,27 @@ public class MainController {
     }
 
     public void updateAdsList(List<Ad> adsFromMediator) {
-        if (adsFromMediator == null) adsFromMediator = new ArrayList<>();
+        System.out.println("Received ads from mediator: " + adsFromMediator.size());
+        if (adsFromMediator == null) {
+            System.out.println("Mediator sent null ads list");
+            adsFromMediator = new ArrayList<>();
+        }
+
         List<AdComponent> decoratedAds = adsFromMediator.stream()
+                .peek(ad -> System.out.println("Processing ad: " + ad.getId() + " - " + ad.getTitle() + " (" + ad.getStatus() + ")"))
                 .map(this::createDecoratedAd)
                 .filter(Objects::nonNull)
                 .toList();
+
+        System.out.println("Decorated ads count: " + decoratedAds.size());
+
         Platform.runLater(() -> {
-            showLoadingIndicator("Оновлення через медіатор...");
+            System.out.println("Updating UI with " + decoratedAds.size() + " ads");
             adsObservableList.setAll(decoratedAds);
             applySorting();
             updatePaginationControls();
             updateActiveFiltersDisplay();
-            updateStatus("Список оновлено через медіатор. " + decoratedAds.size() + " оголошень.");
+            updateStatus("Оновлено " + decoratedAds.size() + " оголошень");
             hideLoadingIndicator();
         });
     }
