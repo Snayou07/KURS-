@@ -43,6 +43,7 @@ public class Ad implements Serializable, Cloneable {
     private double discountPercentage;
     private String discountReason;
     private String adState;
+    private String statusDirectly;
 
     // Основной конструктор с всеми параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -221,6 +222,10 @@ public class Ad implements Serializable, Cloneable {
 
     public void setAdId(String adId) {
         this.adId = adId;
+    }
+
+    public void setStatusDirectly(String statusDirectly) {
+        this.statusDirectly = statusDirectly;
     }
 
     // Utility-класс для работы с датами (внутренний)
