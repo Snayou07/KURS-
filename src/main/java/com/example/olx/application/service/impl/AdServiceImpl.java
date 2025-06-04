@@ -3,7 +3,9 @@ package com.example.olx.application.service.impl;
 
 import com.example.olx.application.dto.AdCreationRequest;
 import com.example.olx.application.service.port.AdServicePort;
+import com.example.olx.application.service.port.CategoryServicePort;
 import com.example.olx.application.service.port.NotificationServicePort;
+
 import com.example.olx.application.service.strategy.AdSearchStrategy;
 import com.example.olx.domain.exception.AdNotFoundException;
 import com.example.olx.domain.exception.InvalidInputException;
@@ -11,6 +13,7 @@ import com.example.olx.domain.exception.UnauthorizedActionException;
 import com.example.olx.domain.exception.UserNotFoundException;
 import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.AdState;
+import com.example.olx.domain.model.ActiveAdState;
 import com.example.olx.domain.model.User;
 import com.example.olx.domain.model.UserType;
 import com.example.olx.domain.repository.AdRepository;
@@ -28,6 +31,16 @@ public class AdServiceImpl implements AdServicePort {
     private final NotificationServicePort notificationService;
     private final AdSearchStrategy searchStrategy;
 
+    // Constructor
+    public AdServiceImpl(AdRepository adRepository, UserRepository userRepository,
+                         CategoryRepository categoryRepository,
+                         NotificationServicePort notificationService, AdSearchStrategy searchStrategy) {
+        this.adRepository = adRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+        this.notificationService = notificationService;
+        this.searchStrategy = searchStrategy;
+    }
 
     @Override
     public void changeAdState(String adId, AdState newState) throws UserNotFoundException {
@@ -43,27 +56,20 @@ public class AdServiceImpl implements AdServicePort {
         Ad ad = adRepository.findById(adId)
                 .orElseThrow(() -> new AdNotFoundException("Ad with ID " + adId + " not found"));
 
-        // Update the ad state - Fixed: Changed from setState() to the correct method
-        ad.setState(newState); // Make sure your Ad class has this method
-        // OR if your Ad class uses a different method name:
-        // ad.setAdState(newState);
+        // Update the ad state
+        ad.setCurrentState(newState);
 
         // Save the updated ad
         adRepository.save(ad);
 
         // Optional: Send notification about state change
         if (notificationService != null) {
-            notificationService.notifyAdStateChanged(ad, newState);
+            try {
+                notificationService.notifyAdStateChanged(ad, newState);
+            } catch (Exception e) {
+                System.err.println("Error sending state change notification: " + e.getMessage());
+            }
         }
-    }
-    public AdServiceImpl(AdRepository adRepository, UserRepository userRepository,
-                         CategoryRepository categoryRepository,
-                         NotificationServicePort notificationService, AdSearchStrategy searchStrategy) {
-        this.adRepository = adRepository;
-        this.userRepository = userRepository;
-        this.categoryRepository = categoryRepository;
-        this.notificationService = notificationService;
-        this.searchStrategy = searchStrategy;
     }
 
     @Override
@@ -108,6 +114,9 @@ public class AdServiceImpl implements AdServicePort {
                     request.getImagePaths()
             );
 
+            // Автоматично публікуємо оголошення для відображення на головному екрані
+            newAd.setCurrentState(new ActiveAdState());
+
             System.out.println("Створюється оголошення: " + newAd.getTitle()); // DEBUG
 
             // Зберігаємо оголошення в репозиторії
@@ -119,6 +128,7 @@ public class AdServiceImpl implements AdServicePort {
             }
 
             System.out.println("Оголошення збережено з ID: " + savedAd.getId()); // DEBUG
+            System.out.println("Стан оголошення: " + savedAd.getStatus()); // DEBUG
 
             // Перевіряємо, чи з'являється оголошення в загальному списку
             List<Ad> allAds = adRepository.findAll();
@@ -129,7 +139,9 @@ public class AdServiceImpl implements AdServicePort {
 
             // Відправляємо сповіщення користувачам про нове оголошення
             try {
-                notificationService.notifyUsersAboutNewAd(savedAd, userRepository.findAll());
+                if (notificationService != null) {
+                    notificationService.notifyUsersAboutNewAd(savedAd, userRepository.findAll());
+                }
             } catch (Exception e) {
                 // Логування помилки сповіщення, але не зупиняємо процес створення оголошення
                 System.err.println("Помилка відправки сповіщень про нове оголошення: " + e.getMessage());
@@ -149,7 +161,14 @@ public class AdServiceImpl implements AdServicePort {
     public List<Ad> getAllAds() {
         List<Ad> ads = adRepository.findAll();
         System.out.println("getAllAds() повертає " + ads.size() + " оголошень"); // DEBUG
-        return ads;
+
+        // Фільтруємо тільки активні оголошення для головного екрану
+        List<Ad> activeAds = ads.stream()
+                .filter(ad -> "Активне".equals(ad.getStatus()))
+                .toList();
+
+        System.out.println("Активних оголошень: " + activeAds.size()); // DEBUG
+        return activeAds;
     }
 
     @Override
@@ -159,9 +178,6 @@ public class AdServiceImpl implements AdServicePort {
         }
         return adRepository.findById(adId.trim());
     }
-
-
-
 
     @Override
     public List<Ad> getAdsByUserId(String userId) {
@@ -187,7 +203,13 @@ public class AdServiceImpl implements AdServicePort {
                 "maxPrice", maxPrice == null ? Double.MAX_VALUE : maxPrice,
                 "categoryId", categoryId == null ? "" : categoryId.trim()
         );
-        return searchStrategy.search(adRepository.findAll(), criteria);
+
+        // Пошук серед всіх активних оголошень
+        List<Ad> allActiveAds = adRepository.findAll().stream()
+                .filter(ad -> "Активне".equals(ad.getStatus()))
+                .toList();
+
+        return searchStrategy.search(allActiveAds, criteria);
     }
 
     @Override
@@ -209,7 +231,9 @@ public class AdServiceImpl implements AdServicePort {
         adRepository.deleteById(adId.trim());
 
         try {
-            notificationService.sendSystemMessage("Оголошення '" + adToDelete.getTitle() + "' було видалено.");
+            if (notificationService != null) {
+                notificationService.sendSystemMessage("Оголошення '" + adToDelete.getTitle() + "' було видалено.");
+            }
         } catch (Exception e) {
             System.err.println("Помилка відправки сповіщення про видалення: " + e.getMessage());
         }

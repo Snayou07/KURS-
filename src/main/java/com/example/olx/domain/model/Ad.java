@@ -42,6 +42,7 @@ public class Ad implements Serializable, Cloneable {
     private boolean hasDiscount;
     private double discountPercentage;
     private String discountReason;
+    private String adState;
 
     // Основной конструктор с всеми параметрами
     public Ad(String title, String description, double price, String categoryId, String sellerId, List<String> imagePaths) {
@@ -57,7 +58,10 @@ public class Ad implements Serializable, Cloneable {
         this.status = currentState.getStatusName();
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+
     }
+    // src/main/java/com/example/olx/domain/model/AdState.java
+
 
     // Конструктор без imagePaths
     public Ad(String title, String description, double price, String categoryId, String sellerId) {
@@ -209,6 +213,10 @@ public class Ad implements Serializable, Cloneable {
     public void setDiscountReason(String discountReason) {
         this.discountReason = discountReason;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public String getAdState() {
+        return adState;
     }
 
     // Utility-класс для работы с датами (внутренний)

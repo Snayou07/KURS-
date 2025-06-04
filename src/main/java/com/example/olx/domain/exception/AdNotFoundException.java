@@ -1,3 +1,4 @@
+// src/main/java/com/example/olx/domain/exception/AdNotFoundException.java
 package com.example.olx.domain.exception;
 
 public class AdNotFoundException extends RuntimeException {

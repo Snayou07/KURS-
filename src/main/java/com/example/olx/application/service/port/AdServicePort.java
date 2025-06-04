@@ -19,7 +19,8 @@ public interface AdServicePort {
 
     // Для админки - все объявления
     List<Ad> getAllAdsForAdmin();
-
+    // У AdServicePort.java додайте:
+    List<Ad> getAllActiveAds();
     // Активные объявления по состоянию
     List<Ad> getAdsByState(AdState state);
 
