@@ -1,4 +1,3 @@
-// src/main/java/com/example/olx/presentation/gui/controller/AdDetailController.java
 package com.example.olx.presentation.gui.controller;
 
 import com.example.olx.domain.decorator.AdComponent;
@@ -68,7 +67,7 @@ public class AdDetailController {
     @FXML private Label createdDateLabel;
     @FXML private VBox decoratorsContainer;
     @FXML private VBox premiumFeaturesContainer;
-    @FXML private VBox imageContainer;
+    @FXML private HBox imageContainer; // <--- ИЗМЕНЕНО: VBox на HBox
     @FXML private Button contactButton;
     @FXML private Button favoriteButton;
     @FXML private Button shareButton;
@@ -89,7 +88,6 @@ public class AdDetailController {
 
         setupImageGallery();
         setupDecoratedInfoContainer();
-
         // Відкладена ініціалізація для коректного знаходження контейнера
         Platform.runLater(this::findMainContainer);
     }
@@ -154,7 +152,6 @@ public class AdDetailController {
                             "-fx-text-fill: #2c3e50; " +
                             "-fx-padding: 0 0 10 0;"
             );
-
             decoratedInfoContainer.getChildren().addAll(decoratedInfoLabel, decoratedInfoText);
         } catch (Exception e) {
             System.err.println("Помилка при створенні контейнера декорованої інформації: " + e.getMessage());
@@ -208,7 +205,6 @@ public class AdDetailController {
         }
 
         this.currentAd = ad;
-
         try {
             // Створюємо декорований компонент
             this.decoratedAd = AdDecoratorFactory.createFullyDecoratedAd(ad,
@@ -225,7 +221,6 @@ public class AdDetailController {
             populateAdDetails();
             setupActionButtons();
             loadImages();
-
             // Відкладене додавання декорованої інформації
             Platform.runLater(this::displayDecoratedInfo);
         } catch (Exception e) {
@@ -243,7 +238,6 @@ public class AdDetailController {
     }
     private void populateBasicAdDetails() {
         if (currentAd == null) return;
-
         if (titleLabel != null) {
             titleLabel.setText(currentAd.getTitle());
         }
@@ -293,7 +287,8 @@ public class AdDetailController {
 
         try {
             // Автоматично визначаємо декоратори на основі властивостей оголошення
-            String titleLower = ad.getTitle() != null ? ad.getTitle().toLowerCase() : "";
+            String titleLower = ad.getTitle() != null ?
+                    ad.getTitle().toLowerCase() : "";
             String descLower = ad.getDescription() != null ? ad.getDescription().toLowerCase() : "";
 
             boolean isPremium = titleLower.contains("преміум") || descLower.contains("преміум");
@@ -360,7 +355,6 @@ public class AdDetailController {
             // Обробка ціни
             if (priceLabel != null) {
                 double calculatedPrice = decoratedAd.getCalculatedPrice();
-
                 // Якщо ціна змінилася через декоратори, показуємо це
                 if (Math.abs(calculatedPrice - currentAd.getPrice()) > 0.01) {
                     priceLabel.setText(String.format("%.2f грн", calculatedPrice));
@@ -414,7 +408,6 @@ public class AdDetailController {
 
             // Отримуємо повну декоровану інформацію
             String decoratedInfo = decoratedAd.getDisplayInfo();
-
             if (decoratedInfo != null && !decoratedInfo.trim().isEmpty()) {
                 // Обробляємо текст для кращого відображення
                 String processedInfo = processDecoratedText(decoratedInfo);
@@ -444,13 +437,10 @@ public class AdDetailController {
 
         // Базова ініціалізація оголошення
         initializeBasicAdInfo(ad);
-
         // Застосовуємо декоратори на основі конфігурації
         applyDecorators(ad, config);
-
         // Налаштовуємо інтерактивні елементи
         setupInteractiveElements(ad, config);
-
         System.out.println("AdDetailController initialized for ad: " + ad.getTitle() +
                 " with config: " + getConfigDescription(config));
     }
@@ -548,7 +538,6 @@ public class AdDetailController {
         premiumLabel.setStyle("-fx-background-color: #FFD700; -fx-text-fill: #000000; " +
                 "-fx-font-weight: bold; -fx-padding: 5px 10px; " +
                 "-fx-background-radius: 5px; -fx-font-size: 14px;");
-
         if (decoratorsContainer != null) {
             decoratorsContainer.getChildren().add(premiumLabel);
         }
@@ -568,7 +557,6 @@ public class AdDetailController {
         urgentLabel.setStyle("-fx-background-color: #FF4444; -fx-text-fill: white; " +
                 "-fx-font-weight: bold; -fx-padding: 5px 10px; " +
                 "-fx-background-radius: 5px; -fx-font-size: 14px;");
-
         if (decoratorsContainer != null) {
             decoratorsContainer.getChildren().add(urgentLabel);
         }
@@ -584,21 +572,16 @@ public class AdDetailController {
         VBox discountBox = new VBox(5);
         discountBox.setStyle("-fx-background-color: #E8F5E8; -fx-border-color: #4CAF50; " +
                 "-fx-border-width: 1px; -fx-border-radius: 5px; -fx-padding: 10px;");
-
         double discountAmount = originalPrice * (discountPercentage / 100);
         double newPrice = originalPrice - discountAmount;
-
         Label discountTitle = new Label("💰 ЗНИЖКА " + String.format("%.0f%%", discountPercentage));
         discountTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #2E7D32; -fx-font-size: 12px;");
-
         Label oldPriceLabel = new Label(String.format("Було: %.2f грн", originalPrice));
         oldPriceLabel.setStyle("-fx-text-fill: #666666; -fx-strikethrough: true; -fx-font-size: 11px;");
-
         Label newPriceLabel = new Label(String.format("Тепер: %.2f грн", newPrice));
         newPriceLabel.setStyle("-fx-text-fill: #2E7D32; -fx-font-weight: bold; -fx-font-size: 13px;");
 
         discountBox.getChildren().addAll(discountTitle, oldPriceLabel, newPriceLabel);
-
         if (reason != null && !reason.trim().isEmpty()) {
             Label reasonLabel = new Label("Причина: " + reason);
             reasonLabel.setStyle("-fx-text-fill: #555555; -fx-font-size: 10px; -fx-font-style: italic;");
@@ -623,17 +606,14 @@ public class AdDetailController {
         HBox warrantyBox = new HBox(10);
         warrantyBox.setStyle("-fx-background-color: #E3F2FD; -fx-border-color: #2196F3; " +
                 "-fx-border-width: 1px; -fx-border-radius: 5px; -fx-padding: 8px;");
-
         Label warrantyIcon = new Label("🛡️");
         warrantyIcon.setStyle("-fx-font-size: 16px;");
 
         VBox warrantyInfo = new VBox(2);
-
         Label warrantyTitle = new Label("ГАРАНТІЯ " + warrantyMonths + " міс.");
         warrantyTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976D2; -fx-font-size: 12px;");
 
         warrantyInfo.getChildren().add(warrantyTitle);
-
         if (warrantyType != null && !warrantyType.trim().isEmpty()) {
             Label warrantyTypeLabel = new Label(warrantyType);
             warrantyTypeLabel.setStyle("-fx-text-fill: #555555; -fx-font-size: 10px;");
@@ -641,7 +621,6 @@ public class AdDetailController {
         }
 
         warrantyBox.getChildren().addAll(warrantyIcon, warrantyInfo);
-
         if (decoratorsContainer != null) {
             decoratorsContainer.getChildren().add(warrantyBox);
         }
@@ -654,12 +633,10 @@ public class AdDetailController {
         HBox deliveryBox = new HBox(10);
         deliveryBox.setStyle("-fx-background-color: #FFF3E0; -fx-border-color: #FF9800; " +
                 "-fx-border-width: 1px; -fx-border-radius: 5px; -fx-padding: 8px;");
-
         Label deliveryIcon = new Label("🚚");
         deliveryIcon.setStyle("-fx-font-size: 16px;");
 
         VBox deliveryInfo_vbox = new VBox(2);
-
         if (freeDelivery != null && freeDelivery) {
             Label freeDeliveryLabel = new Label("БЕЗКОШТОВНА ДОСТАВКА");
             freeDeliveryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #E65100; -fx-font-size: 12px;");
@@ -677,7 +654,6 @@ public class AdDetailController {
         }
 
         deliveryBox.getChildren().addAll(deliveryIcon, deliveryInfo_vbox);
-
         if (decoratorsContainer != null) {
             decoratorsContainer.getChildren().add(deliveryBox);
         }
@@ -710,9 +686,8 @@ public class AdDetailController {
      * Завантажує зображення оголошення
      */
     private void loadAdImages(Ad ad) {
-        if (imageContainer != null && ad.getImagePaths() != null && !ad.getImagePaths().isEmpty()) {
-            imageContainer.getChildren().clear();
-
+        if (imageContainer != null && ad.getImagePaths() != null && !ad.getImagePaths().isEmpty()) { // [cite: 11]
+            imageContainer.getChildren().clear(); // [cite: 11]
             for (String imagePath : ad.getImagePaths()) {
                 try {
                     ImageView imageView = new ImageView(new Image("file:" + imagePath));
@@ -720,7 +695,7 @@ public class AdDetailController {
                     imageView.setFitWidth(200);
                     imageView.setPreserveRatio(true);
                     imageView.setSmooth(true);
-                    imageContainer.getChildren().add(imageView);
+                    imageContainer.getChildren().add(imageView); // [cite: 11]
                 } catch (Exception e) {
                     System.err.println("Error loading image: " + imagePath + " - " + e.getMessage());
                 }
@@ -745,7 +720,6 @@ public class AdDetailController {
      */
     private String getConfigDescription(AdDisplayConfig config) {
         List<String> features = new ArrayList<>();
-
         if (config.isPremium()) features.add("Premium");
         if (config.isUrgent()) features.add("Urgent");
         if (config.getDiscountPercentage() != null) features.add("Discount");
@@ -811,7 +785,6 @@ public class AdDetailController {
 
             // Знаходимо позицію після блоку з описом
             int insertIndex = findInsertPosition();
-
             // Додаємо декоровану інформацію
             if (insertIndex >= 0 && insertIndex < mainContainer.getChildren().size()) {
                 mainContainer.getChildren().add(insertIndex, decoratedInfoContainer);
@@ -862,16 +835,16 @@ public class AdDetailController {
     }
 
     private boolean containsDescriptionText(VBox container) {
-        if (container == null || descriptionText == null) {
+        if (container == null || descriptionText == null) { // [cite: 5]
             return false;
         }
 
         for (var child : container.getChildren()) {
-            if (child == descriptionText) {
+            if (child == descriptionText) { // [cite: 5]
                 return true;
             }
             if (child instanceof VBox || child instanceof HBox) {
-                if (containsTextInContainer(child, descriptionText)) {
+                if (containsTextInContainer(child, descriptionText)) { // [cite: 5]
                     return true;
                 }
             }
@@ -924,7 +897,6 @@ public class AdDetailController {
 
         try {
             imagePaths = currentAd.getImagePaths();
-
             if (imagePaths == null || imagePaths.isEmpty()) {
                 showNoImageMessage();
                 return;
@@ -932,7 +904,6 @@ public class AdDetailController {
 
             loadMainImage(0);
             loadThumbnails();
-
             if (imagePaths.size() > 1) {
                 addGalleryToMainContainer();
             }
@@ -943,12 +914,12 @@ public class AdDetailController {
     }
 
     private void showNoImageMessage() {
-        if (adImageView != null) {
-            adImageView.setVisible(false);
+        if (adImageView != null) { // [cite: 4]
+            adImageView.setVisible(false); // [cite: 4]
         }
-        if (noImageLabel != null) {
-            noImageLabel.setText("Фото не завантажено");
-            noImageLabel.setVisible(true);
+        if (noImageLabel != null) { // [cite: 4]
+            noImageLabel.setText("Фото не завантажено"); // [cite: 4]
+            noImageLabel.setVisible(true); // [cite: 4]
         }
         if (thumbnailContainer != null) {
             thumbnailContainer.getChildren().clear();
@@ -967,8 +938,8 @@ public class AdDetailController {
             if (image != null) {
                 currentMainImage.setImage(image);
                 currentMainImage.setVisible(true);
-                if (noImageLabel != null) {
-                    noImageLabel.setVisible(false);
+                if (noImageLabel != null) { // [cite: 4]
+                    noImageLabel.setVisible(false); // [cite: 4]
                 }
                 currentImageIndex = index;
             } else {
@@ -996,14 +967,12 @@ public class AdDetailController {
 
         try {
             thumbnailContainer.getChildren().clear();
-
             for (int i = 0; i < imagePaths.size(); i++) {
                 String imagePath = imagePaths.get(i);
                 if (imagePath == null || imagePath.trim().isEmpty()) {
                     continue; // пропускаємо порожні шляхи
                 }
                 Image thumbnailImage = loadImageFromPath(imagePath);
-
                 if (thumbnailImage != null) {
                     ImageView thumbnail = createThumbnail(thumbnailImage, i);
                     thumbnailContainer.getChildren().add(thumbnail);
@@ -1027,23 +996,19 @@ public class AdDetailController {
             loadMainImage(index);
             updateAllThumbnailStyles();
         });
-
         thumbnail.setOnMouseEntered(event -> {
             if (index != currentImageIndex) {
                 thumbnail.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0.5, 0, 0); -fx-cursor: hand;");
             }
         });
-
         thumbnail.setOnMouseExited(event -> {
             updateThumbnailStyle(thumbnail, index == currentImageIndex);
         });
-
         return thumbnail;
     }
 
     private void updateThumbnailStyle(ImageView thumbnail, boolean isSelected) {
         if (thumbnail == null) return;
-
         if (isSelected) {
             thumbnail.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,100,255,0.8), 8, 0.6, 0, 0); -fx-cursor: default;");
         } else {
@@ -1053,12 +1018,11 @@ public class AdDetailController {
 
     private void updateAllThumbnailStyles() {
         if (thumbnailContainer == null) return;
-
         try {
             for (int i = 0; i < thumbnailContainer.getChildren().size(); i++) {
                 var child = thumbnailContainer.getChildren().get(i);
-                if (child instanceof ImageView thumbnail) {
-                    updateThumbnailStyle(thumbnail, i == currentImageIndex);
+                if (child instanceof ImageView thumbnailView) { // Renamed to avoid conflict with outer scope 'thumbnail'
+                    updateThumbnailStyle(thumbnailView, i == currentImageIndex);
                 }
             }
         } catch (Exception e) {
@@ -1073,7 +1037,6 @@ public class AdDetailController {
 
         try {
             File imageFile = new File(imagePath);
-
             if (!imageFile.exists()) {
                 imageFile = new File("user_images", new File(imagePath).getName());
             }
@@ -1092,9 +1055,9 @@ public class AdDetailController {
 
     private void addGalleryToMainContainer() {
         try {
-            if (adImageView != null && adImageView.getParent() instanceof VBox) {
-                VBox parentContainer = (VBox) adImageView.getParent();
-                int imageViewIndex = parentContainer.getChildren().indexOf(adImageView);
+            if (adImageView != null && adImageView.getParent() instanceof VBox) { // [cite: 4]
+                VBox parentContainer = (VBox) adImageView.getParent(); // [cite: 4]
+                int imageViewIndex = parentContainer.getChildren().indexOf(adImageView); // [cite: 4]
 
                 if (imageViewIndex >= 0 && imageViewIndex + 1 <= parentContainer.getChildren().size()
                         && imageGalleryContainer != null && !imageGalleryContainer.getChildren().isEmpty()) {
@@ -1109,17 +1072,17 @@ public class AdDetailController {
     private void setupActionButtons() {
         try {
             User loggedInUser = GlobalContext.getInstance().getLoggedInUser();
-            if (loggedInUser != null && currentAd != null && editButton != null && deleteButton != null) {
+            if (loggedInUser != null && currentAd != null && editButton != null && deleteButton != null) { // [cite: 6]
                 boolean isOwner = loggedInUser.getUserId().equals(currentAd.getSellerId());
                 boolean isAdmin = loggedInUser.getUserType() == UserType.ADMIN;
 
                 if (isOwner) {
-                    editButton.setVisible(true);
-                    editButton.setManaged(true);
+                    editButton.setVisible(true); // [cite: 6]
+                    editButton.setManaged(true); // [cite: 6, 14]
                 }
                 if (isOwner || isAdmin) {
-                    deleteButton.setVisible(true);
-                    deleteButton.setManaged(true);
+                    deleteButton.setVisible(true); // [cite: 6]
+                    deleteButton.setManaged(true); // [cite: 6, 15]
                 }
             }
         } catch (Exception e) {

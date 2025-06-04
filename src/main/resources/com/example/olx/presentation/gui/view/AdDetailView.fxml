@@ -32,32 +32,28 @@
                     </padding>
 
                     <children>
-                        <!-- Базова інформація -->
-                        <Label fx:id="titleLabel" />
+                        <Label fx:id="titleLabel_simple" />
                         <TextArea fx:id="descriptionTextArea" />
-                        <Label fx:id="priceLabel" />
+                        <Label fx:id="priceLabel_simple" />
                         <Label fx:id="authorLabel" />
-                        <Label fx:id="categoryLabel" />
+                        <Label fx:id="categoryLabel_simple" />
                         <Label fx:id="statusLabel" />
                         <Label fx:id="createdDateLabel" />
 
-                        <!-- Контейнери -->
-                        <VBox fx:id="mainContainer" />
+
                         <VBox fx:id="decoratorsContainer" />
                         <HBox fx:id="imageContainer" />
                         <VBox fx:id="premiumFeaturesContainer" />
 
-                        <!-- Кнопки -->
                         <Button fx:id="contactButton" text="Контакт" />
                         <Button fx:id="favoriteButton" text="В обрані" />
                         <Button fx:id="shareButton" text="Поділитися" />
-                        <!-- Заголовок оголошення -->
+
                         <Label fx:id="titleLabel"
                                styleClass="detail-title-label"
                                text="Назва оголошення"
                                wrapText="true" />
 
-                        <!-- Основне зображення -->
                         <ImageView fx:id="adImageView"
                                    fitHeight="300.0"
                                    fitWidth="400.0"
@@ -65,14 +61,12 @@
                                    preserveRatio="true"
                                    styleClass="detail-image" />
 
-                        <!-- Повідомлення про відсутність фото -->
                         <Label fx:id="noImageLabel"
                                managed="false"
                                text="Фото не завантажено"
                                visible="false"
                                styleClass="detail-meta-label" />
 
-                        <!-- Блок з ціною -->
                         <HBox alignment="CENTER_LEFT" spacing="15.0">
                             <children>
                                 <Label styleClass="detail-price-label"
@@ -86,7 +80,6 @@
                             </VBox.margin>
                         </HBox>
 
-                        <!-- Секція з описом -->
                         <VBox spacing="12.0" styleClass="detail-section">
                             <children>
                                 <Label styleClass="detail-section-header"
@@ -98,9 +91,8 @@
                             </children>
                         </VBox>
 
-                        <!-- Місце для декорованої інформації буде додано програмно -->
 
-                        <!-- Блок метаінформації -->
+
                         <VBox spacing="8.0" styleClass="detail-section-meta">
                             <children>
                                 <HBox spacing="8.0" alignment="CENTER_LEFT">
@@ -135,7 +127,6 @@
                             </children>
                         </VBox>
 
-                        <!-- Блок з кнопками дій -->
                         <HBox fx:id="actionButtonsBox"
                               alignment="CENTER"
                               spacing="20.0">
@@ -143,7 +134,7 @@
                                 <Insets top="30.0" />
                             </VBox.margin>
                             <children>
-                                <!-- Кнопка редагування (видима тільки для власника) -->
+
                                 <Button fx:id="editButton"
                                         managed="false"
                                         mnemonicParsing="false"
@@ -156,7 +147,6 @@
                                     </tooltip>
                                 </Button>
 
-                                <!-- Кнопка видалення (видима для власника та адміна) -->
                                 <Button fx:id="deleteButton"
                                         managed="false"
                                         mnemonicParsing="false"
@@ -171,7 +161,6 @@
                             </children>
                         </HBox>
 
-                        <!-- Кнопка повернення -->
                         <Button fx:id="backButton"
                                 mnemonicParsing="false"
                                 onAction="#handleBack"

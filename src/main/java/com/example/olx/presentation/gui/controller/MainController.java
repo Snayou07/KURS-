@@ -4,9 +4,9 @@ import com.example.olx.domain.decorator.*;
 import com.example.olx.presentation.gui.mediator.components.SearchComponent;
 import com.example.olx.presentation.gui.mediator.components.AdListComponent;
 import com.example.olx.presentation.gui.mediator.components.FilterComponent;
-import com.example.olx.application.command.AdCommandManager;
-import com.example.olx.application.command.CommandFactory;
-import com.example.olx.application.command.CommandInvoker;
+// import com.example.olx.application.command.AdCommandManager; // Removed
+// import com.example.olx.application.command.CommandFactory; // Removed
+// import com.example.olx.application.command.CommandInvoker; // Removed
 import com.example.olx.domain.model.Ad;
 import com.example.olx.domain.model.Category;
 import com.example.olx.domain.model.CategoryComponent;
@@ -44,7 +44,6 @@ import static com.example.olx.presentation.gui.MainGuiApp.categoryService;
 
 public class MainController {
     private static final Logger LOGGER = Logger.getLogger(MainController.class.getName());
-
     @FXML private BorderPane mainBorderPane;
     @FXML private TextField searchField;
     @FXML private Button searchButton;
@@ -67,23 +66,11 @@ public class MainController {
     @FXML private Button applyFiltersButton;
     @FXML private Button clearFiltersButton;
 
-    // Швидкі фільтри
-    @FXML private CheckBox quickFilterPremium;
-    @FXML private CheckBox quickFilterUrgent;
-    @FXML private CheckBox quickFilterWithDelivery;
-    @FXML private CheckBox quickFilterWithWarranty;
-    @FXML private CheckBox quickFilterWithDiscount;
-    // Command pattern components
-    @FXML private Button undoButton;
-    @FXML private Button redoButton;
-    @FXML private Button clearHistoryButton;
-    @FXML private ListView<String> commandHistoryListView;
-
     // Сортування та відображення
     @FXML private ComboBox<String> sortComboBox;
     @FXML private Button sortOrderButton;
-    @FXML private Button listViewButton;
-    @FXML private Button gridViewButton;
+    // @FXML private Button listViewButton; // Removed
+    // @FXML private Button gridViewButton; // Removed
     @FXML private Button refreshButton;
     // Активні фільтри
     @FXML private HBox activeFiltersPanel;
@@ -109,15 +96,15 @@ public class MainController {
     @FXML private HBox loadingIndicator;
     @FXML private Label loadingLabel;
 
-    private AdCommandManager commandManager;
+    // private AdCommandManager commandManager; // Removed
     private final ObservableList<AdComponent> adsObservableList = FXCollections.observableArrayList();
-    private final ObservableList<String> commandHistoryObservableList = FXCollections.observableArrayList();
+    // private final ObservableList<String> commandHistoryObservableList = FXCollections.observableArrayList(); // Removed
     private String currentSelectedCategoryId = null;
     // Додаємо компоненти медіатора
     private AdBrowserMediator mediator;
     private SearchComponent searchComponent;
     private AdListComponent adListComponent;
-    private FilterComponent filterComponent; // Although declared, not directly used in this controller for its methods
+    private FilterComponent filterComponent;
     // Додаткові змінні для пагінації та сортування
     private int currentPage = 1;
     private int pageSize = 20; // Default page size
@@ -144,24 +131,23 @@ public class MainController {
             }
         }
 
-        initializeCommandManager();
+        // initializeCommandManager(); // Removed
         initializeMediator();
         initializeUIComponents();
-        setupCategoryTree(); // Consider making this async if category loading is slow
+        setupCategoryTree();
         setupAdListView();
-        setupCommandHistoryView();
+        // setupCommandHistoryView(); // Removed
         setupMediatorIntegration();
         setupGlobalEventListeners();
 
         // Initial data load via mediator and UI updates
         if (this.mediator != null) {
-            // Assuming mediator.loadAllAds() will also become asynchronous or use an async method
-            this.mediator.loadAllAds(); // If mediator directly calls controller's loadAds, it will become async
+            this.mediator.loadAllAds();
         } else {
             loadAds(null);
         }
 
-        updateCommandButtons();
+        // updateCommandButtons(); // Removed
         updateLastUpdateTime();
         updateStatus("Головне вікно ініціалізовано.");
     }
@@ -194,7 +180,7 @@ public class MainController {
             pageSizeComboBox.setOnAction(e -> handlePageSizeChange());
         }
 
-        setupQuickFilters();
+        // setupQuickFilters(); // Removed
         if (advancedSearchPanel != null) {
             advancedSearchPanel.setVisible(false);
             advancedSearchPanel.setManaged(false);
@@ -206,94 +192,7 @@ public class MainController {
             LOGGER.severe("Error: adListView is null. Check FXML binding.");
             return;
         }
-        // ... всередині методу setupAdListView ...
-        if (adListView == null) {
-            LOGGER.severe("Error: adListView is null. Check FXML binding.");
-            return;
-        }
-        adListView.setCellFactory(listView -> new ListCell<AdComponent>() {
-            @Override
-            protected void updateItem(AdComponent adComponent, boolean empty) {
-                super.updateItem(adComponent, empty);
-
-                 System.out.println("CellFactory updateItem START: adComponent=" + (adComponent != null ? "Present" : "NULL") + ", adComponent.getAd()=" + (adComponent != null && adComponent.getAd() != null ? adComponent.getAd().getTitle() : "NULL_AD_OR_COMPONENT") + ", empty=" + empty); // DEBUG
-
-                if (empty) {
-                   System.out.println("CellFactory: Item is empty. Clearing cell."); // DEBUG
-                    setText(null);
-                    setGraphic(null);
-                } else if (adComponent == null) {
-                    System.out.println("CellFactory: adComponent is NULL. Clearing cell."); // DEBUG
-                    setText(null);
-                    setGraphic(null);
-                } else if (adComponent.getAd() == null) {
-                      System.out.println("CellFactory: adComponent.getAd() is NULL. AdComponent instance: " + adComponent.toString() + ". Clearing cell."); // DEBUG
-                    // You might want to log more details about adComponent if its .getAd() is null
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    Ad ad = adComponent.getAd();
-                    System.out.println("CellFactory: Rendering Ad: " + ad.getTitle()); // DEBUG
-
-                    VBox container = new VBox(5);
-                    container.setPadding(new Insets(10));
-
-                    Label titleLabel = new Label(ad.getTitle());
-                    titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-
-                    Label priceLabel = new Label(String.format("%.2f грн", ad.getPrice()));
-                    priceLabel.setStyle("-fx-text-fill: #2E8B57; -fx-font-weight: bold;");
-
-                    String description = ad.getDescription();
-                    if (description != null && description.length() > 100) {
-                        description = description.substring(0, 100) + "...";
-                    }
-                    Label descLabel = new Label(description != null ? description : "Немає опису");
-                    descLabel.setStyle("-fx-text-fill: #666666;");
-
-                    HBox infoBox = new HBox(15);
-                    String categoryName = "Невідомо";
-                    if (ad.getCategoryId() != null && categoryService != null) {
-                        Optional<Category> categoryOptional = categoryService.getCategoryById(ad.getCategoryId());
-                        categoryName = categoryOptional
-                                .map(Category::getName)
-                                .orElse("ID: " + ad.getCategoryId());
-                    } else if (ad.getCategoryId() != null) {
-                        categoryName = "ID: " + ad.getCategoryId();
-                    }
-                    Label categoryInfoLabel = new Label("Категорія: " + categoryName);
-
-                    String dateStr = "Дата: невідома";
-                    if (ad.getCreatedAt() != null) {
-                        try {
-                            dateStr = "Дата: " + DateUtils.formatDate(ad.getCreatedAt());
-                        } catch (Exception e) {
-                            LOGGER.log(Level.WARNING, "Error formatting date for ad: " + ad.getId(), e);
-                            dateStr = "Дата: " + (ad.getCreatedAt() != null ?
-                                    ad.getCreatedAt().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) :
-                            LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))) +
-                            " (fallback format error)";
-                        }
-                    }
-                    Label dateLabel = new Label(dateStr);
-                    infoBox.getChildren().addAll(categoryInfoLabel, dateLabel);
-
-                    // System.out.println("CellFactory: AdComponent display info: " + adComponent.getDisplayInfo()); // DEBUG
-                    Label decoratedInfoLabel = new Label(adComponent.getDisplayInfo());
-                    decoratedInfoLabel.setStyle("-fx-font-style: italic; -fx-text-fill: blue;");
-
-                    if(titleLabel.getText() == null || titleLabel.getText().isEmpty()){ // DEBUG
-                         System.out.println("CellFactory WARNING: Title is null or empty for Ad ID: " + ad.getId()); // DEBUG
-                    }
-
-                    container.getChildren().addAll(titleLabel, priceLabel, descLabel, infoBox, decoratedInfoLabel);
-                    setGraphic(container);
-                    System.out.println("CellFactory updateItem END: Graphic set for " + ad.getTitle()); // DEBUG
-                }
-            }
-        });
-// ... решта методу ...
-        adListView.setCellFactory(listView -> new ListCell<AdComponent>() {
+        adListView.setCellFactory(listView -> new ListCell<AdComponent>() { //
             @Override
             protected void updateItem(AdComponent adComponent, boolean empty) {
                 super.updateItem(adComponent, empty);
@@ -330,7 +229,6 @@ public class MainController {
                         categoryName = "ID: " + ad.getCategoryId();
                     }
                     Label categoryInfoLabel = new Label("Категорія: " + categoryName);
-
                     String dateStr = "Дата: невідома";
                     if (ad.getCreatedAt() != null) {
                         try {
@@ -374,15 +272,18 @@ public class MainController {
     public static class DateUtils { // Зроблено статичним вкладеним класом для кращої організації
 
         public static LocalDate toLocalDate(LocalDateTime dateTime) {
-            return dateTime != null ? dateTime.toLocalDate() : null;
+            return dateTime != null ?
+                    dateTime.toLocalDate() : null;
         }
 
         public static String formatDate(LocalDateTime dateTime) {
-            return dateTime != null ? dateTime.toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
+            return dateTime != null ?
+                    dateTime.toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
         }
 
         public static String formatDate(LocalDate date) {
-            return date != null ? date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
+            return date != null ?
+                    date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
         }
     }
 
@@ -429,31 +330,11 @@ public class MainController {
         }
     }
 
+    // private void setupQuickFilters() { // Removed
+    // }
 
-    private void setupQuickFilters() {
-        if (quickFilterPremium != null) {
-            quickFilterPremium.selectedProperty().addListener((obs, old, selected) -> applyQuickFilters());
-        }
-        if (quickFilterUrgent != null) {
-            quickFilterUrgent.selectedProperty().addListener((obs, old, selected) -> applyQuickFilters());
-        }
-        if (quickFilterWithDelivery != null) {
-            quickFilterWithDelivery.selectedProperty().addListener((obs, old, selected) -> applyQuickFilters());
-        }
-        if (quickFilterWithWarranty != null) {
-            quickFilterWithWarranty.selectedProperty().addListener((obs, old, selected) -> applyQuickFilters());
-        }
-        if (quickFilterWithDiscount != null) {
-            quickFilterWithDiscount.selectedProperty().addListener((obs, old, selected) -> applyQuickFilters());
-        }
-    }
-
-    private void applyQuickFilters() {
-        // Quick filters now trigger a reload, which should consider advanced filters if they are active
-        refreshCurrentView();
-        updateActiveFiltersDisplay();
-        updateStatus("Швидкі фільтри застосовано.");
-    }
+    // private void applyQuickFilters() { // Removed
+    // }
 
     private void initializeMediator() {
         if (adService == null || categoryService == null) {
@@ -500,7 +381,6 @@ public class MainController {
                 handleSearchAds();
             }
         });
-        // searchField.textProperty().addListener((observable, oldValue, newValue) -> { /* Optionally react to text changes */ });
     }
 
     @FXML
@@ -515,7 +395,8 @@ public class MainController {
 
     @FXML
     private void handleApplyFilters() {
-        String minPriceText = (minPriceField != null) ? minPriceField.getText() : "";
+        String minPriceText = (minPriceField != null) ?
+                minPriceField.getText() : "";
         String maxPriceText = (maxPriceField != null) ? maxPriceField.getText() : "";
         String selectedStatus = (statusFilterCombo != null && statusFilterCombo.getValue() != null) ? statusFilterCombo.getValue() : "Всі";
         boolean premiumOnlyAdv = premiumOnlyCheckBox != null && premiumOnlyCheckBox.isSelected();
@@ -545,7 +426,6 @@ public class MainController {
             return;
         }
         showLoadingIndicator("Завантаження оголошень з фільтрами...");
-
         Task<List<AdComponent>> loadTask = new Task<>() {
             @Override
             protected List<AdComponent> call() throws Exception {
@@ -560,11 +440,12 @@ public class MainController {
                         if (premiumOnlyAdv && !ad.isPremium()) continue;
                         if (urgentOnlyAdv && !ad.isUrgent()) continue;
 
-                        if (quickFilterPremium != null && quickFilterPremium.isSelected() && !ad.isPremium()) continue;
-                        if (quickFilterUrgent != null && quickFilterUrgent.isSelected() && !ad.isUrgent()) continue;
-                        if (quickFilterWithDelivery != null && quickFilterWithDelivery.isSelected() && !ad.hasDelivery()) continue;
-                        if (quickFilterWithWarranty != null && quickFilterWithWarranty.isSelected() && !ad.hasWarranty()) continue;
-                        if (quickFilterWithDiscount != null && quickFilterWithDiscount.isSelected() && !ad.hasDiscount()) continue;
+                        // Removed quick filter checks
+                        // if (quickFilterPremium != null && quickFilterPremium.isSelected() && !ad.isPremium()) continue;
+                        // if (quickFilterUrgent != null && quickFilterUrgent.isSelected() && !ad.isUrgent()) continue;
+                        // if (quickFilterWithDelivery != null && quickFilterWithDelivery.isSelected() && !ad.hasDelivery()) continue;
+                        // if (quickFilterWithWarranty != null && quickFilterWithWarranty.isSelected() && !ad.hasWarranty()) continue;
+                        // if (quickFilterWithDiscount != null && quickFilterWithDiscount.isSelected() && !ad.hasDiscount()) continue;
 
                         filteredAds.add(ad);
                     }
@@ -575,7 +456,6 @@ public class MainController {
                         .collect(Collectors.toList());
             }
         };
-
         loadTask.setOnSucceeded(event -> {
             List<AdComponent> decoratedAds = loadTask.getValue();
             adsObservableList.setAll(decoratedAds);
@@ -586,13 +466,11 @@ public class MainController {
             hideLoadingIndicator();
             updateStatus("Фільтри застосовано. Знайдено " + decoratedAds.size() + " оголошень (до пагінації).");
         });
-
         loadTask.setOnFailed(event -> {
             LOGGER.log(Level.SEVERE, "Failed to load ads with advanced filters", loadTask.getException());
             hideLoadingIndicator();
             showErrorAlert("Помилка завантаження", "Не вдалося завантажити оголошення з фільтрами.", loadTask.getException().getMessage());
         });
-
         new Thread(loadTask).start();
     }
 
@@ -615,12 +493,12 @@ public class MainController {
         if (statusFilterCombo != null) statusFilterCombo.setValue("Всі");
         if (premiumOnlyCheckBox != null) premiumOnlyCheckBox.setSelected(false);
         if (urgentOnlyCheckBox != null) urgentOnlyCheckBox.setSelected(false);
-
-        if (quickFilterPremium != null) quickFilterPremium.setSelected(false);
-        if (quickFilterUrgent != null) quickFilterUrgent.setSelected(false);
-        if (quickFilterWithDelivery != null) quickFilterWithDelivery.setSelected(false);
-        if (quickFilterWithWarranty != null) quickFilterWithWarranty.setSelected(false);
-        if (quickFilterWithDiscount != null) quickFilterWithDiscount.setSelected(false);
+        // Removed quick filter reset
+        // if (quickFilterPremium != null) quickFilterPremium.setSelected(false);
+        // if (quickFilterUrgent != null) quickFilterUrgent.setSelected(false);
+        // if (quickFilterWithDelivery != null) quickFilterWithDelivery.setSelected(false);
+        // if (quickFilterWithWarranty != null) quickFilterWithWarranty.setSelected(false);
+        // if (quickFilterWithDiscount != null) quickFilterWithDiscount.setSelected(false);
 
         refreshCurrentView();
         updateActiveFiltersDisplay();
@@ -687,37 +565,36 @@ public class MainController {
                     case "popularity":
                         // Placeholder: Implement actual popularity logic if Ad model supports it.
                         // For now, let's sort by creation date descending as a proxy for popularity (newer first).
-                        // If no direct popularity score, this is a common heuristic.
                         // Ensure Ad has a getCreatedAt() method returning LocalDateTime.
                         if (ad1.getCreatedAt() != null && ad2.getCreatedAt() != null) {
-                            comparisonResult = ad2.getCreatedAt().compareTo(ad1.getCreatedAt()); // Descending for popularity
+                            comparisonResult = ad2.getCreatedAt().compareTo(ad1.getCreatedAt());
                         } else {
                             comparisonResult = Objects.compare(ad1.getCreatedAt(), ad2.getCreatedAt(), Comparator.nullsLast(LocalDateTime::compareTo));
                         }
-                        // If sorting by popularity should be ascending based on some score, reverse logic or use a specific score field.
                         break;
                     default:
                         break;
                 }
-                return isAscendingSort ? comparisonResult : -comparisonResult;
+                return isAscendingSort ?
+                        comparisonResult : -comparisonResult;
             });
         }
         LOGGER.info("Applying sort to full list by: " + currentSortBy + (isAscendingSort ? " ASC" : " DESC"));
     }
 
-    @FXML
-    private void handleSwitchToListView() {
-        if (listViewButton != null) listViewButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        if (gridViewButton != null) gridViewButton.setStyle("");
-        updateStatus("Перемкнуто на вигляд списку");
-    }
+    // @FXML // Removed
+    // private void handleSwitchToListView() {
+    // if (listViewButton != null) listViewButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+    // if (gridViewButton != null) gridViewButton.setStyle("");
+    // updateStatus("Перемкнуто на вигляд списку");
+    // }
 
-    @FXML
-    private void handleSwitchToGridView() {
-        if (gridViewButton != null) gridViewButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        if (listViewButton != null) listViewButton.setStyle("");
-        updateStatus("Перемкнуто на вигляд сітки");
-    }
+    // @FXML // Removed
+    // private void handleSwitchToGridView() {
+    // if (gridViewButton != null) gridViewButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+    // if (listViewButton != null) listViewButton.setStyle("");
+    // updateStatus("Перемкнуто на вигляд сітки");
+    // }
 
     @FXML
     private void handleRefresh() {
@@ -787,14 +664,13 @@ public class MainController {
                 paginationControls.setVisible(false);
                 paginationControls.setManaged(false);
             }
-            updateStatistics(); // Потрібно переконатися, що updateStatistics коректно обробляє null adsObservableList
+            updateStatistics();
             return;
         }
 
         int totalItems = adsObservableList.size();
         int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / pageSize)); // totalPages має бути доступний тут
         currentPage = Math.max(1, Math.min(currentPage, totalPages));
-
         if (pageInfoLabel != null) {
             pageInfoLabel.setText("Сторінка " + currentPage + " з " + totalPages);
         }
@@ -811,79 +687,36 @@ public class MainController {
 
         if (adListView != null) {
             if (totalItems == 0) {
-                // System.out.println("updatePaginationControls: totalItems is 0, clearing adListView."); // DEBUG
                 adListView.setItems(FXCollections.emptyObservableList());
             } else {
                 int fromIndex = (currentPage - 1) * pageSize;
                 int toIndex = Math.min(fromIndex + pageSize, totalItems);
 
-                // System.out.println("updatePaginationControls: currentPage=" + currentPage + ", pageSize=" + pageSize + ", totalItems=" + totalItems + " => fromIndex=" + fromIndex + ", toIndex=" + toIndex); // DEBUG
-
-                if (fromIndex >= 0 && fromIndex < totalItems && toIndex <= totalItems && fromIndex <= toIndex) {
-                    List<AdComponent> pageData = adsObservableList.subList(fromIndex, toIndex);
-                    // System.out.println("updatePaginationControls: pageData size: " + pageData.size()); // DEBUG
-                    // for (AdComponent comp : pageData) { // DEBUG
-                    //     System.out.println("updatePaginationControls: Ad in pageData: " + (comp != null && comp.getAd() != null ? comp.getAd().getTitle() : "NULL AdComponent or Ad")); // DEBUG
-                    // } // DEBUG
-                    adListView.setItems(FXCollections.observableArrayList(pageData));
-                } else if (fromIndex >= totalItems && totalItems > 0) { // Цей блок обробляє випадок, коли fromIndex за межами, але дані є
-                    // System.out.println("updatePaginationControls: Attempting to display page beyond total items, adjusting to last page. Current totalPages: " + totalPages); // DEBUG
-                    currentPage = totalPages; // totalPages визначено вище
-                    int adjustedFromIndex = (currentPage - 1) * pageSize; // Нові локальні змінні для індексів
-                    int adjustedToIndex = Math.min(adjustedFromIndex + pageSize, totalItems);
-                    // System.out.println("updatePaginationControls: (adjusted) currentPage=" + currentPage + " => adjustedFromIndex=" + adjustedFromIndex + ", adjustedToIndex=" + adjustedToIndex); // DEBUG
-
-                    if (adjustedFromIndex < adjustedToIndex) {
-                        List<AdComponent> pageData = adsObservableList.subList(adjustedFromIndex, adjustedToIndex); // pageData оголошено тут локально
-                        // System.out.println("updatePaginationControls: (adjusted) pageData size: " + pageData.size()); // DEBUG
-                        adListView.setItems(FXCollections.observableArrayList(pageData));
-                    } else {
-                        // System.out.println("updatePaginationControls: (adjusted) adjustedFromIndex >= adjustedToIndex, clearing adListView. adjustedFromIndex=" + adjustedFromIndex + ", adjustedToIndex=" + adjustedToIndex); // DEBUG
-                        adListView.setItems(FXCollections.emptyObservableList());
-                    }
-                } else if (fromIndex >= toIndex) { // Обробка інших випадків, де індекси некоректні (включаючи totalItems == 0, який вже оброблено, але для безпеки)
-                    // System.out.println("updatePaginationControls: fromIndex ("+ fromIndex +") >= toIndex ("+ toIndex +") or totalItems is 0 after initial check, clearing adListView."); // DEBUG
-                    adListView.setItems(FXCollections.emptyObservableList());
-                } else { // Запасний варіант для непередбачених помилок з індексами
-                    LOGGER.severe("Pagination error (unexpected state): fromIndex=" + fromIndex + ", toIndex=" + toIndex + ", totalItems=" + totalItems + ", currentPage=" + currentPage);
-                    adListView.setItems(FXCollections.emptyObservableList());
-                }
-            }
-        }
-        updateStatistics();
-
-
-
-
-        if (adListView != null) {
-            if (totalItems == 0) {
-                adListView.setItems(FXCollections.emptyObservableList());
-            } else {
-                int fromIndex = (currentPage - 1) * pageSize;
-                int toIndex = Math.min(fromIndex + pageSize, totalItems);
                 if (fromIndex >= 0 && fromIndex < totalItems && toIndex <= totalItems && fromIndex <= toIndex) {
                     List<AdComponent> pageData = adsObservableList.subList(fromIndex, toIndex);
                     adListView.setItems(FXCollections.observableArrayList(pageData));
                 } else if (fromIndex >= totalItems && totalItems > 0) {
                     currentPage = totalPages;
-                    fromIndex = (currentPage - 1) * pageSize;
-                    toIndex = Math.min(fromIndex + pageSize, totalItems);
-                    if (fromIndex < toIndex) {
-                        List<AdComponent> pageData = adsObservableList.subList(fromIndex, toIndex);
+                    int adjustedFromIndex = (currentPage - 1) * pageSize;
+                    int adjustedToIndex = Math.min(adjustedFromIndex + pageSize, totalItems);
+                    if (adjustedFromIndex < adjustedToIndex) {
+                        List<AdComponent> pageData = adsObservableList.subList(adjustedFromIndex, adjustedToIndex);
                         adListView.setItems(FXCollections.observableArrayList(pageData));
                     } else {
                         adListView.setItems(FXCollections.emptyObservableList());
                     }
-                } else if (totalItems == 0 || fromIndex >= toIndex) {
+                } else if (fromIndex >= toIndex) {
                     adListView.setItems(FXCollections.emptyObservableList());
                 } else {
-                    LOGGER.severe("Pagination error: fromIndex=" + fromIndex + ", toIndex=" + toIndex + ", totalItems=" + totalItems + ", currentPage=" + currentPage);
+                    LOGGER.severe("Pagination error (unexpected state): fromIndex=" + fromIndex + ", toIndex=" + toIndex + ", totalItems=" + totalItems + ", currentPage=" + currentPage);
                     adListView.setItems(FXCollections.emptyObservableList());
                 }
             }
         }
-        updateStatistics();
+        updateStatistics(); //
+        // Duplicated block removed for brevity, logic is the same as above
     }
+
 
     private int getTotalPages() {
         if (adsObservableList == null || adsObservableList.isEmpty() || pageSize <= 0) return 1;
@@ -901,7 +734,8 @@ public class MainController {
             addFilterChip("Мін. ціна: " + minPriceText);
             hasActiveFilters = true;
         }
-        String maxPriceText = (maxPriceField != null) ? maxPriceField.getText() : "";
+        String maxPriceText = (maxPriceField != null) ?
+                maxPriceField.getText() : "";
         if (maxPriceText != null && !maxPriceText.isEmpty()) {
             addFilterChip("Макс. ціна: " + maxPriceText);
             hasActiveFilters = true;
@@ -918,26 +752,12 @@ public class MainController {
             addFilterChip("Тільки терміново (розш.)");
             hasActiveFilters = true;
         }
-        if (quickFilterPremium != null && quickFilterPremium.isSelected()) {
-            addFilterChip("⭐ Преміум");
-            hasActiveFilters = true;
-        }
-        if (quickFilterUrgent != null && quickFilterUrgent.isSelected()) {
-            addFilterChip("🚨 Терміново");
-            hasActiveFilters = true;
-        }
-        if (quickFilterWithDelivery != null && quickFilterWithDelivery.isSelected()) {
-            addFilterChip("🚚 З доставкою");
-            hasActiveFilters = true;
-        }
-        if (quickFilterWithWarranty != null && quickFilterWithWarranty.isSelected()) {
-            addFilterChip("🛡️ З гарантією");
-            hasActiveFilters = true;
-        }
-        if (quickFilterWithDiscount != null && quickFilterWithDiscount.isSelected()) {
-            addFilterChip("💰 Зі знижкою");
-            hasActiveFilters = true;
-        }
+        // Removed quick filter display
+        // if (quickFilterPremium != null && quickFilterPremium.isSelected()) {
+        // addFilterChip("⭐ Преміум");
+        // hasActiveFilters = true;
+        // }
+        // ... and for other quick filters
 
         activeFiltersPanel.setVisible(hasActiveFilters);
         activeFiltersPanel.setManaged(hasActiveFilters);
@@ -1016,39 +836,16 @@ public class MainController {
         });
     }
 
-    private void initializeCommandManager() {
-        if (adService == null) {
-            showErrorAlert("Критична помилка", "AdService не ініціалізовано.", "Неможливо створити CommandManager.");
-            return;
-        }
-        CommandInvoker commandInvoker = new CommandInvoker();
-        CommandFactory commandFactoryInstance = new CommandFactory(MainGuiApp.adService);
-        commandManager = new AdCommandManager(commandInvoker, commandFactoryInstance);
-    }
+    // private void initializeCommandManager() { // Removed
+    // }
 
-    private void setupCommandHistoryView() {
-        if (commandHistoryListView != null) {
-            commandHistoryListView.setItems(commandHistoryObservableList);
-            commandHistoryListView.setPrefHeight(150);
-        }
-    }
+    // private void setupCommandHistoryView() { // Removed
+    // }
 
-    private void updateCommandButtons() {
-        if (commandManager == null) return;
-        if (undoButton != null) {
-            undoButton.setDisable(!commandManager.canUndo());
-        }
-        if (redoButton != null) {
-            redoButton.setDisable(!commandManager.canRedo());
-        }
-        if (commandHistoryObservableList != null) {
-            commandHistoryObservableList.setAll(commandManager.getCommandHistory());
-        }
-    }
+    // private void updateCommandButtons() { // Removed
+    // }
 
     private void setupCategoryTree() {
-        // Consider making category loading asynchronous if it's slow
-        // For simplicity now, it remains synchronous.
         if (categoryTreeView == null || categoryService == null) {
             LOGGER.severe("Error: categoryTreeView or categoryService is null. Cannot setup category tree.");
             if (categoryTreeView != null) {
@@ -1137,70 +934,62 @@ public class MainController {
     }
 
     private void loadAds(String categoryId) {
-        LOGGER.info("Loading ads for category: " + (categoryId == null ? "All" : categoryId)); // [cite: 296]
-        if (adService == null) { // [cite: 297]
-            showErrorAlert("Помилка", "Сервіс оголошень недоступний.", "Неможливо завантажити оголошення."); // [cite: 297]
-            hideLoadingIndicator(); // [cite: 298]
-            return; // [cite: 298]
+        LOGGER.info("Loading ads for category: " + (categoryId == null ? "All" : categoryId));
+        if (adService == null) {
+            showErrorAlert("Помилка", "Сервіс оголошень недоступний.", "Неможливо завантажити оголошення.");
+            hideLoadingIndicator();
+            return;
         }
-        showLoadingIndicator("Завантаження оголошень..."); // [cite: 298]
-        String keyword = (searchField != null) ? // [cite: 298]
-                searchField.getText() : ""; // [cite: 299]
+        showLoadingIndicator("Завантаження оголошень...");
+        String keyword = (searchField != null) ?
+                searchField.getText() : "";
 
-        Task<List<AdComponent>> loadTask = new Task<>() { // [cite: 299]
+        Task<List<AdComponent>> loadTask = new Task<>() {
             @Override
             protected List<AdComponent> call() throws Exception {
-                List<Ad> ads = adService.searchAds(keyword, null, null, categoryId); // [cite: 299] <- КРИТИЧНА ТОЧКА: має повертати дані
-                List<Ad> filteredByQuickFilters = new ArrayList<>(); // [cite: 300]
-                if (ads != null) { // [cite: 300]
-                    for (Ad ad : ads) { // [cite: 300]
-                        if (ad == null) continue; // [cite: 300]
-                        boolean pass = true; // [cite: 301]
-                        if (quickFilterPremium != null && quickFilterPremium.isSelected() && !ad.isPremium()) pass = false; // [cite: 301]
-                        if (quickFilterUrgent != null && quickFilterUrgent.isSelected() && !ad.isUrgent()) pass = false; // [cite: 302]
-                        if (quickFilterWithDelivery != null && quickFilterWithDelivery.isSelected() && !ad.hasDelivery()) pass = false; // [cite: 303]
-                        if (quickFilterWithWarranty != null && quickFilterWithWarranty.isSelected() && !ad.hasWarranty()) pass = false; // [cite: 304]
-                        if (quickFilterWithDiscount != null && quickFilterWithDiscount.isSelected() && !ad.hasDiscount()) pass = false; // [cite: 305]
-                        if (pass) { // [cite: 306]
-                            filteredByQuickFilters.add(ad); // [cite: 306]
-                        }
+                List<Ad> ads = adService.searchAds(keyword, null, null, categoryId);
+                List<Ad> filteredByQuickFilters = new ArrayList<>(); // Renamed for clarity, though quick filters are removed
+                if (ads != null) {
+                    for (Ad ad : ads) {
+                        if (ad == null) continue;
+                        // Quick filter logic removed
+                        filteredByQuickFilters.add(ad); // Add ad directly
                     }
                 } else {
-                    ads = new ArrayList<>(); // [cite: 307]
+                    ads = new ArrayList<>(); //
                 }
 
-                LOGGER.info("Total ads fetched by service: " + (ads != null ? ads.size() : 0)); // [cite: 308]
-                LOGGER.info("Ads after quick filtering: " + filteredByQuickFilters.size()); // [cite: 309]
+                LOGGER.info("Total ads fetched by service: " + (ads != null ? ads.size() : 0));
+                LOGGER.info("Ads after (removed) quick filtering: " + filteredByQuickFilters.size()); // This log might be misleading now
 
-                return filteredByQuickFilters.stream() // [cite: 309]
-                        .map(MainController.this::createDecoratedAd) // [cite: 309]
-                        .filter(Objects::nonNull) // [cite: 309]
-                        .collect(Collectors.toList()); // [cite: 309]
+                return filteredByQuickFilters.stream() //
+                        .map(MainController.this::createDecoratedAd) //
+                        .filter(Objects::nonNull) //
+                        .collect(Collectors.toList());
             }
         };
-
-        loadTask.setOnSucceeded(event -> { // [cite: 310]
-            List<AdComponent> decoratedAds = loadTask.getValue(); // [cite: 310]
-            LOGGER.info("Decorated ads count for UI update: " + decoratedAds.size()); // [cite: 310]
-            adsObservableList.setAll(decoratedAds); // [cite: 310]
-            applySorting(); // [cite: 310]
-            updatePaginationControls(); // [cite: 310]
-            updateActiveFiltersDisplay(); // [cite: 310]
-            updateStatistics(); // [cite: 311]
-            hideLoadingIndicator(); // [cite: 311]
-            updateStatus("Завантажено " + adsObservableList.size() + " відповідних оголошень (до пагінації). На сторінці: " + (adListView != null && adListView.getItems() != null ? adListView.getItems().size() : 0) ); // [cite: 311]
+        loadTask.setOnSucceeded(event -> { //
+            List<AdComponent> decoratedAds = loadTask.getValue(); //
+            LOGGER.info("Decorated ads count for UI update: " + decoratedAds.size()); //
+            adsObservableList.setAll(decoratedAds); //
+            applySorting(); //
+            updatePaginationControls(); //
+            updateActiveFiltersDisplay(); //
+            updateStatistics(); //
+            hideLoadingIndicator(); //
+            updateStatus("Завантажено " + adsObservableList.size() + " відповідних оголошень (до пагінації). На сторінці: " + (adListView != null && adListView.getItems() != null ? adListView.getItems().size() : 0) ); //
         });
-        loadTask.setOnFailed(event -> { // [cite: 312]
-            LOGGER.log(Level.SEVERE, "Failed to load ads", loadTask.getException()); // [cite: 312]
-            hideLoadingIndicator(); // [cite: 312]
-            showErrorAlert("Помилка завантаження", "Не вдалося завантажити оголошення.", loadTask.getException().getMessage()); // [cite: 312]
-            adsObservableList.clear(); // Clear list on failure // [cite: 312]
-            updatePaginationControls(); // Update UI to show empty list // [cite: 312]
-            updateStatistics(); // [cite: 312]
+        loadTask.setOnFailed(event -> { //
+            LOGGER.log(Level.SEVERE, "Failed to load ads", loadTask.getException()); //
+            hideLoadingIndicator(); //
+            showErrorAlert("Помилка завантаження", "Не вдалося завантажити оголошення.", loadTask.getException().getMessage()); //
+            adsObservableList.clear(); // Clear list on failure //
+            updatePaginationControls(); // Update UI to show empty list
+            updateStatistics(); //
         });
-
-        new Thread(loadTask).start(); // [cite: 313]
+        new Thread(loadTask).start(); //
     }
+
 
     private void refreshCurrentView() {
         boolean advancedFiltersActive = (minPriceField != null && !minPriceField.getText().isEmpty()) ||
@@ -1208,11 +997,10 @@ public class MainController {
                 (statusFilterCombo != null && statusFilterCombo.getValue() != null && !"Всі".equals(statusFilterCombo.getValue())) ||
                 (premiumOnlyCheckBox != null && premiumOnlyCheckBox.isSelected()) ||
                 (urgentOnlyCheckBox != null && urgentOnlyCheckBox.isSelected());
-
         if (advancedFiltersActive) {
-            handleApplyFilters(); // This calls loadAdsWithAdvancedFilters (which is now async)
+            handleApplyFilters();
         } else {
-            loadAds(currentSelectedCategoryId); // This is now async
+            loadAds(currentSelectedCategoryId);
         }
     }
 
@@ -1267,13 +1055,9 @@ public class MainController {
         if (title == null) {
             title = "Помилка";
         }
-
-// Виправлена логіка для 'header'
-// Якщо 'header' не надано (тобто null), встановлюємо значення за замовчуванням.
         if (header == null) {
             header = "Виникла помилка";
         }
-
         if (content == null || content.trim().isEmpty()) {
             content = "Невідома помилка";
         }
@@ -1301,56 +1085,17 @@ public class MainController {
     }
 
 
-    @FXML
-    private void handleUndo() {
-        try {
-            if (commandManager != null && commandManager.canUndo()) {
-                commandManager.undo();
-                updateCommandButtons();
-                refreshCurrentView();
-                logAction("Дію скасовано (Undo).");
-                updateStatus("Попередню дію скасовано.");
-            } else {
-                if (undoButton != null) undoButton.setDisable(true);
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error during undo operation", e);
-            showErrorAlert("Помилка скасування", "Не вдалося скасувати попередню дію.", e.getMessage());
-        }
-    }
+    // @FXML // Removed
+    // private void handleUndo() {
+    // }
 
-    @FXML
-    private void handleRedo() {
-        try {
-            if (commandManager != null && commandManager.canRedo()) {
-                commandManager.redo();
-                updateCommandButtons();
-                refreshCurrentView();
-                logAction("Дію повторено (Redo).");
-                updateStatus("Скасовану дію повторено.");
-            } else {
-                if (redoButton != null) redoButton.setDisable(true);
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error during redo operation", e);
-            showErrorAlert("Помилка повторення", "Не вдалося повторити скасовану дію.", e.getMessage());
-        }
-    }
+    // @FXML // Removed
+    // private void handleRedo() {
+    // }
 
-    @FXML
-    private void handleClearHistory() {
-        try {
-            if (commandManager != null) {
-                commandManager.clearHistory();
-                updateCommandButtons();
-                logAction("Історію команд очищено.");
-                updateStatus("Історію команд очищено.");
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error clearing command history", e);
-            showErrorAlert("Помилка очищення історії", "Не вдалося очистити історію команд.", e.getMessage());
-        }
-    }
+    // @FXML // Removed
+    // private void handleClearHistory() {
+    // }
 
     @Contract(pure = true)
     private void showError(String message) {
@@ -1361,9 +1106,6 @@ public class MainController {
         LOGGER.severe("ПОМИЛКА: " + message);
     }
 
-    // Other alert methods (showConfirmationAlert, showInfoAlert, etc.) can remain as they were,
-    // ensuring Platform.runLater for UI display and proper CSS loading.
-    // Example for showConfirmationAlert:
     @Contract(pure = true)
     private Optional<ButtonType> showConfirmationAlert(String title, String header, String content) {
         if (title == null) title = "Підтвердження";
@@ -1381,7 +1123,6 @@ public class MainController {
         Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
         yesButton.setText("Так");
         noButton.setText("Ні");
-
         try {
             URL cssUrl = getClass().getResource("/styles/alert-styles.css");
             if (cssUrl != null) {
@@ -1392,8 +1133,7 @@ public class MainController {
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to load alert styles for confirmation", e);
         }
-        return alert.showAndWait(); // This needs to be on FX thread if called from non-FX thread.
-        // If always called from FX event handlers, it's fine.
+        return alert.showAndWait();
     }
 
     @Contract(pure = true)
@@ -1436,7 +1176,6 @@ public class MainController {
             LOGGER.warning("Attempted to decorate null ad");
             return null;
         }
-        // LOGGER.info("Decorating ad: " + ad.getTitle() + " (ID: " + ad.getId() + ")");
         AdComponent currentComponent = AdDecoratorFactory.createBasicAd(ad);
         if (ad.hasDiscount()) {
             double discountPercentage = ad.getDiscountPercentage();
@@ -1469,8 +1208,6 @@ public class MainController {
             adsFromMediator = new ArrayList<>();
         }
 
-        // This method is typically called by the mediator, which itself might be triggered by an async operation.
-        // The decoration and UI update should be on the FX thread.
         List<AdComponent> decoratedAds = adsFromMediator.stream()
                 .map(this::createDecoratedAd)
                 .filter(Objects::nonNull)
@@ -1499,29 +1236,13 @@ public class MainController {
         return GlobalContext.getInstance().getLoggedInUser();
     }
 
-    public void logAction(String action) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-        String logMessage = "[" + timestamp + "] " + action;
-        Platform.runLater(() -> {
-            if (commandHistoryObservableList != null) {
-                commandHistoryObservableList.add(logMessage);
-                // Corrected history limit logic
-                while (commandHistoryObservableList.size() > 100) {
-                    commandHistoryObservableList.remove(0);
-                }
-                if (commandHistoryListView != null && !commandHistoryObservableList.isEmpty()) {
-                    commandHistoryListView.scrollTo(commandHistoryObservableList.size() - 1);
-                }
-            }
-        });
-    }
+    // public void logAction(String action) { // Removed
+    // }
 
     public void cleanup() {
         updateStatus("Очищення контролера...");
         if (mediator != null) {
             updateMediatorStatus("неактивний (очищено)");
-            // Potentially call a cleanup method on the mediator if it holds resources
-            // mediator.cleanup();
         }
         LOGGER.info("MainController cleanup finished.");
     }
