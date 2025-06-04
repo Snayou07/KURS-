@@ -73,6 +73,20 @@ public class AdServiceImpl implements AdServicePort {
     }
 
     @Override
+    public List<Ad> getAllActiveAds() {
+        List<Ad> ads = adRepository.findAll();
+        System.out.println("getAllActiveAds() повертає " + ads.size() + " оголошень"); // DEBUG
+
+        // Фільтруємо тільки активні оголошення для головного екрану
+        List<Ad> activeAds = ads.stream()
+                .filter(ad -> "Активне".equals(ad.getStatus()))
+                .toList();
+
+        System.out.println("Активних оголошень: " + activeAds.size()); // DEBUG
+        return activeAds;
+    }
+
+    @Override
     public Ad createAd(AdCreationRequest request) throws UserNotFoundException {
         // Валідація вхідних даних
         if (request == null) {
@@ -275,5 +289,22 @@ public class AdServiceImpl implements AdServicePort {
         existingAd.setImagePaths(request.getImagePaths());
 
         return adRepository.save(existingAd);
+    }
+
+    @Override
+    public List<Ad> getAllAdsForAdmin() {
+        // Для адміна повертаємо всі оголошення без фільтрації
+        return adRepository.findAll();
+    }
+
+    @Override
+    public List<Ad> getAdsByState(AdState state) {
+        if (state == null) {
+            throw new InvalidInputException("Стан оголошення не може бути null.");
+        }
+
+        return adRepository.findAll().stream()
+                .filter(ad -> ad.getCurrentState().getClass().equals(state.getClass()))
+                .toList();
     }
 }
