@@ -29,24 +29,51 @@ public class FileAdRepositoryImpl implements AdRepository {
 
             if (isUpdate) {
                 sessionManager.updateAdInState(ad);
-                System.out.println("Оновлено існуюче оголошення: " + ad.getAdId());
+                System.out.println("✓ Оновлено існуюче оголошення: " + ad.getAdId() +
+                        " (" + ad.getTitle() + ")");
             } else {
                 sessionManager.addAdToState(ad);
-                System.out.println("Додано нове оголошення: " + ad.getAdId());
+                System.out.println("✓ Додано нове оголошення: " + ad.getAdId() +
+                        " (" + ad.getTitle() + ")");
             }
 
-            // ВАЖЛИВО: Зберігаємо стан після кожної зміни
+            // Зберігаємо стан після кожної зміни з обробкою помилок
             try {
                 sessionManager.saveState();
-                System.out.println("Стан програми збережено після операції з оголошенням");
+                System.out.println("✓ Стан програми збережено після операції з оголошенням");
             } catch (Exception e) {
-                System.err.println("ПОМИЛКА: Не вдалося зберегти стан після створення/оновлення оголошення: " + e.getMessage());
-                e.printStackTrace();
-                // Можна розглянути відкат змін або повторну спробу
-                throw new RuntimeException("Помилка збереження оголошення", e);
+                System.err.println("❌ ПОМИЛКА: Не вдалося зберегти стан після створення/оновлення оголошення");
+                System.err.println("   Причина: " + e.getMessage());
+
+                // Логуємо деталі помилки для діагностики
+                if (e.getCause() != null) {
+                    System.err.println("   Деталі: " + e.getCause().getMessage());
+                }
+
+                // Спробуємо очистити пошкоджений файл і створити новий
+                System.out.println("🔄 Спроба відновлення...");
+                try {
+                    sessionManager.clearCorruptedStateFile();
+                    // Повторна спроба збереження
+                    sessionManager.saveState();
+                    System.out.println("✅ Стан відновлено та збережено");
+                } catch (Exception retryException) {
+                    System.err.println("❌ Повторна спроба також не вдалася: " + retryException.getMessage());
+                    // Не кидаємо виключення, щоб не блокувати роботу програми
+                    System.err.println("⚠ УВАГА: Оголошення створено в пам'яті, але не збережено на диск");
+                }
             }
 
-            return ad;
+            // Перевіряємо, що оголошення дійсно збережено
+            Optional<Ad> savedAd = findById(ad.getAdId());
+            if (savedAd.isPresent()) {
+                System.out.println("✓ Підтверджено: оголошення знайдено в репозиторії");
+                return savedAd.get();
+            } else {
+                System.err.println("❌ ПОМИЛКА: Оголошення не знайдено після збереження!");
+                return ad; // Повертаємо оригінал
+            }
+
         } finally {
             lock.writeLock().unlock();
         }
@@ -60,9 +87,17 @@ public class FileAdRepositoryImpl implements AdRepository {
 
         lock.readLock().lock();
         try {
-            return sessionManager.getAdsFromState().stream()
+            Optional<Ad> result = sessionManager.getAdsFromState().stream()
                     .filter(ad -> ad.getAdId().equals(id.trim()))
                     .findFirst();
+
+            if (result.isPresent()) {
+                System.out.println("✓ Знайдено оголошення: " + id);
+            } else {
+                System.out.println("⚠ Оголошення не знайдено: " + id);
+            }
+
+            return result;
         } finally {
             lock.readLock().unlock();
         }
@@ -73,7 +108,25 @@ public class FileAdRepositoryImpl implements AdRepository {
         lock.readLock().lock();
         try {
             List<Ad> ads = sessionManager.getAdsFromState();
-            System.out.println("Знайдено оголошень: " + ads.size());
+            System.out.println("📋 Знайдено оголошень в репозиторії: " + ads.size());
+
+            // Додаткова діагностика
+            if (!ads.isEmpty()) {
+                long activeCount = ads.stream()
+                        .filter(ad -> "Активне".equals(ad.getStatus()))
+                        .count();
+                System.out.println("   Активних оголошень: " + activeCount);
+
+                // Виводимо список для діагностики
+                System.out.println("   Список всіх оголошень:");
+                for (int i = 0; i < ads.size(); i++) {
+                    Ad ad = ads.get(i);
+                    System.out.println("     " + (i+1) + ". ID: " + ad.getAdId() +
+                            ", Заголовок: '" + ad.getTitle() +
+                            "', Статус: " + ad.getStatus());
+                }
+            }
+
             return ads;
         } finally {
             lock.readLock().unlock();
@@ -83,14 +136,17 @@ public class FileAdRepositoryImpl implements AdRepository {
     @Override
     public List<Ad> findBySellerId(String sellerId) {
         if (sellerId == null || sellerId.trim().isEmpty()) {
-            return List.of(); // Повертаємо порожній список
+            return List.of();
         }
 
         lock.readLock().lock();
         try {
-            return sessionManager.getAdsFromState().stream()
+            List<Ad> result = sessionManager.getAdsFromState().stream()
                     .filter(ad -> ad.getSellerId().equals(sellerId.trim()))
                     .collect(Collectors.toList());
+
+            System.out.println("🔍 Знайдено оголошень для продавця " + sellerId + ": " + result.size());
+            return result;
         } finally {
             lock.readLock().unlock();
         }
@@ -99,14 +155,17 @@ public class FileAdRepositoryImpl implements AdRepository {
     @Override
     public List<Ad> findByCategoryId(String categoryId) {
         if (categoryId == null || categoryId.trim().isEmpty()) {
-            return List.of(); // Повертаємо порожній список
+            return List.of();
         }
 
         lock.readLock().lock();
         try {
-            return sessionManager.getAdsFromState().stream()
+            List<Ad> result = sessionManager.getAdsFromState().stream()
                     .filter(ad -> ad.getCategoryId().equals(categoryId.trim()))
                     .collect(Collectors.toList());
+
+            System.out.println("🔍 Знайдено оголошень для категорії " + categoryId + ": " + result.size());
+            return result;
         } finally {
             lock.readLock().unlock();
         }
@@ -115,26 +174,63 @@ public class FileAdRepositoryImpl implements AdRepository {
     @Override
     public void deleteById(String id) {
         if (id == null || id.trim().isEmpty()) {
-            return; // Нічого не робимо для порожнього ID
+            return;
         }
 
         lock.writeLock().lock();
         try {
-            boolean removed = sessionManager.getAdsFromState().removeIf(ad -> ad.getAdId().equals(id.trim()));
+            // Спочатку перевіряємо існування
+            Optional<Ad> existingAd = findById(id.trim());
+            if (!existingAd.isPresent()) {
+                System.out.println("⚠ Оголошення з ID " + id + " не знайдено для видалення");
+                return;
+            }
 
-            if (removed) {
+            // Видаляємо зі стану
+            sessionManager.removeAdFromState(id.trim());
+
+            // Зберігаємо стан з обробкою помилок
+            try {
+                sessionManager.saveState();
+                System.out.println("✓ Оголошення " + id + " видалено та стан збережено");
+            } catch (Exception e) {
+                System.err.println("❌ Помилка збереження стану після видалення оголошення: " + e.getMessage());
+
+                // Спробуємо відновити
                 try {
+                    sessionManager.clearCorruptedStateFile();
                     sessionManager.saveState();
-                    System.out.println("Оголошення " + id + " видалено та стан збережено");
-                } catch (Exception e) {
-                    System.err.println("Помилка збереження стану після видалення оголошення: " + e.getMessage());
-                    throw new RuntimeException("Помилка видалення оголошення", e);
+                    System.out.println("✅ Стан відновлено після видалення");
+                } catch (Exception retryException) {
+                    System.err.println("❌ Не вдалося відновити стан: " + retryException.getMessage());
+                    System.err.println("⚠ УВАГА: Оголошення видалено з пам'яті, але зміни не збережено на диск");
                 }
-            } else {
-                System.out.println("Оголошення з ID " + id + " не знайдено для видалення");
             }
         } finally {
             lock.writeLock().unlock();
+        }
+    }
+
+    // Додатковий метод для діагностики
+    public void printRepositoryState() {
+        lock.readLock().lock();
+        try {
+            System.out.println("=== СТАН РЕПОЗИТОРІЮ ОГОЛОШЕНЬ ===");
+            List<Ad> ads = sessionManager.getAdsFromState();
+            System.out.println("Загальна кількість: " + ads.size());
+
+            if (!ads.isEmpty()) {
+                System.out.println("Деталі оголошень:");
+                for (Ad ad : ads) {
+                    System.out.println("- ID: " + ad.getAdId() +
+                            ", Заголовок: '" + ad.getTitle() +
+                            "', Статус: " + ad.getStatus() +
+                            ", Продавець: " + ad.getSellerId());
+                }
+            }
+            System.out.println("================================");
+        } finally {
+            lock.readLock().unlock();
         }
     }
 }

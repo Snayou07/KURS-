@@ -219,6 +219,10 @@ public class Ad implements Serializable, Cloneable {
         return adState;
     }
 
+    public void setAdId(String adId) {
+        this.adId = adId;
+    }
+
     // Utility-класс для работы с датами (внутренний)
     public static class DateUtils {
         public static String formatDate(LocalDateTime dateTime) {

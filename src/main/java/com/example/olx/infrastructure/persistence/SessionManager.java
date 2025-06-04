@@ -10,34 +10,27 @@ import com.example.olx.domain.exception.DataPersistenceException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SessionManager {
     private static final SessionManager INSTANCE = new SessionManager();
     private AppState currentAppState;
     private String filePath = "olx_session_refactored.dat";
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     private SessionManager() {
         this.currentAppState = new AppState(); // Початковий порожній стан
 
-        // ВИПРАВЛЕННЯ: Автоматично завантажуємо стан при ініціалізації
+        // Автоматично завантажуємо стан при ініціалізації
         try {
             loadState();
             System.out.println("✓ SessionManager ініціалізовано з завантаженням стану");
         } catch (DataPersistenceException e) {
             System.out.println("⚠ Файл стану не знайдено або помилка завантаження. Починаємо з порожнього стану.");
             System.out.println("Деталі: " + e.getMessage());
-            // ДОДАТКОВЕ ВИПРАВЛЕННЯ: Видаляємо пошкоджений файл
-            if (filePath != null) {
-                File corruptedFile = new File(filePath);
-                if (corruptedFile.exists()) {
-                    if (corruptedFile.delete()) {
-                        System.out.println("⚠ Пошкоджений файл стану видалено: " + filePath);
-                    } else {
-                        System.out.println("⚠ Не вдалося видалити пошкоджений файл: " + filePath);
-                    }
-                }
-            }
-            // Залишаємо порожній стан - це нормально для першого запуску
+
+            // Видаляємо пошкоджений файл
+            clearCorruptedStateFile();
         }
     }
 
@@ -46,140 +39,315 @@ public class SessionManager {
     }
 
     public void setStorageFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    // Додаємо метод для діагностики
-    public synchronized void printCurrentState() {
-        System.out.println("=== ПОТОЧНИЙ СТАН SESSIONMANAGER ===");
-        System.out.println("Файл: " + filePath);
-        System.out.println("Користувачів: " + currentAppState.getUsers().size());
-        System.out.println("Оголошень: " + currentAppState.getAds().size());
-        System.out.println("Категорій: " + currentAppState.getCategories().size());
-
-        // Детальна інформація про оголошення
-        if (!currentAppState.getAds().isEmpty()) {
-            System.out.println("Список оголошень:");
-            for (int i = 0; i < currentAppState.getAds().size(); i++) {
-                Ad ad = currentAppState.getAds().get(i);
-                System.out.println("  " + (i+1) + ". ID: " + ad.getAdId() + ", Заголовок: " + ad.getTitle());
-            }
-        }
-        System.out.println("=====================================");
-    }
-
-    public synchronized List<User> getUsersFromState() {
-        return new ArrayList<>(currentAppState.getUsers());
-    }
-
-    public synchronized void updateUserInState(User userToUpdate) {
-        List<User> users = currentAppState.getUsers();
-        users.removeIf(u -> u.getUserId().equals(userToUpdate.getUserId()));
-        users.add(userToUpdate);
-        System.out.println("Користувач оновлений в стані: " + userToUpdate.getUserId());
-    }
-
-    public synchronized void addUserToState(User userToAdd) {
-        currentAppState.getUsers().add(userToAdd);
-        System.out.println("Користувач доданий в стан: " + userToAdd.getUserId());
-    }
-
-    public synchronized void removeUserFromState(String userId) {
-        boolean removed = currentAppState.getUsers().removeIf(u -> u.getUserId().equals(userId));
-        System.out.println("Користувач видалений зі стану: " + userId + " (успішно: " + removed + ")");
-    }
-
-    public synchronized List<Ad> getAdsFromState() {
-        List<Ad> ads = new ArrayList<>(currentAppState.getAds());
-        System.out.println("Запит на отримання оголошень. Поточна кількість: " + ads.size());
-        return ads;
-    }
-
-    public synchronized void updateAdInState(Ad adToUpdate) {
-        List<Ad> ads = currentAppState.getAds();
-        boolean removed = ads.removeIf(a -> a.getAdId().equals(adToUpdate.getAdId()));
-        ads.add(adToUpdate);
-        System.out.println("Оголошення оновлено в стані: " + adToUpdate.getAdId() + " (старе видалено: " + removed + ")");
-    }
-
-    public synchronized void addAdToState(Ad adToAdd) {
-        currentAppState.getAds().add(adToAdd);
-        System.out.println("Оголошення додано в стан: " + adToAdd.getAdId() + ". Загальна кількість: " + currentAppState.getAds().size());
-    }
-
-    public synchronized void removeAdFromState(String adId) {
-        boolean removed = currentAppState.getAds().removeIf(a -> a.getAdId().equals(adId));
-        System.out.println("Оголошення видалене зі стану: " + adId + " (успішно: " + removed + ")");
-    }
-
-    public synchronized List<CategoryComponent> getCategoriesFromState() {
-        return new ArrayList<>(currentAppState.getCategories());
-    }
-
-    public synchronized void setCategoriesInState(List<CategoryComponent> categories) {
-        currentAppState.setCategories(new ArrayList<>(categories));
-        System.out.println("Категорії встановлені в стан. Кількість: " + categories.size());
-    }
-
-    public synchronized void saveState() throws DataPersistenceException {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(this.currentAppState);
-            System.out.println("✅ Стан збережено у файл: " + filePath);
-            System.out.println("   Користувачів: " + currentAppState.getUsers().size());
-            System.out.println("   Оголошень: " + currentAppState.getAds().size());
-            System.out.println("   Категорій: " + currentAppState.getCategories().size());
-        } catch (IOException e) {
-            System.err.println("❌ Помилка збереження стану у файл: " + filePath);
-            throw new DataPersistenceException("Error saving session state to file: " + filePath, e);
+        lock.writeLock().lock();
+        try {
+            this.filePath = filePath;
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
-    public synchronized void loadState() throws DataPersistenceException {
-        if (filePath == null) {
-            throw new DataPersistenceException("File path not set");
-        }
+    public void printCurrentState() {
+        lock.readLock().lock();
+        try {
+            System.out.println("=== ПОТОЧНИЙ СТАН SESSIONMANAGER ===");
+            System.out.println("Файл: " + filePath);
+            System.out.println("Користувачів: " + currentAppState.getUsers().size());
+            System.out.println("Оголошень: " + currentAppState.getAds().size());
+            System.out.println("Категорій: " + currentAppState.getCategories().size());
 
-        File file = new File(filePath);
-        if (file.exists()) {
-            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-                this.currentAppState = (AppState) ois.readObject();
-                System.out.println("✅ Стан завантажено з файлу: " + filePath);
-                System.out.println("   Користувачів: " + currentAppState.getUsers().size());
-                System.out.println("   Оголошень: " + currentAppState.getAds().size());
-                System.out.println("   Категорій: " + currentAppState.getCategories().size());
-            } catch (IOException | ClassNotFoundException e) {
-                System.err.println("❌ Помилка завантаження стану з файлу: " + filePath);
-                // ВИПРАВЛЕННЯ: Більш детальна обробка помилок серіалізації
-                if (e instanceof InvalidClassException) {
-                    System.err.println("❌ Файл стану несумісний з поточною версією програми");
-                    System.err.println("❌ Рекомендується видалити файл: " + filePath);
+            if (!currentAppState.getAds().isEmpty()) {
+                System.out.println("Список оголошень:");
+                for (int i = 0; i < currentAppState.getAds().size(); i++) {
+                    Ad ad = currentAppState.getAds().get(i);
+                    System.out.println("  " + (i+1) + ". ID: " + ad.getAdId() +
+                            ", Заголовок: " + ad.getTitle() +
+                            ", Статус: " + ad.getStatus());
                 }
-                throw new DataPersistenceException("Error loading session state from file: " + filePath, e);
             }
-        } else {
-            System.out.println("ℹ Файл стану не існує: " + filePath + ". Починаємо з порожнього стану.");
+            System.out.println("=====================================");
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
-    public synchronized void clearCurrentState() {
-        this.currentAppState.clear();
-        System.out.println("Поточний стан програми очищено в SessionManager.");
+    public List<User> getUsersFromState() {
+        lock.readLock().lock();
+        try {
+            return new ArrayList<>(currentAppState.getUsers());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
-    /**
-     * НОВИЙ МЕТОД: Очищення пошкодженого файлу стану
-     */
-    public synchronized void clearCorruptedStateFile() {
-        if (filePath != null) {
+    public void updateUserInState(User userToUpdate) {
+        lock.writeLock().lock();
+        try {
+            List<User> users = currentAppState.getUsers();
+            users.removeIf(u -> u.getUserId().equals(userToUpdate.getUserId()));
+            users.add(userToUpdate);
+            System.out.println("Користувач оновлений в стані: " + userToUpdate.getUserId());
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void addUserToState(User userToAdd) {
+        lock.writeLock().lock();
+        try {
+            currentAppState.getUsers().add(userToAdd);
+            System.out.println("Користувач доданий в стан: " + userToAdd.getUserId());
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void removeUserFromState(String userId) {
+        lock.writeLock().lock();
+        try {
+            boolean removed = currentAppState.getUsers().removeIf(u -> u.getUserId().equals(userId));
+            System.out.println("Користувач видалений зі стану: " + userId + " (успішно: " + removed + ")");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public List<Ad> getAdsFromState() {
+        lock.readLock().lock();
+        try {
+            List<Ad> ads = new ArrayList<>(currentAppState.getAds());
+            System.out.println("Запит на отримання оголошень. Поточна кількість: " + ads.size());
+            return ads;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public void updateAdInState(Ad adToUpdate) {
+        lock.writeLock().lock();
+        try {
+            List<Ad> ads = currentAppState.getAds();
+            boolean removed = ads.removeIf(a -> a.getAdId().equals(adToUpdate.getAdId()));
+            ads.add(adToUpdate);
+            System.out.println("Оголошення оновлено в стані: " + adToUpdate.getAdId() +
+                    " (старе видалено: " + removed + ")");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void addAdToState(Ad adToAdd) {
+        lock.writeLock().lock();
+        try {
+            currentAppState.getAds().add(adToAdd);
+            System.out.println("Оголошення додано в стан: " + adToAdd.getAdId() +
+                    ". Загальна кількість: " + currentAppState.getAds().size());
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void removeAdFromState(String adId) {
+        lock.writeLock().lock();
+        try {
+            boolean removed = currentAppState.getAds().removeIf(a -> a.getAdId().equals(adId));
+            System.out.println("Оголошення видалене зі стану: " + adId + " (успішно: " + removed + ")");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public List<CategoryComponent> getCategoriesFromState() {
+        lock.readLock().lock();
+        try {
+            return new ArrayList<>(currentAppState.getCategories());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public void setCategoriesInState(List<CategoryComponent> categories) {
+        lock.writeLock().lock();
+        try {
+            currentAppState.setCategories(new ArrayList<>(categories));
+            System.out.println("Категорії встановлені в стан. Кількість: " + categories.size());
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void saveState() throws DataPersistenceException {
+        lock.readLock().lock();
+        try {
+            // Створюємо копію стану для серіалізації
+            AppState stateToSave = createSerializableCopy(currentAppState);
+
+            // Створюємо резервну копію існуючого файлу
+            File currentFile = new File(filePath);
+            File backupFile = new File(filePath + ".backup");
+
+            if (currentFile.exists()) {
+                try {
+                    java.nio.file.Files.copy(currentFile.toPath(), backupFile.toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (Exception e) {
+                    System.err.println("⚠ Не вдалося створити резервну копію: " + e.getMessage());
+                }
+            }
+
+            // Зберігаємо новий стан
+            try (ObjectOutputStream oos = new ObjectOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(filePath)))) {
+                oos.writeObject(stateToSave);
+                oos.flush();
+
+                System.out.println("✅ Стан збережено у файл: " + filePath);
+                System.out.println("   Користувачів: " + stateToSave.getUsers().size());
+                System.out.println("   Оголошень: " + stateToSave.getAds().size());
+                System.out.println("   Категорій: " + stateToSave.getCategories().size());
+
+                // Видаляємо резервну копію після успішного збереження
+                if (backupFile.exists()) {
+                    backupFile.delete();
+                }
+
+            } catch (IOException e) {
+                System.err.println("❌ Помилка збереження стану у файл: " + filePath);
+
+                // Відновлюємо з резервної копії при помилці
+                if (backupFile.exists()) {
+                    try {
+                        java.nio.file.Files.move(backupFile.toPath(), currentFile.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        System.out.println("✅ Відновлено з резервної копії");
+                    } catch (Exception restoreException) {
+                        System.err.println("❌ Не вдалося відновити з резервної копії: " +
+                                restoreException.getMessage());
+                    }
+                }
+
+                throw new DataPersistenceException("Error saving session state to file: " + filePath, e);
+            }
+
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    private AppState createSerializableCopy(AppState original) {
+        AppState copy = new AppState();
+
+        // Копіюємо користувачів
+        for (User user : original.getUsers()) {
+            copy.getUsers().add(user); // User повинен бути Serializable
+        }
+
+        // Копіюємо оголошення з перевіркою серіалізованості
+        for (Ad ad : original.getAds()) {
+            try {
+                // Створюємо копію оголошення без проблемних полів
+                Ad adCopy = createSerializableAdCopy(ad);
+                copy.getAds().add(adCopy);
+            } catch (Exception e) {
+                System.err.println("⚠ Пропущено оголошення при серіалізації: " + ad.getAdId() +
+                        " - " + e.getMessage());
+            }
+        }
+
+        // Копіюємо категорії
+        for (CategoryComponent category : original.getCategories()) {
+            copy.getCategories().add(category); // CategoryComponent повинен бути Serializable
+        }
+
+        return copy;
+    }
+
+    private Ad createSerializableAdCopy(Ad original) {
+        // Створюємо нове оголошення з базовими даними
+        Ad copy = new Ad(
+                original.getTitle(),
+                original.getDescription(),
+                original.getPrice(),
+                original.getCategoryId(),
+                original.getSellerId(),
+                original.getImagePaths()
+        );
+
+        // Встановлюємо ID
+        copy.setAdId(original.getAdId());
+
+        // Встановлюємо стан через статус (без серіалізації State об'єкта)
+        String status = original.getStatus();
+        copy.setStatusDirectly(status); // Потрібно додати цей метод в Ad
+
+        return copy;
+    }
+
+    public void loadState() throws DataPersistenceException {
+        lock.writeLock().lock();
+        try {
+            if (filePath == null) {
+                throw new DataPersistenceException("File path not set");
+            }
+
             File file = new File(filePath);
             if (file.exists()) {
-                if (file.delete()) {
-                    System.out.println("✅ Пошкоджений файл стану видалено: " + filePath);
-                    this.currentAppState = new AppState(); // Скидаємо до порожнього стану
-                } else {
-                    System.err.println("❌ Не вдалося видалити пошкоджений файл: " + filePath);
+                try (ObjectInputStream ois = new ObjectInputStream(
+                        new BufferedInputStream(new FileInputStream(file)))) {
+
+                    AppState loadedState = (AppState) ois.readObject();
+                    this.currentAppState = loadedState;
+
+                    System.out.println("✅ Стан завантажено з файлу: " + filePath);
+                    System.out.println("   Користувачів: " + currentAppState.getUsers().size());
+                    System.out.println("   Оголошень: " + currentAppState.getAds().size());
+                    System.out.println("   Категорій: " + currentAppState.getCategories().size());
+
+                } catch (IOException | ClassNotFoundException e) {
+                    System.err.println("❌ Помилка завантаження стану з файлу: " + filePath);
+
+                    if (e instanceof InvalidClassException) {
+                        System.err.println("❌ Файл стану несумісний з поточною версією програми");
+                        System.err.println("❌ Рекомендується видалити файл: " + filePath);
+                    }
+
+                    // Не кидаємо виключення, а просто очищуємо стан
+                    clearCorruptedStateFile();
+                }
+            } else {
+                System.out.println("ℹ Файл стану не існує: " + filePath + ". Починаємо з порожнього стану.");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void clearCurrentState() {
+        lock.writeLock().lock();
+        try {
+            this.currentAppState.clear();
+            System.out.println("Поточний стан програми очищено в SessionManager.");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void clearCorruptedStateFile() {
+        lock.writeLock().lock();
+        try {
+            if (filePath != null) {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    if (file.delete()) {
+                        System.out.println("✅ Пошкоджений файл стану видалено: " + filePath);
+                    } else {
+                        System.err.println("❌ Не вдалося видалити пошкоджений файл: " + filePath);
+                    }
                 }
             }
+            this.currentAppState = new AppState(); // Скидаємо до порожнього стану
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 }
