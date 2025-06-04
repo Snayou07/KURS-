@@ -7,4 +7,15 @@ public interface AdState {
     void archive(Ad ad);
     void markAsSold(Ad ad);
     String getStatusName();
+
+
+    public enum adState {
+        ACTIVE,           // Активное объявление
+        INACTIVE,         // Неактивное объявление
+        PENDING_APPROVAL, // Ожидает модерации
+        REJECTED,         // Отклонено модератором
+        SOLD,            // Продано
+        EXPIRED,         // Истек срок
+        DELETED          // Удалено
+    }
 }

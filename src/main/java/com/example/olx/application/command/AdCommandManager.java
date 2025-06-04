@@ -6,6 +6,8 @@ import com.example.olx.domain.model.Ad;
 import java.util.List;
 import java.util.ArrayList;
 
+import static com.example.olx.presentation.gui.MainGuiApp.adService;
+
 public class AdCommandManager {
     private final CommandInvoker commandInvoker;
     private final CommandFactory commandFactory;
@@ -19,25 +21,57 @@ public class AdCommandManager {
     public Ad createAndPublishAdAtomic(AdCreationRequest request) throws UserNotFoundException {
         List<Command> commands = new ArrayList<>();
 
-        // Створюємо команди
+        // Создаем команды
         CommandWithResult<Ad> createCommand = commandFactory.createCreateAdCommand(request);
 
-        // Виконуємо створення
-        executeCommandWithResult(createCommand);
+        // НЕ выполняем createCommand отдельно!
+        // Добавляем в макрокоманду для атомарного выполнения
+        commands.add(createCommand);
+
+        // Выполняем макрокоманду
+        executeMacroCommand(commands, "Створення оголошення: " + request.getTitle());
+
+        // Получаем результат после выполнения
         Ad createdAd = createCommand.getResult();
 
         if (createdAd != null) {
+            // Теперь добавляем команду публикации
             Command publishCommand = commandFactory.createPublishAdCommand(createdAd.getAdId());
-            commands.add(createCommand);
-            commands.add(publishCommand);
+            List<Command> publishCommands = new ArrayList<>();
+            publishCommands.add(publishCommand);
 
-            // Виконуємо як макрокоманду для атомарності
-            executeMacroCommand(commands, "Створення та публікація оголошення: " + request.getTitle());
+            executeMacroCommand(publishCommands, "Публікація оголошення: " + createdAd.getTitle());
         }
 
         return createdAd;
     }
+    // Добавьте этот метод в AdCommandManager для отладки
+    public void debugAdStates() {
+        System.out.println("=== DEBUG: История команд ===");
+        List<String> history = getCommandHistory();
+        for (int i = 0; i < history.size(); i++) {
+            System.out.println((i + 1) + ". " + history.get(i));
+        }
 
+        System.out.println("=== DEBUG: Текущая позиция в истории ===");
+        System.out.println("Можно отменить: " + canUndo());
+        System.out.println("Можно повторить: " + canRedo());
+        System.out.println("Размер истории: " + getHistorySize());
+    }
+
+    // И этот метод в сервисном слое для проверки статусов объявлений
+    public void debugAllAdsStatus() {
+        // Получить все объявления и вывести их статусы
+        List<Ad> allAds = adService.getAllAds(); // предполагается такой метод
+
+        System.out.println("=== DEBUG: Статусы всех объявлений ===");
+        for (Ad ad : allAds) {
+            System.out.println("ID: " + ad.getAdId() +
+                    ", Title: " + ad.getTitle() +
+                    ", Status: " + ad.getStatus() +
+                    ", State: " + ad.getCurrentState().getClass().getSimpleName());
+        }
+    }
     private <T> T executeCommandWithResult(CommandWithResult<T> command) throws UserNotFoundException {
         commandInvoker.executeCommand(command);
         return command.getResult();
