@@ -1137,69 +1137,69 @@ public class MainController {
     }
 
     private void loadAds(String categoryId) {
-        LOGGER.info("Loading ads for category: " + (categoryId == null ? "All" : categoryId));
-        if (adService == null) {
-            showErrorAlert("Помилка", "Сервіс оголошень недоступний.", "Неможливо завантажити оголошення.");
-            hideLoadingIndicator();
-            return;
+        LOGGER.info("Loading ads for category: " + (categoryId == null ? "All" : categoryId)); // [cite: 296]
+        if (adService == null) { // [cite: 297]
+            showErrorAlert("Помилка", "Сервіс оголошень недоступний.", "Неможливо завантажити оголошення."); // [cite: 297]
+            hideLoadingIndicator(); // [cite: 298]
+            return; // [cite: 298]
         }
-        showLoadingIndicator("Завантаження оголошень...");
-        String keyword = (searchField != null) ? searchField.getText() : "";
+        showLoadingIndicator("Завантаження оголошень..."); // [cite: 298]
+        String keyword = (searchField != null) ? // [cite: 298]
+                searchField.getText() : ""; // [cite: 299]
 
-        Task<List<AdComponent>> loadTask = new Task<>() {
+        Task<List<AdComponent>> loadTask = new Task<>() { // [cite: 299]
             @Override
             protected List<AdComponent> call() throws Exception {
-                List<Ad> ads = adService.searchAds(keyword, null, null, categoryId);
-                List<Ad> filteredByQuickFilters = new ArrayList<>();
-                if (ads != null) {
-                    for (Ad ad : ads) {
-                        if (ad == null) continue;
-                        boolean pass = true;
-                        if (quickFilterPremium != null && quickFilterPremium.isSelected() && !ad.isPremium()) pass = false;
-                        if (quickFilterUrgent != null && quickFilterUrgent.isSelected() && !ad.isUrgent()) pass = false;
-                        if (quickFilterWithDelivery != null && quickFilterWithDelivery.isSelected() && !ad.hasDelivery()) pass = false;
-                        if (quickFilterWithWarranty != null && quickFilterWithWarranty.isSelected() && !ad.hasWarranty()) pass = false;
-                        if (quickFilterWithDiscount != null && quickFilterWithDiscount.isSelected() && !ad.hasDiscount()) pass = false;
-                        if (pass) {
-                            filteredByQuickFilters.add(ad);
+                List<Ad> ads = adService.searchAds(keyword, null, null, categoryId); // [cite: 299] <- КРИТИЧНА ТОЧКА: має повертати дані
+                List<Ad> filteredByQuickFilters = new ArrayList<>(); // [cite: 300]
+                if (ads != null) { // [cite: 300]
+                    for (Ad ad : ads) { // [cite: 300]
+                        if (ad == null) continue; // [cite: 300]
+                        boolean pass = true; // [cite: 301]
+                        if (quickFilterPremium != null && quickFilterPremium.isSelected() && !ad.isPremium()) pass = false; // [cite: 301]
+                        if (quickFilterUrgent != null && quickFilterUrgent.isSelected() && !ad.isUrgent()) pass = false; // [cite: 302]
+                        if (quickFilterWithDelivery != null && quickFilterWithDelivery.isSelected() && !ad.hasDelivery()) pass = false; // [cite: 303]
+                        if (quickFilterWithWarranty != null && quickFilterWithWarranty.isSelected() && !ad.hasWarranty()) pass = false; // [cite: 304]
+                        if (quickFilterWithDiscount != null && quickFilterWithDiscount.isSelected() && !ad.hasDiscount()) pass = false; // [cite: 305]
+                        if (pass) { // [cite: 306]
+                            filteredByQuickFilters.add(ad); // [cite: 306]
                         }
                     }
                 } else {
-                    ads = new ArrayList<>(); // Should not happen if service returns empty list instead of null
+                    ads = new ArrayList<>(); // [cite: 307]
                 }
 
-                LOGGER.info("Total ads fetched by service: " + (ads != null ? ads.size() : 0));
-                LOGGER.info("Ads after quick filtering: " + filteredByQuickFilters.size());
+                LOGGER.info("Total ads fetched by service: " + (ads != null ? ads.size() : 0)); // [cite: 308]
+                LOGGER.info("Ads after quick filtering: " + filteredByQuickFilters.size()); // [cite: 309]
 
-                return filteredByQuickFilters.stream()
-                        .map(MainController.this::createDecoratedAd)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
+                return filteredByQuickFilters.stream() // [cite: 309]
+                        .map(MainController.this::createDecoratedAd) // [cite: 309]
+                        .filter(Objects::nonNull) // [cite: 309]
+                        .collect(Collectors.toList()); // [cite: 309]
             }
         };
 
-        loadTask.setOnSucceeded(event -> {
-            List<AdComponent> decoratedAds = loadTask.getValue();
-            LOGGER.info("Decorated ads count for UI update: " + decoratedAds.size());
-            adsObservableList.setAll(decoratedAds);
-            applySorting();
-            updatePaginationControls();
-            updateActiveFiltersDisplay();
-            updateStatistics();
-            hideLoadingIndicator();
-            updateStatus("Завантажено " + adsObservableList.size() + " відповідних оголошень (до пагінації). На сторінці: " + (adListView != null && adListView.getItems() != null ? adListView.getItems().size() : 0) );
+        loadTask.setOnSucceeded(event -> { // [cite: 310]
+            List<AdComponent> decoratedAds = loadTask.getValue(); // [cite: 310]
+            LOGGER.info("Decorated ads count for UI update: " + decoratedAds.size()); // [cite: 310]
+            adsObservableList.setAll(decoratedAds); // [cite: 310]
+            applySorting(); // [cite: 310]
+            updatePaginationControls(); // [cite: 310]
+            updateActiveFiltersDisplay(); // [cite: 310]
+            updateStatistics(); // [cite: 311]
+            hideLoadingIndicator(); // [cite: 311]
+            updateStatus("Завантажено " + adsObservableList.size() + " відповідних оголошень (до пагінації). На сторінці: " + (adListView != null && adListView.getItems() != null ? adListView.getItems().size() : 0) ); // [cite: 311]
+        });
+        loadTask.setOnFailed(event -> { // [cite: 312]
+            LOGGER.log(Level.SEVERE, "Failed to load ads", loadTask.getException()); // [cite: 312]
+            hideLoadingIndicator(); // [cite: 312]
+            showErrorAlert("Помилка завантаження", "Не вдалося завантажити оголошення.", loadTask.getException().getMessage()); // [cite: 312]
+            adsObservableList.clear(); // Clear list on failure // [cite: 312]
+            updatePaginationControls(); // Update UI to show empty list // [cite: 312]
+            updateStatistics(); // [cite: 312]
         });
 
-        loadTask.setOnFailed(event -> {
-            LOGGER.log(Level.SEVERE, "Failed to load ads", loadTask.getException());
-            hideLoadingIndicator();
-            showErrorAlert("Помилка завантаження", "Не вдалося завантажити оголошення.", loadTask.getException().getMessage());
-            adsObservableList.clear(); // Clear list on failure
-            updatePaginationControls(); // Update UI to show empty list
-            updateStatistics();
-        });
-
-        new Thread(loadTask).start();
+        new Thread(loadTask).start(); // [cite: 313]
     }
 
     private void refreshCurrentView() {
