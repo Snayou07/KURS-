@@ -20,6 +20,7 @@ import com.example.olx.domain.repository.AdRepository;
 import com.example.olx.domain.repository.CategoryRepository;
 import com.example.olx.domain.repository.UserRepository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -210,14 +211,32 @@ public class AdServiceImpl implements AdServicePort {
      * то MainController отримає 0 оголошень.
      * Перевірте ваші дані та логіку збереження стану оголошень.
      */
+
+    // src/main/java/com/example/olx/application/service/impl/AdServiceImpl.java
+
     @Override
     public List<Ad> searchAds(String keyword, Double minPrice, Double maxPrice, String categoryId) {
-        Map<String, Object> criteria = Map.of(
-                "keyword", keyword == null ? "" : keyword.trim(),
-                "minPrice", minPrice == null ? Double.MIN_VALUE : minPrice,
-                "maxPrice", maxPrice == null ? Double.MAX_VALUE : maxPrice,
-                "categoryId", categoryId == null ? "" : categoryId.trim()
-        );
+        // --- ПОЧАТОК ВИПРАВЛЕННЯ ---
+
+        // 1. Використовуємо HashMap, щоб гнучко керувати критеріями.
+        Map<String, Object> criteria = new HashMap<>();
+
+        // Додаємо критерії, які не потребують спеціальної обробки.
+        // Стратегія сама впорається з null значеннями.
+        criteria.put("keyword", keyword);
+        criteria.put("minPrice", minPrice);
+        criteria.put("maxPrice", maxPrice);
+
+        // 2. Додаємо ключову логіку: якщо categoryId не є "All" (і не порожній),
+        // тільки тоді додаємо його до критеріїв.
+        if (categoryId != null && !categoryId.trim().isEmpty() && !categoryId.equalsIgnoreCase("All")) {
+            criteria.put("categoryId", categoryId.trim());
+        }
+        // Якщо умова не виконується (categoryId is "All", null, or empty),
+        // критерій "categoryId" не буде додано до мапи.
+
+        // --- КІНЕЦЬ ВИПРАВЛЕННЯ ---
+
         // Пошук серед всіх оголошень, потім фільтрація за активним станом перед передачею стратегії
         List<Ad> allAdsFromRepo = adRepository.findAll();
         System.out.println("searchAds() initial count from repo: " + allAdsFromRepo.size() + " ads"); // DEBUG
@@ -228,7 +247,7 @@ public class AdServiceImpl implements AdServicePort {
 
         System.out.println("searchAds() count after filtering for active (instanceof ActiveAdState): " + adsToSearch.size()); // DEBUG
 
-        // Тепер передаємо відфільтровані (активні) оголошення до стратегії пошуку
+        // Тепер передаємо відфільтровані (активні) оголошення до стратегії пошуку з правильними критеріями
         List<Ad> result = searchStrategy.search(adsToSearch, criteria);
         System.out.println("searchAds() count after searchStrategy: " + result.size()); //DEBUG
         return result;
