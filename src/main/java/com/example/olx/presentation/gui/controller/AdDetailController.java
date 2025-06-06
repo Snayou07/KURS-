@@ -46,7 +46,7 @@ public class AdDetailController {
 
     // --- Поля класу ---
     private VBox decoratedInfoContainer; // Контейнер для відображення інформації від декораторів
-    private Text decoratedInfoText;      // Текст для інформації від декораторів
+    private VBox decoratedInfoTextContainer; // Контейнер для тексту
     private Ad currentAd;                // Поточне оголошення (оригінальна модель)
     private AdComponent decoratedAd;     // Декорований компонент оголошення
 
@@ -160,7 +160,38 @@ public class AdDetailController {
 
         String info = decoratedAd.getDisplayInfo();
         if (info != null && !info.trim().isEmpty()) {
-            decoratedInfoText.setText(info);
+            // Очищаємо попередній контент
+            decoratedInfoTextContainer.getChildren().clear();
+
+            // Розділяємо текст на рядки і створюємо окремі Label для кожного
+            String[] lines = info.split("\\n");
+
+            for (String line : lines) {
+                if (line.trim().isEmpty()) continue;
+
+                Label lineLabel = new Label(line.trim());
+
+                // Стилізуємо різні типи рядків
+                if (line.contains("ЗНИЖКА") || line.contains("💰")) {
+                    lineLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 13px;");
+                } else if (line.contains("ПРЕМІУМ") || line.contains("⭐") || line.contains("🌟")) {
+                    lineLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-weight: bold; -fx-font-size: 13px;");
+                } else if (line.contains("ТЕРМІНОВО") || line.contains("🔥") || line.contains("🚨")) {
+                    lineLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 13px;");
+                } else if (line.contains("ДОСТАВКА") || line.contains("🚚")) {
+                    lineLabel.setStyle("-fx-text-fill: #3498db; -fx-font-weight: bold; -fx-font-size: 12px;");
+                } else if (line.contains("ГАРАНТІЯ") || line.contains("🛡️")) {
+                    lineLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 12px;");
+                } else {
+                    lineLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-size: 12px;");
+                }
+
+                lineLabel.setWrapText(true);
+                lineLabel.setMaxWidth(550);
+                decoratedInfoTextContainer.getChildren().add(lineLabel);
+            }
+
+            // Додаємо контейнер до головного контейнера, якщо його там немає
             if (!mainContainer.getChildren().contains(decoratedInfoContainer)) {
                 int index = mainContainer.getChildren().indexOf(actionButtonsBox);
                 if (index != -1) {
@@ -266,19 +297,23 @@ public class AdDetailController {
      * Налаштовує контейнер для відображення інформації від декораторів.
      */
     private void setupDecoratedInfoContainer() {
-        decoratedInfoContainer = new VBox(10);
+        decoratedInfoContainer = new VBox(8);
         decoratedInfoContainer.setPadding(new Insets(15));
         decoratedInfoContainer.setStyle(
-                "-fx-background-color: #f0f8ff; " +
-                        "-fx-border-color: #add8e6; " +
+                "-fx-background-color: #f8f9fa; " +
+                        "-fx-border-color: #dee2e6; " +
                         "-fx-border-width: 1; " +
-                        "-fx-border-radius: 5;"
+                        "-fx-border-radius: 8; " +
+                        "-fx-background-radius: 8;"
         );
+
         Label title = new Label("✨ Спеціальні умови та особливості:");
-        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        decoratedInfoText = new Text();
-        decoratedInfoText.setWrappingWidth(550);
-        decoratedInfoContainer.getChildren().addAll(title, decoratedInfoText);
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #495057;");
+
+        // Створюємо окремий контейнер для текстового контенту
+        decoratedInfoTextContainer = new VBox(5);
+
+        decoratedInfoContainer.getChildren().addAll(title, decoratedInfoTextContainer);
         decoratedInfoContainer.setVisible(false);
         decoratedInfoContainer.setManaged(false);
     }
