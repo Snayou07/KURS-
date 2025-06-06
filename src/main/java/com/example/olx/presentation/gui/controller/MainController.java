@@ -179,6 +179,7 @@ public class MainController {
             return;
         }
         adListView.setCellFactory(listView -> new ListCell<AdComponent>() {
+
             @Override
             protected void updateItem(AdComponent adComponent, boolean empty) {
                 super.updateItem(adComponent, empty);
@@ -198,72 +199,82 @@ public class MainController {
                     Label priceLabel = new Label(String.format("%.2f грн", ad.getPrice()));
                     priceLabel.setStyle("-fx-text-fill: #2E8B57; -fx-font-weight: bold;");
 
-                    String description = ad.getDescription();
-                    if (description != null && description.length() > 100) {
-                        description = description.substring(0, 100) + "...";
+                    // --- ВИПРАВЛЕННЯ: ОЧИЩЕННЯ ОПИСУ ВІД ТЕХНІЧНИХ ДАНИХ ---
+                    String rawDescription = ad.getDescription(); //
+                    String cleanDescription = rawDescription;
+
+                    // Перевіряємо, чи є в описі наш маркер, і видаляємо все після нього
+                    if (rawDescription != null && rawDescription.contains("[DECORATORS]")) {
+                        int decoratorIndex = rawDescription.indexOf("[DECORATORS]");
+                        cleanDescription = rawDescription.substring(0, decoratorIndex).trim();
                     }
-                    Label descLabel = new Label(description != null ? description : "Немає опису");
-                    descLabel.setStyle("-fx-text-fill: #666666;");
+
+                    if (cleanDescription != null && cleanDescription.length() > 100) {
+                        cleanDescription = cleanDescription.substring(0, 100) + "...";
+                    }
+                    // Використовуємо очищений опис. Якщо він порожній, виводимо "Немає опису".
+                    Label descLabel = new Label(cleanDescription != null && !cleanDescription.isEmpty() ? cleanDescription : "Немає опису"); //
+                    descLabel.setStyle("-fx-text-fill: #666666;"); //
 
                     HBox infoBox = new HBox(15);
 
                     String categoryName = "Невідомо";
-                    if (ad.getCategoryId() != null && categoryService != null) {
-                        Optional<Category> categoryOptional = categoryService.getCategoryById(ad.getCategoryId());
+                    if (ad.getCategoryId() != null && categoryService != null) { //
+                        Optional<Category> categoryOptional = categoryService.getCategoryById(ad.getCategoryId()); //
                         categoryName = categoryOptional
                                 .map(Category::getName)
-                                .orElse("ID: " + ad.getCategoryId());
-                    } else if (ad.getCategoryId() != null) {
-                        categoryName = "ID: " + ad.getCategoryId();
+                                .orElse("ID: " + ad.getCategoryId()); //
+                    } else if (ad.getCategoryId() != null) { //
+                        categoryName = "ID: " + ad.getCategoryId(); //
                     }
-                    Label categoryInfoLabel = new Label("Категорія: " + categoryName);
-                    String dateStr = "Дата: невідома";
-                    if (ad.getCreatedAt() != null) {
+                    Label categoryInfoLabel = new Label("Категорія: " + categoryName); //
+                    String dateStr = "Дата: невідома"; //
+                    if (ad.getCreatedAt() != null) { //
                         try {
-                            dateStr = "Дата: " + DateUtils.formatDate(ad.getCreatedAt());
+                            dateStr = "Дата: " + DateUtils.formatDate(ad.getCreatedAt()); //
                         } catch (Exception e) {
-                            LOGGER.log(Level.WARNING, "Error formatting date for ad: " + ad.getId(), e);
+                            LOGGER.log(Level.WARNING, "Error formatting date for ad: " + ad.getId(), e); //
                             dateStr = "Дата: " + (ad.getCreatedAt() != null ?
                                     ad.getCreatedAt().toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) :
                                     LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))) +
-                                    " (fallback format error)";
+                                    " (fallback format error)"; //
                         }
                     }
-                    Label dateLabel = new Label(dateStr);
-                    infoBox.getChildren().addAll(categoryInfoLabel, dateLabel);
+                    Label dateLabel = new Label(dateStr); //
+                    infoBox.getChildren().addAll(categoryInfoLabel, dateLabel); //
 
                     container.getChildren().addAll(titleLabel, priceLabel, descLabel, infoBox);
 
-                    // --- ВИПРАВЛЕНА ЛОГІКА ВІДОБРАЖЕННЯ ДЕКОРАТОРІВ ---
-                    List<String> decoratorInfoParts = new ArrayList<>();
-                    if (ad.isPremium()) {
-                        decoratorInfoParts.add("⭐ Преміум");
+                    // --- ЛОГІКА ВІДОБРАЖЕННЯ ДЕКОРАТОРІВ (залишається без змін) ---
+                    List<String> decoratorInfoParts = new ArrayList<>(); //
+                    if (ad.isPremium()) { //
+                        decoratorInfoParts.add("⭐ Преміум"); //
                     }
-                    if (ad.isUrgent()) {
-                        decoratorInfoParts.add("🔥 Терміново");
+                    if (ad.isUrgent()) { //
+                        decoratorInfoParts.add("🔥 Терміново"); //
                     }
-                    if (ad.hasDelivery()) {
-                        String deliveryInfo = "🚚 Доставка";
-                        if (ad.isFreeDelivery()) {
-                            deliveryInfo += " (безкоштовна)";
+                    if (ad.hasDelivery()) { //
+                        String deliveryInfo = "🚚 Доставка"; //
+                        if (ad.isFreeDelivery()) { //
+                            deliveryInfo += " (безкоштовна)"; //
                         }
-                        decoratorInfoParts.add(deliveryInfo);
+                        decoratorInfoParts.add(deliveryInfo); //
                     }
-                    if (ad.hasWarranty()) {
-                        decoratorInfoParts.add("🛡️ Гарантія");
+                    if (ad.hasWarranty()) { //
+                        decoratorInfoParts.add("🛡️ Гарантія"); //
                     }
-                    if (ad.hasDiscount()) {
-                        decoratorInfoParts.add(String.format("💲 Знижка %.0f%%", ad.getDiscountPercentage()));
-                    }
-
-                    if (!decoratorInfoParts.isEmpty()) {
-                        String decoratorText = String.join(" | ", decoratorInfoParts);
-                        Label decoratedInfoLabel = new Label(decoratorText);
-                        decoratedInfoLabel.setStyle("-fx-font-style: italic; -fx-text-fill: blue; -fx-padding: 5 0 0 0;");
-                        container.getChildren().add(decoratedInfoLabel);
+                    if (ad.hasDiscount()) { //
+                        decoratorInfoParts.add(String.format("💲 Знижка %.0f%%", ad.getDiscountPercentage())); //
                     }
 
-                    setGraphic(container);
+                    if (!decoratorInfoParts.isEmpty()) { //
+                        String decoratorText = String.join(" | ", decoratorInfoParts); //
+                        Label decoratedInfoLabel = new Label(decoratorText); //
+                        decoratedInfoLabel.setStyle("-fx-font-style: italic; -fx-text-fill: blue; -fx-padding: 5 0 0 0;"); //
+                        container.getChildren().add(decoratedInfoLabel); //
+                    }
+
+                    setGraphic(container); //
                 }
             }
         });
@@ -284,15 +295,18 @@ public class MainController {
 
     public static class DateUtils {
         public static LocalDate toLocalDate(LocalDateTime dateTime) {
-            return dateTime != null ? dateTime.toLocalDate() : null;
+            return dateTime != null ?
+                    dateTime.toLocalDate() : null;
         }
 
         public static String formatDate(LocalDateTime dateTime) {
-            return dateTime != null ? dateTime.toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
+            return dateTime != null ?
+                    dateTime.toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
         }
 
         public static String formatDate(LocalDate date) {
-            return date != null ? date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
+            return date != null ?
+                    date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "";
         }
     }
 
@@ -398,7 +412,8 @@ public class MainController {
 
     @FXML
     private void handleApplyFilters() {
-        String minPriceText = (minPriceField != null) ? minPriceField.getText() : "";
+        String minPriceText = (minPriceField != null) ?
+                minPriceField.getText() : "";
         String maxPriceText = (maxPriceField != null) ? maxPriceField.getText() : "";
         String selectedStatus = (statusFilterCombo != null && statusFilterCombo.getValue() != null) ? statusFilterCombo.getValue() : "Всі";
         boolean premiumOnlyAdv = premiumOnlyCheckBox != null && premiumOnlyCheckBox.isSelected();
@@ -488,7 +503,6 @@ public class MainController {
         if (statusFilterCombo != null) statusFilterCombo.setValue("Всі");
         if (premiumOnlyCheckBox != null) premiumOnlyCheckBox.setSelected(false);
         if (urgentOnlyCheckBox != null) urgentOnlyCheckBox.setSelected(false);
-
         refreshCurrentView();
         updateActiveFiltersDisplay();
         updateStatus("Всі фільтри очищено");
@@ -562,7 +576,8 @@ public class MainController {
                     default:
                         break;
                 }
-                return isAscendingSort ? comparisonResult : -comparisonResult;
+                return isAscendingSort ?
+                        comparisonResult : -comparisonResult;
             });
         }
         LOGGER.info("Applying sort to full list by: " + currentSortBy + (isAscendingSort ? " ASC" : " DESC"));
@@ -705,7 +720,8 @@ public class MainController {
             addFilterChip("Мін. ціна: " + minPriceText);
             hasActiveFilters = true;
         }
-        String maxPriceText = (maxPriceField != null) ? maxPriceField.getText() : "";
+        String maxPriceText = (maxPriceField != null) ?
+                maxPriceField.getText() : "";
         if (maxPriceText != null && !maxPriceText.isEmpty()) {
             addFilterChip("Макс. ціна: " + maxPriceText);
             hasActiveFilters = true;
@@ -895,7 +911,8 @@ public class MainController {
             return;
         }
         showLoadingIndicator("Завантаження оголошень...");
-        String keyword = (searchField != null) ? searchField.getText() : "";
+        String keyword = (searchField != null) ?
+                searchField.getText() : "";
 
         Task<List<AdComponent>> loadTask = new Task<>() {
             @Override

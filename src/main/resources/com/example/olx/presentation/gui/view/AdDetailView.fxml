@@ -32,23 +32,6 @@
                     </padding>
 
                     <children>
-                        <Label fx:id="titleLabel_simple" />
-                        <TextArea fx:id="descriptionTextArea" />
-                        <Label fx:id="priceLabel_simple" />
-                        <Label fx:id="authorLabel" />
-                        <Label fx:id="categoryLabel_simple" />
-                        <Label fx:id="statusLabel" />
-                        <Label fx:id="createdDateLabel" />
-
-
-                        <VBox fx:id="decoratorsContainer" />
-                        <HBox fx:id="imageContainer" />
-                        <VBox fx:id="premiumFeaturesContainer" />
-
-                        <Button fx:id="contactButton" text="Контакт" />
-                        <Button fx:id="favoriteButton" text="В обрані" />
-                        <Button fx:id="shareButton" text="Поділитися" />
-
                         <Label fx:id="titleLabel"
                                styleClass="detail-title-label"
                                text="Назва оголошення"
@@ -90,8 +73,6 @@
                                       wrappingWidth="700.0" />
                             </children>
                         </VBox>
-
-
 
                         <VBox spacing="8.0" styleClass="detail-section-meta">
                             <children>

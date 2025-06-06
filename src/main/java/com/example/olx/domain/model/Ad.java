@@ -4,11 +4,7 @@ package com.example.olx.domain.model;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class Ad implements Serializable, Cloneable {
     private static final long serialVersionUID = 4L;
@@ -28,6 +24,32 @@ public class Ad implements Serializable, Cloneable {
     private String id;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // --- ІСНУЮЧІ ПОЛЯ ---
+
+
+    // --- ЗМІНИ ТУТ ---
+
+    // 1. Це поле тепер зберігає ТІЛЬКИ чистий опис для користувача
+
+
+    // 2. ДОДАЄМО нове поле для технічних метаданих
+    private Map<String, String> decorators;
+
+    // --- Конструктори, гетери і сеттери ---
+
+    // Переконайтеся, що ваш конструктор ініціалізує нове поле
+
+
+
+
+    // 3. ДОДАЄМО гетер і сеттер для нового поля
+    public Map<String, String> getDecorators() {
+        return decorators;
+    }
+
+    public void setDecorators(Map<String, String> decorators) {
+        this.decorators = decorators;
+    }
 
     // Дополнительные поля для функциональности
     private boolean hasDelivery;
