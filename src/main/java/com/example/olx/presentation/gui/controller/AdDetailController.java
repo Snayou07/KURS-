@@ -155,42 +155,28 @@ public class AdDetailController {
     /**
      * Відображає додаткову інформацію від декораторів (якщо вона є).
      */
+    /**
+     * Відображає додаткову інформацію від декораторів у зручному для користувача форматі.
+     */
     private void displayDecoratedAdInfo() {
         if (decoratedAd == null) return;
 
-        String info = decoratedAd.getDisplayInfo();
-        if (info != null && !info.trim().isEmpty()) {
-            // Очищаємо попередній контент
-            decoratedInfoTextContainer.getChildren().clear();
+        // Очищаємо попередній контент
+        decoratedInfoTextContainer.getChildren().clear();
 
-            // Розділяємо текст на рядки і створюємо окремі Label для кожного
-            String[] lines = info.split("\\n");
+        // Отримуємо метадані декораторів
+        Map<String, String> metadata = currentAd.getDecorators();
+        if (metadata == null || metadata.isEmpty()) {
+            decoratedInfoContainer.setVisible(false);
+            decoratedInfoContainer.setManaged(false);
+            return;
+        }
 
-            for (String line : lines) {
-                if (line.trim().isEmpty()) continue;
+        // Створюємо зручні мітки замість технічного тексту
+        createUserFriendlyDecorators(metadata);
 
-                Label lineLabel = new Label(line.trim());
-
-                // Стилізуємо різні типи рядків
-                if (line.contains("ЗНИЖКА") || line.contains("💰")) {
-                    lineLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 13px;");
-                } else if (line.contains("ПРЕМІУМ") || line.contains("⭐") || line.contains("🌟")) {
-                    lineLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-weight: bold; -fx-font-size: 13px;");
-                } else if (line.contains("ТЕРМІНОВО") || line.contains("🔥") || line.contains("🚨")) {
-                    lineLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 13px;");
-                } else if (line.contains("ДОСТАВКА") || line.contains("🚚")) {
-                    lineLabel.setStyle("-fx-text-fill: #3498db; -fx-font-weight: bold; -fx-font-size: 12px;");
-                } else if (line.contains("ГАРАНТІЯ") || line.contains("🛡️")) {
-                    lineLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 12px;");
-                } else {
-                    lineLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-size: 12px;");
-                }
-
-                lineLabel.setWrapText(true);
-                lineLabel.setMaxWidth(550);
-                decoratedInfoTextContainer.getChildren().add(lineLabel);
-            }
-
+        // Показуємо контейнер якщо є хоча б один декоратор
+        if (!decoratedInfoTextContainer.getChildren().isEmpty()) {
             // Додаємо контейнер до головного контейнера, якщо його там немає
             if (!mainContainer.getChildren().contains(decoratedInfoContainer)) {
                 int index = mainContainer.getChildren().indexOf(actionButtonsBox);
@@ -206,6 +192,192 @@ public class AdDetailController {
             decoratedInfoContainer.setVisible(false);
             decoratedInfoContainer.setManaged(false);
         }
+    }
+
+    /**
+     * Створює зручні для користувача мітки декораторів на основі метаданих.
+     */
+    private void createUserFriendlyDecorators(Map<String, String> metadata) {
+        // Преміум товар
+        if ("true".equalsIgnoreCase(metadata.get("premium"))) {
+            Label premiumLabel = createDecoratorLabel("⭐ Преміум товар", "#f39c12", true);
+            decoratedInfoTextContainer.getChildren().add(premiumLabel);
+        }
+
+        // Термінова пропозиція
+        if ("true".equalsIgnoreCase(metadata.get("urgent"))) {
+            Label urgentLabel = createDecoratorLabel("🔥 Термінова пропозиція", "#e74c3c", true);
+            urgentLabel.setStyle(urgentLabel.getStyle() + " -fx-effect: dropshadow(gaussian, rgba(231, 76, 60, 0.3), 5, 0, 0, 0);");
+            decoratedInfoTextContainer.getChildren().add(urgentLabel);
+        }
+
+        // Знижка
+        Double discountPercentage = parseDouble(metadata.get("discountPercentage"));
+        if (discountPercentage != null && discountPercentage > 0) {
+            String discountText = String.format("💰 Знижка %.0f%%", discountPercentage);
+            Label discountLabel = createDecoratorLabel(discountText, "#e74c3c", true);
+            decoratedInfoTextContainer.getChildren().add(discountLabel);
+
+            // Причина знижки
+            String discountReason = metadata.get("discountReason");
+            if (discountReason != null && !discountReason.trim().isEmpty()) {
+                Label reasonLabel = createDecoratorLabel("💡 " + discountReason, "#7f8c8d", false);
+                decoratedInfoTextContainer.getChildren().add(reasonLabel);
+            }
+
+            // Показуємо економію
+            double originalPrice = currentAd.getPrice();
+            double discountAmount = originalPrice * discountPercentage / 100;
+            Label savingsLabel = createDecoratorLabel(
+                    String.format("💸 Ви економите: %.2f грн", discountAmount),
+                    "#27ae60",
+                    true
+            );
+            decoratedInfoTextContainer.getChildren().add(savingsLabel);
+        }
+
+        // Гарантія
+        Integer warrantyMonths = parseInt(metadata.get("warrantyMonths"));
+        String warrantyType = metadata.get("warrantyType");
+        if (warrantyMonths != null && warrantyMonths > 0) {
+            String warrantyText = String.format("🛡️ Гарантія: %d міс.", warrantyMonths);
+            if (warrantyType != null && !warrantyType.trim().isEmpty()) {
+                warrantyText += " (" + warrantyType + ")";
+            }
+            Label warrantyLabel = createDecoratorLabel(warrantyText, "#27ae60", false);
+            decoratedInfoTextContainer.getChildren().add(warrantyLabel);
+        }
+
+        // Доставка
+        boolean freeDelivery = "true".equalsIgnoreCase(metadata.get("freeDelivery"));
+        Double deliveryCost = parseDouble(metadata.get("deliveryCost"));
+        String deliveryInfo = metadata.get("deliveryInfo");
+
+        if (freeDelivery) {
+            Label deliveryLabel = createDecoratorLabel("🚚 Безкоштовна доставка", "#3498db", true);
+            decoratedInfoTextContainer.getChildren().add(deliveryLabel);
+        } else if (deliveryCost != null && deliveryCost > 0) {
+            String deliveryText = String.format("🚚 Доставка: %.2f грн", deliveryCost);
+            Label deliveryLabel = createDecoratorLabel(deliveryText, "#3498db", false);
+            decoratedInfoTextContainer.getChildren().add(deliveryLabel);
+        }
+
+        if (deliveryInfo != null && !deliveryInfo.trim().isEmpty()) {
+            Label infoLabel = createDecoratorLabel("📋 " + deliveryInfo, "#7f8c8d", false);
+            decoratedInfoTextContainer.getChildren().add(infoLabel);
+        }
+    }
+
+    /**
+     * Створює стилізований Label для декоратора.
+     */
+    private Label createDecoratorLabel(String text, String color, boolean isBold) {
+        Label label = new Label(text);
+        label.setWrapText(true);
+        label.setMaxWidth(550);
+
+        String style = String.format("-fx-text-fill: %s; -fx-font-size: %dpx;",
+                color, isBold ? 13 : 12);
+        if (isBold) {
+            style += " -fx-font-weight: bold;";
+        }
+
+        label.setStyle(style);
+        label.setPadding(new Insets(3, 0, 3, 0));
+
+        return label;
+    }
+
+    /**
+     * Альтернативний метод для створення бейджів замість простого тексту.
+     */
+    private void createDecoratorBadges(Map<String, String> metadata) {
+        HBox badgesContainer = new HBox(8);
+        badgesContainer.setPadding(new Insets(0, 0, 10, 0));
+
+        // Преміум бейдж
+        if ("true".equalsIgnoreCase(metadata.get("premium"))) {
+            Label premiumBadge = createBadge("⭐ Преміум", "#f39c12");
+            badgesContainer.getChildren().add(premiumBadge);
+        }
+
+        // Термінова пропозиція
+        if ("true".equalsIgnoreCase(metadata.get("urgent"))) {
+            Label urgentBadge = createBadge("🔥 Терміново", "#e74c3c");
+            badgesContainer.getChildren().add(urgentBadge);
+        }
+
+        // Знижка
+        Double discountPercentage = parseDouble(metadata.get("discountPercentage"));
+        if (discountPercentage != null && discountPercentage > 0) {
+            Label discountBadge = createBadge(String.format("💰 -%.0f%%", discountPercentage), "#e74c3c");
+            badgesContainer.getChildren().add(discountBadge);
+        }
+
+        // Безкоштовна доставка
+        if ("true".equalsIgnoreCase(metadata.get("freeDelivery"))) {
+            Label deliveryBadge = createBadge("🚚 Безкоштовна доставка", "#3498db");
+            badgesContainer.getChildren().add(deliveryBadge);
+        }
+
+        // Гарантія
+        Integer warrantyMonths = parseInt(metadata.get("warrantyMonths"));
+        if (warrantyMonths != null && warrantyMonths > 0) {
+            Label warrantyBadge = createBadge(String.format("🛡️ Гарантія %d міс.", warrantyMonths), "#27ae60");
+            badgesContainer.getChildren().add(warrantyBadge);
+        }
+
+        if (!badgesContainer.getChildren().isEmpty()) {
+            decoratedInfoTextContainer.getChildren().add(badgesContainer);
+        }
+    }
+
+    /**
+     * Створює стилізований бейдж.
+     */
+    private Label createBadge(String text, String backgroundColor) {
+        Label badge = new Label(text);
+        badge.setStyle(String.format(
+                "-fx-background-color: %s; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-padding: 4 8 4 8; " +
+                        "-fx-background-radius: 12; " +
+                        "-fx-font-size: 11px; " +
+                        "-fx-font-weight: bold;",
+                backgroundColor
+        ));
+        return badge;
+    }
+
+    /**
+     * Оновлений метод setupDecoratedInfoContainer з кращим стилем.
+     */
+    private void setupDecoratedInfoContainer() {
+        decoratedInfoContainer = new VBox(10);
+        decoratedInfoContainer.setPadding(new Insets(15));
+        decoratedInfoContainer.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #f8f9fa, #e9ecef); " +
+                        "-fx-border-color: #dee2e6; " +
+                        "-fx-border-width: 1; " +
+                        "-fx-border-radius: 10; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2);"
+        );
+
+        Label title = new Label("✨ Спеціальні умови та особливості");
+        title.setStyle(
+                "-fx-font-weight: bold; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-padding: 0 0 5 0;"
+        );
+
+        // Створюємо окремий контейнер для текстового контенту
+        decoratedInfoTextContainer = new VBox(8);
+
+        decoratedInfoContainer.getChildren().addAll(title, decoratedInfoTextContainer);
+        decoratedInfoContainer.setVisible(false);
+        decoratedInfoContainer.setManaged(false);
     }
 
     // --- Нові, простіші хелпери для безпечного парсингу значень ---
@@ -296,27 +468,7 @@ public class AdDetailController {
     /**
      * Налаштовує контейнер для відображення інформації від декораторів.
      */
-    private void setupDecoratedInfoContainer() {
-        decoratedInfoContainer = new VBox(8);
-        decoratedInfoContainer.setPadding(new Insets(15));
-        decoratedInfoContainer.setStyle(
-                "-fx-background-color: #f8f9fa; " +
-                        "-fx-border-color: #dee2e6; " +
-                        "-fx-border-width: 1; " +
-                        "-fx-border-radius: 8; " +
-                        "-fx-background-radius: 8;"
-        );
 
-        Label title = new Label("✨ Спеціальні умови та особливості:");
-        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #495057;");
-
-        // Створюємо окремий контейнер для текстового контенту
-        decoratedInfoTextContainer = new VBox(5);
-
-        decoratedInfoContainer.getChildren().addAll(title, decoratedInfoTextContainer);
-        decoratedInfoContainer.setVisible(false);
-        decoratedInfoContainer.setManaged(false);
-    }
 
     /**
      * Налаштовує видимість кнопок "Редагувати" та "Видалити"

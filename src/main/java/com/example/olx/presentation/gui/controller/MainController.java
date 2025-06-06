@@ -379,8 +379,8 @@ public class MainController {
             // Спробуємо різні способи отримання обгорнутого компонента
             try {
                 // Спосіб 1: Через AdDecoratorBase (якщо такий клас існує)
-                if (current instanceof AdDecoratorBase) {
-                    nextComponent = ((AdDecoratorBase) current).getWrappedAd();
+                if (current instanceof BasicAdDecorator) {
+                    nextComponent = ((BasicAdDecorator) current).getWrappedAd();
                 }
                 // Спосіб 2: Через загальний інтерфейс декоратора (якщо є метод getWrappedComponent)
                 else if (hasWrappedComponentMethod(current)) {
