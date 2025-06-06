@@ -23,6 +23,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.jetbrains.annotations.Contract;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -331,12 +332,21 @@ public class MainController {
     /**
      * Отримує додаткову інформацію від декораторів
      */
+    /**
+     * Отримує додаткову інформацію від декораторів
+     */
     private String getAdditionalDecoratorInfo(AdComponent adComponent) {
         List<String> additionalInfo = new ArrayList<>();
 
         // Перевіряємо кожен тип декоратора та збираємо додаткову інформацію
         AdComponent current = adComponent;
-        while (current != null) {
+        int maxIterations = 10; // Захист від нескінченного циклу
+        int iterations = 0;
+
+        while (current != null && iterations < maxIterations) {
+            iterations++;
+            boolean foundDecorator = false;
+
             if (current instanceof DeliveryAdDecorator) {
                 DeliveryAdDecorator deliveryDecorator = (DeliveryAdDecorator) current;
                 String deliveryInfo = deliveryDecorator.getDeliveryInfo();
@@ -344,6 +354,7 @@ public class MainController {
                         !deliveryInfo.equals("Стандартна доставка")) {
                     additionalInfo.add("Доставка: " + deliveryInfo);
                 }
+                foundDecorator = true;
             } else if (current instanceof WarrantyAdDecorator) {
                 WarrantyAdDecorator warrantyDecorator = (WarrantyAdDecorator) current;
                 String warrantyType = warrantyDecorator.getWarrantyType();
@@ -351,20 +362,179 @@ public class MainController {
                         !warrantyType.equals("Стандартна гарантія")) {
                     additionalInfo.add("Тип гарантії: " + warrantyType);
                 }
+                foundDecorator = true;
             } else if (current instanceof DiscountAdDecorator) {
                 DiscountAdDecorator discountDecorator = (DiscountAdDecorator) current;
                 // Додаткова інформація про знижку вже відображається вище
+                foundDecorator = true;
+            } else if (current instanceof PremiumAdDecorator) {
+                foundDecorator = true;
+            } else if (current instanceof UrgentAdDecorator) {
+                foundDecorator = true;
             }
 
             // Переходимо до наступного декоратора
-            if (current instanceof AdDecoratorBase) {
-                current = ((AdDecoratorBase) current).getWrappedAd();
-            } else {
+            AdComponent nextComponent = null;
+
+            // Спробуємо різні способи отримання обгорнутого компонента
+            try {
+                // Спосіб 1: Через AdDecoratorBase (якщо такий клас існує)
+                if (current instanceof AdDecoratorBase) {
+                    nextComponent = ((AdDecoratorBase) current).getWrappedAd();
+                }
+                // Спосіб 2: Через загальний інтерфейс декоратора (якщо є метод getWrappedComponent)
+                else if (hasWrappedComponentMethod(current)) {
+                    nextComponent = getWrappedComponentUsingReflection(current);
+                }
+                // Спосіб 3: Перевірка конкретних типів декораторів
+                else if (current instanceof DeliveryAdDecorator) {
+                    // Припускаємо, що у DeliveryAdDecorator є поле або метод для отримання обгорнутого компонента
+                    nextComponent = getWrappedFromDeliveryDecorator((DeliveryAdDecorator) current);
+                }
+                else if (current instanceof WarrantyAdDecorator) {
+                    nextComponent = getWrappedFromWarrantyDecorator((WarrantyAdDecorator) current);
+                }
+                else if (current instanceof DiscountAdDecorator) {
+                    nextComponent = getWrappedFromDiscountDecorator((DiscountAdDecorator) current);
+                }
+                else if (current instanceof PremiumAdDecorator) {
+                    nextComponent = getWrappedFromPremiumDecorator((PremiumAdDecorator) current);
+                }
+                else if (current instanceof UrgentAdDecorator) {
+                    nextComponent = getWrappedFromUrgentDecorator((UrgentAdDecorator) current);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Error while traversing decorator chain", e);
                 break;
             }
+
+            // Якщо не знайшли наступний компонент або він той самий, що й поточний, виходимо
+            if (nextComponent == null || nextComponent == current) {
+                break;
+            }
+
+            current = nextComponent;
         }
 
         return additionalInfo.isEmpty() ? null : String.join(" | ", additionalInfo);
+    }
+
+    /**
+     * Перевіряє, чи має об'єкт метод для отримання обгорнутого компонента
+     */
+    private boolean hasWrappedComponentMethod(AdComponent component) {
+        try {
+            Class<?> clazz = component.getClass();
+            // Шукаємо метод getWrappedAd або getWrappedComponent
+            return clazz.getMethod("getWrappedAd") != null ||
+                    clazz.getMethod("getWrappedComponent") != null;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Отримує обгорнутий компонент через reflection
+     */
+    private AdComponent getWrappedComponentUsingReflection(AdComponent component) {
+        try {
+            Class<?> clazz = component.getClass();
+            try {
+                Method method = clazz.getMethod("getWrappedAd");
+                return (AdComponent) method.invoke(component);
+            } catch (NoSuchMethodException e) {
+                Method method = clazz.getMethod("getWrappedComponent");
+                return (AdComponent) method.invoke(component);
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to get wrapped component using reflection", e);
+            return null;
+        }
+    }
+
+    /**
+     * Методи для отримання обгорнутого компонента з конкретних декораторів
+     * Ці методи потрібно адаптувати під реальну структуру ваших декораторів
+     */
+    private AdComponent getWrappedFromDeliveryDecorator(DeliveryAdDecorator decorator) {
+        try {
+            // Припускаємо, що у декоратора є поле wrappedAd або wrapped
+            java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrappedAd");
+            field.setAccessible(true);
+            return (AdComponent) field.get(decorator);
+        } catch (Exception e) {
+            try {
+                java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrapped");
+                field.setAccessible(true);
+                return (AdComponent) field.get(decorator);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    private AdComponent getWrappedFromWarrantyDecorator(WarrantyAdDecorator decorator) {
+        try {
+            java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrappedAd");
+            field.setAccessible(true);
+            return (AdComponent) field.get(decorator);
+        } catch (Exception e) {
+            try {
+                java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrapped");
+                field.setAccessible(true);
+                return (AdComponent) field.get(decorator);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    private AdComponent getWrappedFromDiscountDecorator(DiscountAdDecorator decorator) {
+        try {
+            java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrappedAd");
+            field.setAccessible(true);
+            return (AdComponent) field.get(decorator);
+        } catch (Exception e) {
+            try {
+                java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrapped");
+                field.setAccessible(true);
+                return (AdComponent) field.get(decorator);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    private AdComponent getWrappedFromPremiumDecorator(PremiumAdDecorator decorator) {
+        try {
+            java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrappedAd");
+            field.setAccessible(true);
+            return (AdComponent) field.get(decorator);
+        } catch (Exception e) {
+            try {
+                java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrapped");
+                field.setAccessible(true);
+                return (AdComponent) field.get(decorator);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    private AdComponent getWrappedFromUrgentDecorator(UrgentAdDecorator decorator) {
+        try {
+            java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrappedAd");
+            field.setAccessible(true);
+            return (AdComponent) field.get(decorator);
+        } catch (Exception e) {
+            try {
+                java.lang.reflect.Field field = decorator.getClass().getDeclaredField("wrapped");
+                field.setAccessible(true);
+                return (AdComponent) field.get(decorator);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
     }
 
     public static class DateUtils {
