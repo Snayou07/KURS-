@@ -87,48 +87,57 @@ public class CreateAdController {
 
             commandManager = MainGuiApp.getAdCommandManager();
             if (commandManager == null) {
-                showError("Ошибка инициализации системы.");
+                showError("Помилка ініціалізації системи.");
                 return;
             }
 
             if (formHeaderLabel != null) {
-                formHeaderLabel.setText(adToEdit == null ? "Создать новое объявление" : "Редактировать объявление");
+                formHeaderLabel.setText(adToEdit == null ? "Створити нове оголошення" : "Редагувати оголошення");
             }
             updatePreviewAutomatically();
         } catch (Exception e) {
-            showError("Ошибка инициализации: " + e.getMessage());
+            showError("Помилка ініціалізації: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
     @FXML
     private void handleCancel() {
-        // Отримуємо Stage (вікно) з кнопки
-        Stage stage = (Stage) cancelButton.getScene().getWindow();
-        // Закриваємо вікно
-        stage.close();
+        try {
+            // Повертаємося на головну сторінку замість неіснуючої user-ads-view.fxml
+            MainGuiApp.loadMainScene();
+        } catch (IOException e) {
+            System.err.println("Помилка при поверненні на головну сторінку: " + e.getMessage());
+            e.printStackTrace();
+            // Альтернативний спосіб - просто закрити вікно
+            Stage stage = (Stage) cancelButton.getScene().getWindow();
+            stage.close();
+        }
     }
 
-    // --- ГОТОВЫЙ МЕТОД ДЛЯ НАВИГАЦИИ ---
+    // --- ГОТОВИЙ МЕТОД ДЛЯ НАВІГАЦІЇ ---
     private void showSuccessAndReturn(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Успех");
+        alert.setTitle("Успіх");
         alert.setHeaderText(null);
         alert.setContentText(message);
 
         alert.showAndWait().ifPresent(response -> {
-            if (saveButton != null && saveButton.getScene() != null) {
-                // Вызываем метод из MainGuiApp для смены окна
-                // УБЕДИТЕСЬ, ЧТО ИМЯ FXML ФАЙЛА ВЕРНОЕ
-                MainGuiApp.loadScene("user-ads-view.fxml");
+            try {
+                // Повертаємося на головну сторінку замість неіснуючої user-ads-view.fxml
+                MainGuiApp.loadMainScene();
+            } catch (IOException e) {
+                System.err.println("Помилка при поверненні на головну сторінку: " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
 
-    // --- Остальной код класса остается без изменений ---
-
     public void initDataForEdit(Ad ad) {
         this.adToEdit = ad;
-        formHeaderLabel.setText("Редактировать объявление: " + ad.getTitle());
+        if (formHeaderLabel != null) {
+            formHeaderLabel.setText("Редагувати оголошення: " + ad.getTitle());
+        }
         titleField.setText(ad.getTitle());
         priceField.setText(String.format("%.2f", ad.getPrice()).replace(',', '.'));
 
@@ -161,16 +170,30 @@ public class CreateAdController {
         try {
             User currentUser = GlobalContext.getInstance().getLoggedInUser();
             if (currentUser == null) {
-                showError("Вы не вошли в систему.");
+                showError("Ви не увійшли в систему.");
                 return;
             }
 
-            if (titleField.getText().trim().isEmpty() || descriptionArea.getText().trim().isEmpty() || priceField.getText().trim().isEmpty() || categoryComboBox.getSelectionModel().getSelectedItem() == null) {
-                showError("Все поля обязательны для заполнения.");
+            if (titleField.getText().trim().isEmpty() ||
+                    descriptionArea.getText().trim().isEmpty() ||
+                    priceField.getText().trim().isEmpty() ||
+                    categoryComboBox.getSelectionModel().getSelectedItem() == null) {
+                showError("Всі поля обов'язкові для заповнення.");
                 return;
             }
 
-            double price = Double.parseDouble(priceField.getText().replace(',', '.').trim());
+            double price;
+            try {
+                price = Double.parseDouble(priceField.getText().replace(',', '.').trim());
+                if (price < 0) {
+                    showError("Ціна не може бути від'ємною.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showError("Введіть коректну ціну.");
+                return;
+            }
+
             List<String> finalImagePaths = new ArrayList<>(existingImagePaths);
             for (File imageFile : selectedImageFiles) {
                 String uniqueFileName = UUID.randomUUID().toString() + "_" + imageFile.getName();
@@ -183,18 +206,25 @@ public class CreateAdController {
             String decoratorMetadata = buildDecoratorMetadata();
             String fullDescription = cleanDescription + METADATA_SEPARATOR + decoratorMetadata;
 
-            AdCreationRequest request = new AdCreationRequest(titleField.getText().trim(), fullDescription, price, categoryComboBox.getSelectionModel().getSelectedItem().getId(), currentUser.getUserId(), finalImagePaths);
+            AdCreationRequest request = new AdCreationRequest(
+                    titleField.getText().trim(),
+                    fullDescription,
+                    price,
+                    categoryComboBox.getSelectionModel().getSelectedItem().getId(),
+                    currentUser.getUserId(),
+                    finalImagePaths
+            );
 
             if (adToEdit == null) {
                 commandManager.createAd(request);
+                showSuccessAndReturn("Оголошення успішно створено!");
             } else {
                 commandManager.updateAd(adToEdit.getAdId(), request, currentUser.getUserId());
+                showSuccessAndReturn("Оголошення успішно оновлено!");
             }
 
-            showSuccessAndReturn("Объявление успешно сохранено!");
-
         } catch (Exception e) {
-            showError("Произошла ошибка: " + e.getMessage());
+            showError("Сталася помилка: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -204,57 +234,93 @@ public class CreateAdController {
         Stream.of(metadata.split(";")).forEach(pair -> {
             String[] keyValue = pair.split(":", 2);
             if (keyValue.length < 2) return;
-            String key = keyValue[0];
-            String value = keyValue[1];
+            String key = keyValue[0].trim();
+            String value = keyValue[1].trim();
             switch (key) {
-                case "premium": premiumCheckBox.setSelected(Boolean.parseBoolean(value)); break;
-                case "urgent": urgentCheckBox.setSelected(Boolean.parseBoolean(value)); break;
-                case "discount": discountCheckBox.setSelected(Boolean.parseBoolean(value)); handleDiscountToggle(); break;
-                case "discountPercentage": discountPercentageField.setText(value); break;
-                case "discountReason": discountReasonField.setText(value); break;
-                case "warranty": warrantyCheckBox.setSelected(Boolean.parseBoolean(value)); handleWarrantyToggle(); break;
-                case "warrantyMonths": warrantyMonthsField.setText(value); break;
-                case "warrantyType": warrantyTypeField.setText(value); break;
-                case "delivery": deliveryCheckBox.setSelected(Boolean.parseBoolean(value)); handleDeliveryToggle(); break;
-                case "freeDelivery": freeDeliveryCheckBox.setSelected(Boolean.parseBoolean(value)); handleFreeDeliveryToggle(); break;
-                case "deliveryCost": deliveryCostField.setText(value); break;
-                case "deliveryInfo": deliveryInfoField.setText(value); break;
+                case "premium":
+                    if (premiumCheckBox != null) premiumCheckBox.setSelected(Boolean.parseBoolean(value));
+                    break;
+                case "urgent":
+                    if (urgentCheckBox != null) urgentCheckBox.setSelected(Boolean.parseBoolean(value));
+                    break;
+                case "discount":
+                    if (discountCheckBox != null) {
+                        discountCheckBox.setSelected(Boolean.parseBoolean(value));
+                        handleDiscountToggle();
+                    }
+                    break;
+                case "discountPercentage":
+                    if (discountPercentageField != null) discountPercentageField.setText(value);
+                    break;
+                case "discountReason":
+                    if (discountReasonField != null) discountReasonField.setText(value);
+                    break;
+                case "warranty":
+                    if (warrantyCheckBox != null) {
+                        warrantyCheckBox.setSelected(Boolean.parseBoolean(value));
+                        handleWarrantyToggle();
+                    }
+                    break;
+                case "warrantyMonths":
+                    if (warrantyMonthsField != null) warrantyMonthsField.setText(value);
+                    break;
+                case "warrantyType":
+                    if (warrantyTypeField != null) warrantyTypeField.setText(value);
+                    break;
+                case "delivery":
+                    if (deliveryCheckBox != null) {
+                        deliveryCheckBox.setSelected(Boolean.parseBoolean(value));
+                        handleDeliveryToggle();
+                    }
+                    break;
+                case "freeDelivery":
+                    if (freeDeliveryCheckBox != null) {
+                        freeDeliveryCheckBox.setSelected(Boolean.parseBoolean(value));
+                        handleFreeDeliveryToggle();
+                    }
+                    break;
+                case "deliveryCost":
+                    if (deliveryCostField != null) deliveryCostField.setText(value);
+                    break;
+                case "deliveryInfo":
+                    if (deliveryInfoField != null) deliveryInfoField.setText(value);
+                    break;
             }
         });
     }
 
     private String buildDecoratorMetadata() {
         StringBuilder sb = new StringBuilder();
-        sb.append("premium:").append(premiumCheckBox.isSelected()).append(";");
-        sb.append("urgent:").append(urgentCheckBox.isSelected()).append(";");
-        sb.append("discount:").append(discountCheckBox.isSelected()).append(";");
-        if (discountCheckBox.isSelected()) {
-            sb.append("discountPercentage:").append(discountPercentageField.getText()).append(";");
-            sb.append("discountReason:").append(discountReasonField.getText()).append(";");
+        sb.append("premium:").append(premiumCheckBox != null ? premiumCheckBox.isSelected() : false).append(";");
+        sb.append("urgent:").append(urgentCheckBox != null ? urgentCheckBox.isSelected() : false).append(";");
+        sb.append("discount:").append(discountCheckBox != null ? discountCheckBox.isSelected() : false).append(";");
+        if (discountCheckBox != null && discountCheckBox.isSelected()) {
+            sb.append("discountPercentage:").append(discountPercentageField != null ? discountPercentageField.getText() : "").append(";");
+            sb.append("discountReason:").append(discountReasonField != null ? discountReasonField.getText() : "").append(";");
         }
-        sb.append("warranty:").append(warrantyCheckBox.isSelected()).append(";");
-        if(warrantyCheckBox.isSelected()){
-            sb.append("warrantyMonths:").append(warrantyMonthsField.getText()).append(";");
-            sb.append("warrantyType:").append(warrantyTypeField.getText()).append(";");
+        sb.append("warranty:").append(warrantyCheckBox != null ? warrantyCheckBox.isSelected() : false).append(";");
+        if (warrantyCheckBox != null && warrantyCheckBox.isSelected()) {
+            sb.append("warrantyMonths:").append(warrantyMonthsField != null ? warrantyMonthsField.getText() : "").append(";");
+            sb.append("warrantyType:").append(warrantyTypeField != null ? warrantyTypeField.getText() : "").append(";");
         }
-        sb.append("delivery:").append(deliveryCheckBox.isSelected()).append(";");
-        if(deliveryCheckBox.isSelected()){
-            sb.append("freeDelivery:").append(freeDeliveryCheckBox.isSelected()).append(";");
-            sb.append("deliveryCost:").append(deliveryCostField.getText()).append(";");
-            sb.append("deliveryInfo:").append(deliveryInfoField.getText()).append(";");
+        sb.append("delivery:").append(deliveryCheckBox != null ? deliveryCheckBox.isSelected() : false).append(";");
+        if (deliveryCheckBox != null && deliveryCheckBox.isSelected()) {
+            sb.append("freeDelivery:").append(freeDeliveryCheckBox != null ? freeDeliveryCheckBox.isSelected() : false).append(";");
+            sb.append("deliveryCost:").append(deliveryCostField != null ? deliveryCostField.getText() : "").append(";");
+            sb.append("deliveryInfo:").append(deliveryInfoField != null ? deliveryInfoField.getText() : "").append(";");
         }
         return sb.toString();
     }
 
-
-    @FXML private void handleUpdatePreview() {
+    @FXML
+    private void handleUpdatePreview() {
         if (previewArea == null) return;
         try {
             String title = titleField.getText().trim();
             String description = descriptionArea.getText().trim();
             String priceStr = priceField.getText().replace(',', '.').trim();
             if (title.isEmpty() || description.isEmpty() || priceStr.isEmpty()) {
-                previewArea.setText("Заполните все основные поля для предпросмотра");
+                previewArea.setText("Заповніть всі основні поля для попереднього перегляду");
                 return;
             }
             Ad tempAd = new Ad();
@@ -263,108 +329,216 @@ public class CreateAdController {
             tempAd.setPrice(Double.parseDouble(priceStr));
             tempAd.setStatus("ACTIVE");
             AdComponent decoratedAd = createDecoratedAd(tempAd);
-            String preview = decoratedAd.getDisplayInfo() + "\n\n" + "=".repeat(50) + "\nЗаголовок: " + decoratedAd.getFormattedTitle() + String.format("\nИтоговая цена: %.2f грн", decoratedAd.getCalculatedPrice());
+            String preview = decoratedAd.getDisplayInfo() + "\n\n" + "=".repeat(50) +
+                    "\nЗаголовок: " + decoratedAd.getFormattedTitle() +
+                    String.format("\nІтогова ціна: %.2f грн", decoratedAd.getCalculatedPrice());
             previewArea.setText(preview);
         } catch (Exception e) {
-            previewArea.setText("Ошибка создания предпросмотра: " + e.getMessage());
+            previewArea.setText("Помилка створення попереднього перегляду: " + e.getMessage());
         }
     }
 
-    private void updatePreviewAutomatically() { handleUpdatePreview(); }
-    @FXML private void handleDiscountToggle() {
+    private void updatePreviewAutomatically() {
+        handleUpdatePreview();
+    }
+
+    @FXML
+    private void handleDiscountToggle() {
+        if (discountCheckBox == null || discountOptionsBox == null) return;
         boolean selected = discountCheckBox.isSelected();
         discountOptionsBox.setVisible(selected);
         discountOptionsBox.setManaged(selected);
-        if (!selected) { discountPercentageField.clear(); discountReasonField.clear(); }
+        if (!selected) {
+            if (discountPercentageField != null) discountPercentageField.clear();
+            if (discountReasonField != null) discountReasonField.clear();
+        }
         updatePreviewAutomatically();
     }
-    @FXML private void handleWarrantyToggle() {
+
+    @FXML
+    private void handleWarrantyToggle() {
+        if (warrantyCheckBox == null || warrantyOptionsBox == null) return;
         boolean selected = warrantyCheckBox.isSelected();
         warrantyOptionsBox.setVisible(selected);
         warrantyOptionsBox.setManaged(selected);
-        if (!selected) { warrantyMonthsField.clear(); warrantyTypeField.clear(); }
+        if (!selected) {
+            if (warrantyMonthsField != null) warrantyMonthsField.clear();
+            if (warrantyTypeField != null) warrantyTypeField.clear();
+        }
         updatePreviewAutomatically();
     }
-    @FXML private void handleDeliveryToggle() {
+
+    @FXML
+    private void handleDeliveryToggle() {
+        if (deliveryCheckBox == null || deliveryOptionsBox == null) return;
         boolean selected = deliveryCheckBox.isSelected();
         deliveryOptionsBox.setVisible(selected);
         deliveryOptionsBox.setManaged(selected);
-        if (!selected) { freeDeliveryCheckBox.setSelected(false); deliveryCostField.clear(); deliveryInfoField.clear(); }
+        if (!selected) {
+            if (freeDeliveryCheckBox != null) freeDeliveryCheckBox.setSelected(false);
+            if (deliveryCostField != null) deliveryCostField.clear();
+            if (deliveryInfoField != null) deliveryInfoField.clear();
+        }
         updatePreviewAutomatically();
     }
-    @FXML private void handleFreeDeliveryToggle() {
+
+    @FXML
+    private void handleFreeDeliveryToggle() {
+        if (freeDeliveryCheckBox == null || deliveryCostBox == null) return;
         boolean selected = freeDeliveryCheckBox.isSelected();
         deliveryCostBox.setVisible(!selected);
         deliveryCostBox.setManaged(!selected);
-        if (selected) { deliveryCostField.clear(); }
+        if (selected && deliveryCostField != null) {
+            deliveryCostField.clear();
+        }
         updatePreviewAutomatically();
     }
 
     private void setupDecoratorValidation() {
-        discountOptionsBox.setVisible(false); discountOptionsBox.setManaged(false);
-        warrantyOptionsBox.setVisible(false); warrantyOptionsBox.setManaged(false);
-        deliveryOptionsBox.setVisible(false); deliveryOptionsBox.setManaged(false);
-        discountCheckBox.setOnAction(event -> handleDiscountToggle());
-        warrantyCheckBox.setOnAction(event -> handleWarrantyToggle());
-        deliveryCheckBox.setOnAction(event -> handleDeliveryToggle());
-        freeDeliveryCheckBox.setOnAction(event -> handleFreeDeliveryToggle());
+        if (discountOptionsBox != null) {
+            discountOptionsBox.setVisible(false);
+            discountOptionsBox.setManaged(false);
+        }
+        if (warrantyOptionsBox != null) {
+            warrantyOptionsBox.setVisible(false);
+            warrantyOptionsBox.setManaged(false);
+        }
+        if (deliveryOptionsBox != null) {
+            deliveryOptionsBox.setVisible(false);
+            deliveryOptionsBox.setManaged(false);
+        }
+        if (discountCheckBox != null) discountCheckBox.setOnAction(event -> handleDiscountToggle());
+        if (warrantyCheckBox != null) warrantyCheckBox.setOnAction(event -> handleWarrantyToggle());
+        if (deliveryCheckBox != null) deliveryCheckBox.setOnAction(event -> handleDeliveryToggle());
+        if (freeDeliveryCheckBox != null) freeDeliveryCheckBox.setOnAction(event -> handleFreeDeliveryToggle());
     }
 
     private void showError(String message) {
-        if (errorLabel != null) { errorLabel.setText(message); errorLabel.setVisible(true); }
-        else { new Alert(Alert.AlertType.ERROR, message).showAndWait(); }
+        if (errorLabel != null) {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+        } else {
+            new Alert(Alert.AlertType.ERROR, message).showAndWait();
+        }
     }
 
     private AdComponent createDecoratedAd(Ad ad) {
-        Double discountPercentage = null; String discountReason = null;
-        if (discountCheckBox.isSelected()) { try { discountPercentage = Double.parseDouble(discountPercentageField.getText().trim()); discountReason = discountReasonField.getText().trim(); } catch (Exception e) { /* ignore */ } }
-        Integer warrantyMonths = null; String warrantyType = null;
-        if (warrantyCheckBox.isSelected()) { try { warrantyMonths = Integer.parseInt(warrantyMonthsField.getText().trim()); warrantyType = warrantyTypeField.getText().trim(); } catch (Exception e) { /* ignore */ } }
-        Boolean freeDelivery = null; Double deliveryCost = null; String deliveryInfo = null;
-        if (deliveryCheckBox.isSelected()) { freeDelivery = freeDeliveryCheckBox.isSelected(); deliveryInfo = deliveryInfoField.getText().trim(); if (!freeDelivery) { try { deliveryCost = Double.parseDouble(deliveryCostField.getText().trim()); } catch (Exception e) { /* ignore */ } } }
-        return AdDecoratorFactory.createFullyDecoratedAd(ad, premiumCheckBox.isSelected(), urgentCheckBox.isSelected(), discountPercentage, discountReason, warrantyMonths, warrantyType, freeDelivery, deliveryCost, deliveryInfo);
+        Double discountPercentage = null;
+        String discountReason = null;
+        if (discountCheckBox != null && discountCheckBox.isSelected()) {
+            try {
+                if (discountPercentageField != null && !discountPercentageField.getText().trim().isEmpty()) {
+                    discountPercentage = Double.parseDouble(discountPercentageField.getText().trim());
+                }
+                if (discountReasonField != null) {
+                    discountReason = discountReasonField.getText().trim();
+                }
+            } catch (Exception e) { /* ignore */ }
+        }
+
+        Integer warrantyMonths = null;
+        String warrantyType = null;
+        if (warrantyCheckBox != null && warrantyCheckBox.isSelected()) {
+            try {
+                if (warrantyMonthsField != null && !warrantyMonthsField.getText().trim().isEmpty()) {
+                    warrantyMonths = Integer.parseInt(warrantyMonthsField.getText().trim());
+                }
+                if (warrantyTypeField != null) {
+                    warrantyType = warrantyTypeField.getText().trim();
+                }
+            } catch (Exception e) { /* ignore */ }
+        }
+
+        Boolean freeDelivery = null;
+        Double deliveryCost = null;
+        String deliveryInfo = null;
+        if (deliveryCheckBox != null && deliveryCheckBox.isSelected()) {
+            freeDelivery = freeDeliveryCheckBox != null ? freeDeliveryCheckBox.isSelected() : false;
+            if (deliveryInfoField != null) {
+                deliveryInfo = deliveryInfoField.getText().trim();
+            }
+            if (!freeDelivery && deliveryCostField != null && !deliveryCostField.getText().trim().isEmpty()) {
+                try {
+                    deliveryCost = Double.parseDouble(deliveryCostField.getText().trim());
+                } catch (Exception e) { /* ignore */ }
+            }
+        }
+
+        return AdDecoratorFactory.createFullyDecoratedAd(
+                ad,
+                premiumCheckBox != null ? premiumCheckBox.isSelected() : false,
+                urgentCheckBox != null ? urgentCheckBox.isSelected() : false,
+                discountPercentage,
+                discountReason,
+                warrantyMonths,
+                warrantyType,
+                freeDelivery,
+                deliveryCost,
+                deliveryInfo
+        );
     }
 
     private void setupPreviewListeners() {
-        titleField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        descriptionArea.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        priceField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        categoryComboBox.valueProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        premiumCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        urgentCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        discountCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        discountPercentageField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        discountReasonField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        warrantyCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        warrantyMonthsField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        warrantyTypeField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        deliveryCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        freeDeliveryCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        deliveryCostField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
-        deliveryInfoField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (titleField != null) titleField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (descriptionArea != null) descriptionArea.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (priceField != null) priceField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (categoryComboBox != null) categoryComboBox.valueProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (premiumCheckBox != null) premiumCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (urgentCheckBox != null) urgentCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (discountCheckBox != null) discountCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (discountPercentageField != null) discountPercentageField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (discountReasonField != null) discountReasonField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (warrantyCheckBox != null) warrantyCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (warrantyMonthsField != null) warrantyMonthsField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (warrantyTypeField != null) warrantyTypeField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (deliveryCheckBox != null) deliveryCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (freeDeliveryCheckBox != null) freeDeliveryCheckBox.selectedProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (deliveryCostField != null) deliveryCostField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
+        if (deliveryInfoField != null) deliveryInfoField.textProperty().addListener((obs, o, n) -> updatePreviewAutomatically());
     }
 
     private void setupImageStorageDir() {
-        try { Files.createDirectories(Paths.get(IMAGE_STORAGE_DIR)); }
-        catch (IOException e) { System.err.println("Could not create image storage directory: " + e.getMessage()); }
+        try {
+            Files.createDirectories(Paths.get(IMAGE_STORAGE_DIR));
+        } catch (IOException e) {
+            System.err.println("Не вдалося створити директорію для зображень: " + e.getMessage());
+        }
     }
 
     private void setupCategoryComboBox() {
-        categoryComboBox.setItems(categoryItems);
-        categoryComboBox.setConverter(new StringConverter<>() {
-            @Override public String toString(CategoryDisplayItem item) { return item == null ? null : item.getDisplayName(); }
-            @Override public CategoryDisplayItem fromString(String string) { return categoryItems.stream().filter(i -> i.getDisplayName().equals(string)).findFirst().orElse(null); }
-        });
+        if (categoryComboBox != null) {
+            categoryComboBox.setItems(categoryItems);
+            categoryComboBox.setConverter(new StringConverter<>() {
+                @Override
+                public String toString(CategoryDisplayItem item) {
+                    return item == null ? null : item.getDisplayName();
+                }
+                @Override
+                public CategoryDisplayItem fromString(String string) {
+                    return categoryItems.stream()
+                            .filter(i -> i.getDisplayName().equals(string))
+                            .findFirst()
+                            .orElse(null);
+                }
+            });
+        }
     }
 
     private void setupPriceFieldValidation() {
-        priceField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*([.,]\\d{0,2})?")) { priceField.setText(oldValue); }
-        });
+        if (priceField != null) {
+            priceField.textProperty().addListener((observable, oldValue, newValue) -> {
+                if (!newValue.matches("\\d*([.,]\\d{0,2})?")) {
+                    priceField.setText(oldValue);
+                }
+            });
+        }
     }
 
     private void loadCategories() {
-        if (MainGuiApp.categoryService == null) { showError("Ошибка загрузки категорий."); return; }
+        if (MainGuiApp.categoryService == null) {
+            showError("Помилка завантаження категорій.");
+            return;
+        }
         List<CategoryDisplayItem> flatCategories = new ArrayList<>();
         populateFlatCategories(MainGuiApp.categoryService.getAllRootCategories(), flatCategories, "");
         categoryItems.setAll(flatCategories);
@@ -380,14 +554,17 @@ public class CreateAdController {
         }
     }
 
-    @FXML private void handleAddPhoto() {
+    @FXML
+    private void handleAddPhoto() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Выбрать фото");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Изображения", "*.png", "*.jpg", "*.jpeg"));
+        fileChooser.setTitle("Вибрати фото");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Зображення", "*.png", "*.jpg", "*.jpeg"));
         List<File> files = fileChooser.showOpenMultipleDialog(addPhotoButton.getScene().getWindow());
         if (files != null) {
             int limit = 5 - selectedImageFiles.size() - existingImagePaths.size();
-            if (files.size() > limit) { showError("Можно добавить еще максимум " + limit + " фото."); }
+            if (files.size() > limit) {
+                showError("Можна додати ще максимум " + limit + " фото.");
+            }
             for (int i = 0; i < files.size() && i < limit; i++) {
                 File file = files.get(i);
                 if (!selectedImageFiles.contains(file)) {
@@ -395,7 +572,9 @@ public class CreateAdController {
                     addImageToPreview(file);
                 }
             }
-            if (selectedImageFiles.size() + existingImagePaths.size() >= 5) { addPhotoButton.setDisable(true); }
+            if (selectedImageFiles.size() + existingImagePaths.size() >= 5 && addPhotoButton != null) {
+                addPhotoButton.setDisable(true);
+            }
         }
     }
 
@@ -405,12 +584,20 @@ public class CreateAdController {
             Button removeButton = new Button("X");
             VBox imageContainer = new VBox(5, imageView, removeButton);
             removeButton.setOnAction(event -> {
-                photoPreviewBox.getChildren().remove(imageContainer);
+                if (photoPreviewBox != null) {
+                    photoPreviewBox.getChildren().remove(imageContainer);
+                }
                 selectedImageFiles.remove(file);
-                addPhotoButton.setDisable(false);
+                if (addPhotoButton != null) {
+                    addPhotoButton.setDisable(false);
+                }
             });
-            photoPreviewBox.getChildren().add(imageContainer);
-        } catch (Exception e) { e.printStackTrace(); }
+            if (photoPreviewBox != null) {
+                photoPreviewBox.getChildren().add(imageContainer);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void addExistingImageToPreview(String imagePath) {
@@ -420,19 +607,37 @@ public class CreateAdController {
             Button removeButton = new Button("X");
             VBox imageContainer = new VBox(5, imageView, removeButton);
             removeButton.setOnAction(event -> {
-                photoPreviewBox.getChildren().remove(imageContainer);
+                if (photoPreviewBox != null) {
+                    photoPreviewBox.getChildren().remove(imageContainer);
+                }
                 existingImagePaths.remove(imagePath);
-                addPhotoButton.setDisable(false);
+                if (addPhotoButton != null) {
+                    addPhotoButton.setDisable(false);
+                }
             });
-            photoPreviewBox.getChildren().add(imageContainer);
-        } catch (Exception e) { e.printStackTrace(); }
+            if (photoPreviewBox != null) {
+                photoPreviewBox.getChildren().add(imageContainer);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static class CategoryDisplayItem {
         private final String id;
         private final String displayName;
-        public CategoryDisplayItem(String id, String displayName) { this.id = id; this.displayName = displayName; }
-        public String getId() { return id; }
-        public String getDisplayName() { return displayName; }
+
+        public CategoryDisplayItem(String id, String displayName) {
+            this.id = id;
+            this.displayName = displayName;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 }
